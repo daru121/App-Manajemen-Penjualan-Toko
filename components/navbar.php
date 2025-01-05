@@ -67,6 +67,18 @@ require_once '../backend/check_session.php';
                                 'active' => true
                             ];
                             break;
+                        case 'laporan':
+                            $breadcrumbs[] = [
+                                'text' => 'Penjualan',
+                                'url' => '#',
+                                'active' => false
+                            ];
+                            $breadcrumbs[] = [
+                                'text' => 'Laporan',
+                                'url' => 'laporan.php',
+                                'active' => true
+                            ];
+                            break;
                         // Add more cases as needed
                     }
 
