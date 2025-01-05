@@ -2,6 +2,38 @@
 require_once '../backend/check_session.php';
 require_once '../backend/database.php';
 
+// Tambahkan di bagian awal file setelah require statements
+if (isset($_GET['action']) && $_GET['action'] === 'get_daerah_detail') {
+    header('Content-Type: application/json');
+    try {
+        $daerah = $_GET['daerah'];
+        
+        $query = "SELECT 
+            t.id,
+            t.tanggal,
+            t.total_harga,
+            t.marketplace,
+            p.nama as nama_pembeli
+        FROM transaksi t
+        LEFT JOIN pembeli p ON t.pembeli_id = p.id
+        WHERE t.daerah = ?
+        ORDER BY t.tanggal DESC";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->execute([$daerah]);
+        $details = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode([
+            'success' => true,
+            'details' => $details
+        ]);
+        exit;
+    } catch(PDOException $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
 // Handle get transaction detail
 if (isset($_GET['action']) && $_GET['action'] === 'get_detail' && isset($_GET['id'])) {
     header('Content-Type: application/json');
@@ -113,6 +145,45 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_product_history' && isset
         exit;
     } catch(PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// Tambahkan handler untuk edit transaksi di bagian awal file
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit_transaction') {
+    header('Content-Type: application/json');
+    try {
+        $id = $_POST['transaction_id'];
+        $tanggal = $_POST['tanggal'];
+        $marketplace = $_POST['marketplace'];
+        
+        // Update transaksi
+        $stmt = $conn->prepare("UPDATE transaksi SET tanggal = ?, marketplace = ? WHERE id = ?");
+        $stmt->execute([$tanggal, $marketplace, $id]);
+        
+        echo json_encode(['status' => 'success']);
+    } catch(PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
+// Tambahkan handler untuk get_transaction
+if (isset($_GET['action']) && $_GET['action'] === 'get_transaction') {
+    header('Content-Type: application/json');
+    try {
+        $id = $_GET['id'];
+        $stmt = $conn->prepare("SELECT t.*, p.nama as nama_pembeli 
+                               FROM transaksi t 
+                               LEFT JOIN pembeli p ON t.pembeli_id = p.id 
+                               WHERE t.id = ?");
+        $stmt->execute([$id]);
+        $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        echo json_encode($transaction);
+        exit;
+    } catch(PDOException $e) {
+        echo json_encode(['error' => $e->getMessage()]);
         exit;
     }
 }
@@ -256,6 +327,17 @@ try {
                     </svg>
                     Produk Terjual
                 </button>
+                <button id="btnDaerah" onclick="showTab('daerah')" 
+                        class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
+                               <?= isset($_GET['tab']) && $_GET['tab'] === 'daerah' ? 
+                                   'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
+                                   'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Daerah
+                </button>
             </div>
 
             <!-- Table Section -->
@@ -346,79 +428,175 @@ try {
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
                                     </button>
+                                    <button onclick="editTransaction(<?= $transaction['id'] ?>)" 
+                                            class="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                        </svg>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
-                <?php else: ?>
-                <!-- Tabel Produk Terlaris -->
-                <table class="w-full">
-                    <thead class="bg-gray-50/50 border-b border-gray-100">
-                        <tr>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NO</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NAMA PRODUK</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL TERJUAL</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL PENJUALAN</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL PROFIT</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <?php
-                        // Query untuk produk terlaris
-                        $query = "SELECT 
-                            b.nama_barang,
-                            COALESCE(SUM(dt.jumlah), 0) as total_terjual,
-                            COALESCE(SUM(dt.jumlah * dt.harga), 0) as total_penjualan,
-                            COALESCE(SUM((dt.harga - b.harga_modal) * dt.jumlah), 0) as total_profit,
-                            COUNT(DISTINCT t.id) as total_transaksi
-                        FROM barang b
-                        LEFT JOIN detail_transaksi dt ON b.id = dt.barang_id
-                        LEFT JOIN transaksi t ON dt.transaksi_id = t.id
-                        GROUP BY b.id, b.nama_barang
-                        ORDER BY total_terjual DESC";
-                        
-                        $stmt = $conn->prepare($query);
-                        $stmt->execute();
-                        $products = $stmt->fetchAll();
-                        
-                        foreach ($products as $index => $product):
-                        ?>
-                        <tr class="hover:bg-gray-50/50">
-                            <td class="px-6 py-4 text-sm text-gray-600"><?= $index + 1 ?></td>
-                            <td class="px-6 py-4 text-sm text-gray-800 font-medium">
-                                <?= htmlspecialchars($product['nama_barang']) ?>
-                                <div class="text-xs text-gray-400 mt-0.5">
-                                    <?= $product['total_transaksi'] ?: 'Belum ada' ?> transaksi
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="px-3 py-1 rounded-lg text-sm font-medium <?= $product['total_terjual'] > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600' ?>">
-                                    <?= number_format($product['total_terjual']) ?> Unit
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-600">
-                                <?= $product['total_penjualan'] > 0 ? 'Rp ' . number_format($product['total_penjualan'], 0, ',', '.') : '-' ?>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="<?= $product['total_profit'] > 0 ? 'text-green-600' : ($product['total_profit'] < 0 ? 'text-red-600' : 'text-gray-400') ?> font-medium">
-                                    <?= $product['total_profit'] != 0 ? 'Rp ' . number_format($product['total_profit'], 0, ',', '.') : '-' ?>
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <button onclick="showProductHistory('<?= htmlspecialchars($product['nama_barang']) ?>')" 
-                                        class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                </button>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                <?php elseif (isset($_GET['tab']) && $_GET['tab'] === 'produk-terlaris'): ?>
+                    <!-- Tabel Produk Terlaris -->
+                    <table class="w-full">
+                        <thead class="bg-gray-50/50 border-b border-gray-100">
+                            <tr>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NO</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NAMA PRODUK</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL TERJUAL</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL PENJUALAN</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL PROFIT</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">AKSI</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <?php
+                            // Query untuk produk terlaris dengan menambahkan kolom gambar
+                            $query = "SELECT 
+                                b.id,
+                                b.nama_barang,
+                                b.gambar,
+                                COALESCE(SUM(dt.jumlah), 0) as total_terjual,
+                                COALESCE(SUM(dt.jumlah * dt.harga), 0) as total_penjualan,
+                                COALESCE(SUM((dt.harga - b.harga_modal) * dt.jumlah), 0) as total_profit,
+                                COUNT(DISTINCT t.id) as total_transaksi
+                            FROM barang b
+                            LEFT JOIN detail_transaksi dt ON b.id = dt.barang_id
+                            LEFT JOIN transaksi t ON dt.transaksi_id = t.id
+                            GROUP BY b.id, b.nama_barang, b.gambar
+                            ORDER BY total_terjual DESC";
+                            
+                            $stmt = $conn->prepare($query);
+                            $stmt->execute();
+                            $products = $stmt->fetchAll();
+                            
+                            foreach ($products as $index => $product):
+                            ?>
+                            <tr class="hover:bg-gray-50/50">
+                                <td class="px-6 py-4 text-sm text-gray-600"><?= $index + 1 ?></td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-4">
+                                        <!-- Image Container -->
+                                        <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                                            <?php if ($product['gambar']): ?>
+                                                <img src="../uploads/<?= htmlspecialchars($product['gambar']) ?>" 
+                                                     alt="<?= htmlspecialchars($product['nama_barang']) ?>"
+                                                     class="w-full h-full object-cover">
+                                            <?php else: ?>
+                                                <div class="w-full h-full flex items-center justify-center bg-gray-50">
+                                                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                                    </svg>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <!-- Product Name and Transaction Count -->
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-800">
+                                                <?= htmlspecialchars($product['nama_barang']) ?>
+                                            </p>
+                                            <div class="text-xs text-gray-400 mt-0.5">
+                                                <?= $product['total_transaksi'] ?: 'Belum ada' ?> transaksi
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 rounded-lg text-sm font-medium <?= $product['total_terjual'] > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600' ?>">
+                                        <?= number_format($product['total_terjual']) ?> Unit
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-600">
+                                    <?= $product['total_penjualan'] > 0 ? 'Rp ' . number_format($product['total_penjualan'], 0, ',', '.') : '-' ?>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="<?= $product['total_profit'] > 0 ? 'text-green-600' : ($product['total_profit'] < 0 ? 'text-red-600' : 'text-gray-400') ?> font-medium">
+                                        <?= $product['total_profit'] != 0 ? 'Rp ' . number_format($product['total_profit'], 0, ',', '.') : '-' ?>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button onclick="showProductHistory('<?= htmlspecialchars($product['nama_barang']) ?>')" 
+                                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php elseif (isset($_GET['tab']) && $_GET['tab'] === 'daerah'): ?>
+                    <!-- Tabel Daerah -->
+                    <table class="w-full">
+                        <thead class="bg-gray-50/50 border-b border-gray-100">
+                            <tr>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NO</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">DAERAH</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL TRANSAKSI</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL PENJUALAN</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">PROFIT</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">AKSI</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <?php
+                            // Query untuk data daerah
+                            $query = "SELECT 
+                                t.daerah,
+                                COUNT(DISTINCT t.id) as total_transaksi,
+                                SUM(t.total_harga) as total_penjualan,
+                                SUM(dt.jumlah * (dt.harga - b.harga_modal)) as profit
+                            FROM transaksi t
+                            JOIN detail_transaksi dt ON t.id = dt.transaksi_id
+                            JOIN barang b ON dt.barang_id = b.id
+                            WHERE t.daerah IS NOT NULL
+                            GROUP BY t.daerah
+                            ORDER BY total_transaksi DESC, total_penjualan DESC";
+                            
+                            $stmt = $conn->prepare($query);
+                            $stmt->execute();
+                            $daerahData = $stmt->fetchAll();
+                            
+                            foreach ($daerahData as $index => $data):
+                            ?>
+                            <tr class="hover:bg-gray-50/50">
+                                <td class="px-6 py-4 text-sm text-gray-600"><?= $index + 1 ?></td>
+                                <td class="px-6 py-4 text-sm text-gray-800 font-medium">
+                                    <?= htmlspecialchars($data['daerah']) ?>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 rounded-lg text-sm font-medium bg-blue-100 text-blue-700">
+                                        <?= number_format($data['total_transaksi']) ?> Transaksi
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-600">
+                                    Rp <?= number_format($data['total_penjualan'], 0, ',', '.') ?>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="<?= $data['profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
+                                        Rp <?= number_format($data['profit'], 0, ',', '.') ?>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button onclick="showDaerahDetail('<?= htmlspecialchars($data['daerah']) ?>')" 
+                                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 <?php endif; ?>
             </div>
         </div>
@@ -539,6 +717,81 @@ try {
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Daerah Detail Modal -->
+    <div id="daerahDetailModal" class="modal items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-xl w-[800px] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <h3 class="text-lg font-semibold text-gray-800" id="modalDaerahTitle">Detail Transaksi Daerah</h3>
+                <button onclick="closeDaerahModal()" class="text-gray-400 hover:text-gray-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Modal Content -->
+            <div class="p-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-100">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">NO</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">NAMA PEMBELI</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">TANGGAL</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">TOTAL</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">MARKETPLACE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="daerahDetailContent" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Transaksi -->
+    <div id="editTransactionModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-2xl w-full max-w-lg p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-800">Edit Transaksi</h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="editTransactionForm" class="space-y-4">
+                <input type="hidden" id="editTransactionId" name="transaction_id">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Transaksi</label>
+                    <input type="datetime-local" id="editTanggal" name="tanggal" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Marketplace</label>
+                    <select id="editMarketplace" name="marketplace" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                        <option value="Offline">Offline</option>
+                        <option value="Shopee">Shopee</option>
+                        <option value="Tokopedia">Tokopedia</option>
+                        <option value="Tiktok">Tiktok</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeEditModal()" 
+                            class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                        Batal
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -708,6 +961,123 @@ try {
             if (e.target === this) {
                 closeProductHistory();
             }
+        });
+
+        async function showDaerahDetail(daerah) {
+            try {
+                const response = await fetch(`informasi.php?action=get_daerah_detail&daerah=${encodeURIComponent(daerah)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('modalDaerahTitle').textContent = `Detail Transaksi: ${daerah}`;
+                    
+                    const tbody = document.getElementById('daerahDetailContent');
+                    tbody.innerHTML = data.details.map((item, index) => `
+                        <tr class="hover:bg-gray-50/50">
+                            <td class="px-4 py-3 text-sm text-gray-600">${index + 1}</td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <span class="text-sm font-medium text-blue-600">
+                                            ${item.nama_pembeli ? item.nama_pembeli.charAt(0).toUpperCase() : '?'}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">${item.nama_pembeli || 'Tanpa Nama'}</p>
+                                        <p class="text-xs text-gray-500">${item.marketplace}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600">
+                                ${new Date(item.tanggal).toLocaleString('id-ID', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                })}
+                            </td>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-800">
+                                Rp ${Number(item.total_harga).toLocaleString('id-ID')}
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 rounded-lg text-xs font-medium ${getMarketplaceColor(item.marketplace)}">
+                                    ${item.marketplace}
+                                </span>
+                            </td>
+                        </tr>
+                    `).join('');
+                    
+                    document.getElementById('daerahDetailModal').classList.add('active');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat memuat detail daerah');
+            }
+        }
+
+        function getMarketplaceColor(marketplace) {
+            switch(marketplace.toLowerCase()) {
+                case 'shopee':
+                    return 'bg-orange-100 text-orange-700';
+                case 'tokopedia':
+                    return 'bg-green-100 text-green-700';
+                case 'tiktok':
+                    return 'bg-gray-100 text-gray-700';
+                default:
+                    return 'bg-blue-100 text-blue-700';
+            }
+        }
+
+        function closeDaerahModal() {
+            document.getElementById('daerahDetailModal').classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('daerahDetailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDaerahModal();
+            }
+        });
+
+        function editTransaction(id) {
+            fetch(`informasi.php?action=get_transaction&id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('editTransactionId').value = data.id;
+                    
+                    // Format tanggal untuk input datetime-local
+                    const tanggal = new Date(data.tanggal);
+                    const formattedDate = tanggal.toISOString().slice(0, 16);
+                    document.getElementById('editTanggal').value = formattedDate;
+                    
+                    document.getElementById('editMarketplace').value = data.marketplace;
+                    document.getElementById('editTransactionModal').classList.remove('hidden');
+                });
+        }
+
+        function closeEditModal() {
+            document.getElementById('editTransactionModal').classList.add('hidden');
+        }
+
+        document.getElementById('editTransactionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            formData.append('action', 'edit_transaction');
+            
+            fetch('informasi.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    closeEditModal();
+                    location.reload();
+                } else {
+                    alert('Gagal mengupdate transaksi');
+                }
+            });
         });
     </script>
 </body>

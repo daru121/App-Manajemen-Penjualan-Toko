@@ -100,4 +100,5 @@ INSERT INTO stok (barang_id, jumlah) VALUES
 (4, 30),
 (5, 60);
 
-
+ALTER TABLE transaksi 
+ADD COLUMN IF NOT EXISTS daerah VARCHAR(50) NULL;

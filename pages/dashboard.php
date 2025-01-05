@@ -2,6 +2,50 @@
 session_start();
 require_once '../backend/database.php';
 
+// Fungsi untuk mengambil semua data marketplace
+function getMarketplaceData() {
+    global $conn;
+    
+        $query = "SELECT 
+            marketplace,
+            COUNT(*) as total_orders,
+            COUNT(DISTINCT pembeli_id) as total_customers,
+            COALESCE(SUM(total_harga), 0) as total_revenue,
+            COALESCE(ROUND(AVG(total_harga), 2), 0) as avg_order_value
+        FROM transaksi 
+        WHERE marketplace IS NOT NULL
+        GROUP BY marketplace 
+        ORDER BY total_revenue DESC";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+// Ambil semua data marketplace
+$marketplaceData = getMarketplaceData();
+
+// Hitung total untuk card rangkuman
+$totalRevenue = array_sum(array_column($marketplaceData, 'total_revenue'));
+$totalOrders = array_sum(array_column($marketplaceData, 'total_orders'));
+$avgOrderValue = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
+
+// Endpoint AJAX untuk update data
+if (isset($_POST['action']) && $_POST['action'] === 'updateMarketplace') {
+    header('Content-Type: application/json');
+    $days = isset($_POST['days']) ? (int)$_POST['days'] : 7;
+    $data = getMarketplaceData($days);
+    echo json_encode([
+        'marketplaceData' => $data,
+        'summary' => [
+            'totalRevenue' => array_sum(array_column($data, 'total_revenue')),
+            'totalOrders' => array_sum(array_column($data, 'total_orders')),
+            'avgOrderValue' => array_sum(array_column($data, 'total_revenue')) / array_sum(array_column($data, 'total_orders'))
+        ]
+    ]);
+    exit;
+}
+
 // Query untuk mengambil data transaksi 7 hari terakhir
 $query = "SELECT 
     dates.tanggal,
@@ -115,6 +159,22 @@ function getSalesData($days) {
 // Ambil data default (7 hari)
 $salesData7Days = getSalesData(7);
 $salesData30Days = getSalesData(30);
+
+// Tambahkan query untuk marketplace analytics setelah query $salesData30Days
+$queryMarketplace = "SELECT 
+    marketplace,
+    COUNT(*) as total_orders,
+    COUNT(DISTINCT pembeli_id) as total_customers,
+    SUM(total_harga) as total_revenue,
+    ROUND(AVG(total_harga), 2) as avg_order_value
+FROM transaksi 
+WHERE marketplace IS NOT NULL
+GROUP BY marketplace 
+ORDER BY total_revenue DESC";
+
+$stmtMarketplace = $conn->prepare($queryMarketplace);
+$stmtMarketplace->execute();
+$marketplaceData = $stmtMarketplace->fetchAll();
 
 ?>
 
@@ -363,7 +423,7 @@ $salesData30Days = getSalesData(30);
                             <h2 class="text-xl font-semibold text-gray-800">5 Produk Terlaris</h2>
                             <p class="text-sm text-gray-500 mt-1">Berdasarkan jumlah penjualan</p>
                         </div>
-                        <a href="products.php" class="text-blue-500 hover:text-blue-600 text-sm font-medium flex items-center gap-1 transition-colors">
+                        <a href="informasi.php?tab=produk-terlaris" class="text-blue-500 hover:text-blue-600 text-sm font-medium flex items-center gap-1 transition-colors">
                             Lihat Semua
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -412,6 +472,104 @@ $salesData30Days = getSalesData(30);
                             <?php endforeach; ?>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Grid Container untuk Marketplace dan Daerah -->
+            <div class="grid grid-cols-12 gap-6 mt-6">
+                <!-- Marketplace Analytics Section -->
+                <div class="col-span-5">
+                    <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 class="text-xl font-semibold text-gray-800">Ringkasan Penjualan</h2>
+                                <p class="text-sm text-gray-500 mt-1">Total penjualan dari semua marketplace</p>
+                            </div>
+                        </div>
+
+                        <!-- Marketplace Stats Summary -->
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="bg-gradient-to-br from-blue-50 to-blue-100/50 p-4 rounded-xl">
+                                <p class="text-sm text-gray-600">Total Pendapatan</p>
+                                <h3 class="text-xl font-bold text-gray-800 mt-1">
+                                    Rp <?= number_format(array_sum(array_column($marketplaceData, 'total_revenue')), 0, ',', '.') ?>
+                                </h3>
+                                <p class="text-xs text-gray-500 mt-1">Total <?= array_sum(array_column($marketplaceData, 'total_orders')) ?> Transaksi</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-green-50 to-green-100/50 p-4 rounded-xl">
+                                <p class="text-sm text-gray-600">Rata-rata Transaksi</p>
+                                <h3 class="text-xl font-bold text-gray-800 mt-1">
+                                    Rp <?= number_format(array_sum(array_column($marketplaceData, 'total_revenue')) / array_sum(array_column($marketplaceData, 'total_orders')), 0, ',', '.') ?>
+                                </h3>
+                                <p class="text-xs text-gray-500 mt-1">Nilai rata-rata per order</p>
+                            </div>
+                        </div>
+
+                        <!-- Distribusi Penjualan per Marketplace -->
+                        <div class="space-y-3">
+                            <h3 class="text-sm font-medium text-gray-700 mb-3">Distribusi Penjualan</h3>
+                            <?php foreach ($marketplaceData as $data): 
+                                $colors = [
+                                    'shopee' => ['from-orange-500/20 to-orange-500/5 text-orange-600', 'text-orange-600'],
+                                    'tokopedia' => ['from-green-500/20 to-green-500/5 text-green-600', 'text-green-600'],
+                                    'tiktok' => ['from-gray-800/20 to-gray-800/5 text-gray-700', 'text-gray-700'],
+                                    'offline' => ['from-blue-500/20 to-blue-500/5 text-blue-600', 'text-blue-600']
+                                ];
+                                $color = $colors[strtolower($data['marketplace'])] ?? ['from-blue-500/20 to-blue-500/5 text-blue-600', 'text-blue-600'];
+                                
+                                // Hitung persentase dari total
+                                $percentageOfTotal = ($data['total_revenue'] / array_sum(array_column($marketplaceData, 'total_revenue'))) * 100;
+                            ?>
+                            <div class="group relative overflow-hidden cursor-pointer" 
+                                 onclick="showMarketplaceDetail('<?= $data['marketplace'] ?>', <?= json_encode($data) ?>)">
+                                <div class="flex items-center justify-between p-4 rounded-xl bg-gradient-to-br <?= $color[0] ?> hover:scale-[1.02] transition-all duration-300">
+                                    <div class="flex items-center gap-3">
+                                        <div class="p-3 rounded-xl bg-white shadow-sm">
+                                            <?php if(strtolower($data['marketplace']) === 'shopee'): ?>
+                                                <img src="../img/shopee.png" alt="Shopee" class="w-7 h-7 object-contain">
+                                            <?php elseif(strtolower($data['marketplace']) === 'tokopedia'): ?>
+                                                <img src="../img/tokopedia.png" alt="Tokopedia" class="w-7 h-7 object-contain">
+                                            <?php elseif(strtolower($data['marketplace']) === 'tiktok'): ?>
+                                                <img src="../img/tiktok.png" alt="Tiktok" class="w-7 h-7 object-contain">
+                                            <?php else: ?>
+                                                <svg class="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z"/>
+                                                </svg>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-medium text-gray-800"><?= ucfirst($data['marketplace']) ?></h3>
+                                            <div class="flex items-center gap-2 mt-0.5">
+                                                <span class="text-xs text-gray-500"><?= $data['total_orders'] ?> Transaksi</span>
+                                                <span class="text-xs font-medium <?= $color[1] ?>"><?= number_format($percentageOfTotal, 1) ?>% dari total</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-sm font-semibold text-gray-800">
+                                            Rp <?= number_format($data['total_revenue'], 0, ',', '.') ?>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-0.5">
+                                            Rata-rata: Rp <?= number_format($data['avg_order_value'], 0, ',', '.') ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Progress bar -->
+                                <div class="h-1 w-full bg-gray-100 absolute bottom-0 left-0">
+                                    <div class="h-full <?= str_replace(['from-', '/20'], ['bg-', ''], explode(' ', $color[0])[0]) ?>" 
+                                         style="width: <?= $percentageOfTotal ?>%">
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Placeholder untuk Section Daerah -->
+                <div class="col-span-7">
+                    <!-- Section Daerah akan ditambahkan di sini -->
                 </div>
             </div>
         </div>
@@ -762,6 +920,152 @@ $salesData30Days = getSalesData(30);
             
             currentChart.update();
         }
+
+        // Marketplace Chart
+        const marketplaceCtx = document.getElementById('marketplaceChart');
+        const marketplaceData = <?= json_encode($marketplaceData) ?>;
+
+        // Sort data by revenue
+        marketplaceData.sort((a, b) => b.total_revenue - a.total_revenue);
+
+        // Get highest and lowest
+        const highestMarket = marketplaceData[0];
+        const lowestMarket = marketplaceData[marketplaceData.length - 1];
+
+        const marketplaceColors = {
+            'shopee': 'rgb(238, 77, 45)',
+            'tokopedia': 'rgb(42, 169, 71)',
+            'tiktok': 'rgb(45, 45, 45)',
+            'offline': 'rgb(99, 102, 241)'
+        };
+
+        let currentChartType = 'bar';
+        let marketplaceChart = null;
+
+        function toggleChartType(type) {
+            if (currentChartType === type) return;
+            
+            currentChartType = type;
+            
+            // Update button states
+            document.querySelectorAll('.chart-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`${type}ChartBtn`).classList.add('active');
+            
+            // Destroy existing chart
+            if (marketplaceChart) {
+                marketplaceChart.destroy();
+            }
+            
+            // Create new chart with selected type
+            marketplaceChart = new Chart(marketplaceCtx, {
+                type: currentChartType,
+                data: {
+                    labels: marketplaceData.map(item => item.marketplace),
+                    datasets: [{
+                        data: marketplaceData.map(item => item.total_revenue),
+                        backgroundColor: marketplaceData.map(item => {
+                            if (item === highestMarket) {
+                                return 'rgba(34, 197, 94, 0.8)';
+                            } else if (item === lowestMarket) {
+                                return 'rgba(239, 68, 68, 0.8)';
+                            }
+                            const color = marketplaceColors[item.marketplace.toLowerCase()] || 'rgb(99, 102, 241)';
+                            return color.replace('rgb', 'rgba').replace(')', ', 0.3)');
+                        }),
+                        borderWidth: currentChartType === 'line' ? 2 : 0,
+                        borderColor: marketplaceData.map(item => {
+                            if (item === highestMarket) {
+                                return 'rgb(34, 197, 94)';
+                            } else if (item === lowestMarket) {
+                                return 'rgb(239, 68, 68)';
+                            }
+                            return marketplaceColors[item.marketplace.toLowerCase()] || 'rgb(99, 102, 241)';
+                        }),
+                        borderRadius: currentChartType === 'bar' ? 4 : 0,
+                        barThickness: currentChartType === 'bar' ? 12 : undefined,
+                        tension: currentChartType === 'line' ? 0.4 : undefined,
+                        fill: currentChartType === 'line' ? 'start' : undefined,
+                        pointBackgroundColor: 'white',
+                        pointBorderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'white',
+                            titleColor: '#1F2937',
+                            bodyColor: '#1F2937',
+                            bodyFont: {
+                                size: 12
+                            },
+                            padding: 10,
+                            borderColor: 'rgba(0,0,0,0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    const item = marketplaceData[tooltipItems[0].dataIndex];
+                                    let title = item.marketplace;
+                                    if (item === highestMarket) {
+                                        title += ' (Tertinggi)';
+                                    } else if (item === lowestMarket) {
+                                        title += ' (Terendah)';
+                                    }
+                                    return title;
+                                },
+                                label: function(context) {
+                                    const data = marketplaceData[context.dataIndex];
+                                    return [
+                                        `Revenue: Rp ${data.total_revenue.toLocaleString('id-ID')}`,
+                                        `${data.total_orders} Transaksi · ${data.total_customers} Pelanggan`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            display: true,
+                            drawBorder: false,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            },
+                            callback: function(value) {
+                                return 'Rp ' + value.toLocaleString('id-ID');
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000
+                }
+            });
+        }
+
+        // Initialize chart with bar type
+        toggleChartType('bar');
     </script>
 
     <!-- Tambahkan style untuk animasi smooth -->

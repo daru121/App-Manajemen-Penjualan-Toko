@@ -210,6 +210,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
             exit;
             break;
+
+        case 'process_transaction':
+            try {
+                $conn->beginTransaction();
+
+                $nama_pembeli = $_POST['pembeli'];
+                $marketplace = $_POST['marketplace'];
+                $total_harga = $_POST['total_harga'];
+                $pembayaran = $_POST['pembayaran'];
+                $kembalian = $_POST['kembalian'];
+                $daerah = null;
+
+                // Set daerah jika marketplace online
+                if (in_array($marketplace, ['shopee', 'tokopedia', 'tiktok'])) {
+                    $daerah = $_POST['daerah'];
+                    if (empty($daerah)) {
+                        throw new Exception("Provinsi pembeli harus diisi untuk marketplace online!");
+                    }
+                }
+
+                // Cek apakah pembeli sudah ada
+                $stmt = $conn->prepare("SELECT id FROM pembeli WHERE nama = ?");
+                $stmt->execute([$nama_pembeli]);
+                $pembeli = $stmt->fetch();
+                
+                // Jika pembeli belum ada, tambahkan pembeli baru
+                if (!$pembeli) {
+                    $stmt = $conn->prepare("INSERT INTO pembeli (nama) VALUES (?)");
+                    $stmt->execute([$nama_pembeli]);
+                    $pembeli_id = $conn->lastInsertId();
+                } else {
+                    $pembeli_id = $pembeli['id'];
+                }
+
+                // Insert ke tabel transaksi
+                $query = "INSERT INTO transaksi (user_id, pembeli_id, total_harga, pembayaran, kembalian, marketplace, daerah, tanggal) 
+                         VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+                $stmt = $conn->prepare($query);
+                $stmt->execute([
+                    $_SESSION['user_id'],
+                    $pembeli_id,
+                    $total_harga,
+                    $pembayaran,
+                    $kembalian,
+                    $marketplace,
+                    $daerah
+                ]);
+
+                $transaksi_id = $conn->lastInsertId();
+
+                // Insert detail transaksi
+                foreach ($_SESSION['cart'] as $item) {
+                    $stmt = $conn->prepare("INSERT INTO detail_transaksi (transaksi_id, barang_id, jumlah, harga) VALUES (?, ?, ?, ?)");
+                    $stmt->execute([$transaksi_id, $item['id'], $item['jumlah'], $item['harga']]);
+                    
+                    // Update stok
+                    $stmt = $conn->prepare("UPDATE stok SET jumlah = jumlah - ? WHERE barang_id = ?");
+                    $stmt->execute([$item['jumlah'], $item['id']]);
+                }
+
+                $conn->commit();
+                unset($_SESSION['cart']); // Kosongkan cart
+                
+                // Kirim response dengan transaksi_id
+                echo json_encode([
+                    'status' => 'success',
+                    'transaksi_id' => $transaksi_id // Pastikan mengirim transaksi_id
+                ]);
+                
+            } catch(Exception $e) {
+                $conn->rollBack();
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => $e->getMessage()
+                ]);
+            }
+            exit;
+            break;
     }
 }
 
@@ -258,8 +336,7 @@ try {
     $totalProducts = 0;
     $totalPages = 1;
 }
-?>
-<!DOCTYPE html>
+?><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -600,90 +677,144 @@ try {
                                 </div>
 
                                 <!-- Payment Section -->
-                                <div class="border-t border-gray-100 pt-6 space-y-4">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-gray-600">Total Items</span>
-                                        <span class="font-medium text-gray-800"><?= $totalItems ?> items</span>
+                                <div class="border-t border-gray-100 pt-6">
+                                    <!-- Summary Section -->
+                                    <div class="mb-6 space-y-4">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600">Total Items</span>
+                                            <span class="font-medium text-gray-800"><?= $totalItems ?> items</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600">Total</span>
+                                            <span class="text-lg font-semibold text-gray-800">
+                                                Rp <?= number_format($grandTotal, 0, ',', '.') ?>
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-gray-600">Total</span>
-                                        <span class="text-lg font-semibold text-gray-800">
-                                            Rp <?= number_format($grandTotal, 0, ',', '.') ?>
-                                        </span>
-                                    </div>
-                                    
-                                    <!-- Input Fields dengan animasi focus -->
+
+                                    <!-- Form Pembayaran -->
                                     <div class="space-y-3">
+                                        <!-- Input Nama Pembeli -->
                                         <input type="text" 
                                                id="buyerName"
                                                placeholder="Nama Pembeli"
                                                class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl
                                                       focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
                                                       transition-all duration-300 outline-none">
-                                              
-                                        <div class="relative">
+
+                                        <!-- Input Jumlah Pembayaran -->
+                                        <div class="mb-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Jumlah Pembayaran
+                                            </label>
                                             <input type="number" 
                                                    id="paymentAmount"
-                                                   placeholder="Jumlah Pembayaran"
+                                                   oninput="calculateChange()"
                                                    class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl
-                                                          focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20
+                                                          focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
                                                           transition-all duration-300 outline-none">
-                                            <div class="absolute right-0 top-0 h-full flex items-center pr-4">
-                                                <span class="text-sm font-medium text-gray-400">Rp</span>
-                                            </div>
                                         </div>
 
-                                        <!-- Marketplace Select -->
-                                        <div class="relative">
+                                        <!-- Pilih Marketplace -->
+                                        <div class="mb-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Marketplace
+                                            </label>
                                             <select id="marketplace" 
                                                     class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl
-                                                           appearance-none cursor-pointer
                                                            focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
                                                            transition-all duration-300 outline-none">
-                                                <option value="" selected disabled>Pilih Marketplace</option>
-                                                <option value="offline" class="flex items-center">
-                                                    offline
-                                                </option>
-                                                <option value="shopee" class="flex items-center">
-                                                    shopee
-                                                </option>
-                                                <option value="tokopedia">
-                                                    tokopedia
-                                                </option>
-                                                <option value="tiktok">
-                                                    tiktok
-                                                </option>
+                                                <option value="">Pilih Marketplace</option>
+                                                <option value="offline">Offline</option>
+                                                <option value="shopee">Shopee</option>
+                                                <option value="tokopedia">Tokopedia</option>
+                                                <option value="tiktok">Tiktok Shop</option>
                                             </select>
-                                            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                                </svg>
+                                        </div>
+
+                                        <!-- Dropdown Daerah (hidden by default) -->
+                                        <div id="daerahPembeli" class="mb-4 hidden">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Provinsi Pembeli
+                                            </label>
+                                            <select id="daerah" name="daerah" class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl
+                                                                         focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
+                                                                         transition-all duration-300 outline-none">
+                                                <option value="">Pilih Provinsi</option>
+                                                <optgroup label="Pulau Jawa">
+                                                    <option value="DKI Jakarta">DKI Jakarta</option>
+                                                    <option value="Banten">Banten</option>
+                                                    <option value="Jawa Barat">Jawa Barat</option>
+                                                    <option value="Jawa Tengah">Jawa Tengah</option>
+                                                    <option value="DI Yogyakarta">DI Yogyakarta</option>
+                                                    <option value="Jawa Timur">Jawa Timur</option>
+                                                </optgroup>
+                                                <optgroup label="Pulau Sumatera">
+                                                    <option value="Aceh">Aceh</option>
+                                                    <option value="Sumatera Utara">Sumatera Utara</option>
+                                                    <option value="Sumatera Barat">Sumatera Barat</option>
+                                                    <option value="Riau">Riau</option>
+                                                    <option value="Kepulauan Riau">Kepulauan Riau</option>
+                                                    <option value="Jambi">Jambi</option>
+                                                    <option value="Sumatera Selatan">Sumatera Selatan</option>
+                                                    <option value="Kepulauan Bangka Belitung">Kepulauan Bangka Belitung</option>
+                                                    <option value="Bengkulu">Bengkulu</option>
+                                                    <option value="Lampung">Lampung</option>
+                                                </optgroup>
+                                                <optgroup label="Pulau Kalimantan">
+                                                    <option value="Kalimantan Barat">Kalimantan Barat</option>
+                                                    <option value="Kalimantan Tengah">Kalimantan Tengah</option>
+                                                    <option value="Kalimantan Selatan">Kalimantan Selatan</option>
+                                                    <option value="Kalimantan Timur">Kalimantan Timur</option>
+                                                    <option value="Kalimantan Utara">Kalimantan Utara</option>
+                                                </optgroup>
+                                                <optgroup label="Pulau Sulawesi">
+                                                    <option value="Sulawesi Utara">Sulawesi Utara</option>
+                                                    <option value="Gorontalo">Gorontalo</option>
+                                                    <option value="Sulawesi Tengah">Sulawesi Tengah</option>
+                                                    <option value="Sulawesi Barat">Sulawesi Barat</option>
+                                                    <option value="Sulawesi Selatan">Sulawesi Selatan</option>
+                                                    <option value="Sulawesi Tenggara">Sulawesi Tenggara</option>
+                                                </optgroup>
+                                                <optgroup label="Kepulauan Maluku & Papua">
+                                                    <option value="Maluku">Maluku</option>
+                                                    <option value="Maluku Utara">Maluku Utara</option>
+                                                    <option value="Papua">Papua</option>
+                                                    <option value="Papua Barat">Papua Barat</option>
+                                                    <option value="Papua Selatan">Papua Selatan</option>
+                                                    <option value="Papua Tengah">Papua Tengah</option>
+                                                    <option value="Papua Pegunungan">Papua Pegunungan</option>
+                                                </optgroup>
+                                                <optgroup label="Kepulauan Nusa Tenggara & Bali">
+                                                    <option value="Bali">Bali</option>
+                                                    <option value="Nusa Tenggara Barat">Nusa Tenggara Barat</option>
+                                                    <option value="Nusa Tenggara Timur">Nusa Tenggara Timur</option>
+                                                </optgroup>
+                                            </select>
+                                        </div>
+
+                                        <!-- Display Kembalian -->
+                                        <div class="mb-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Kembalian
+                                            </label>
+                                            <div id="changeAmount" 
+                                                 class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl font-medium">
+                                                Rp 0
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <!-- Kembalian Display -->
-                                    <div class="p-4 bg-gray-50/50 rounded-2xl">
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-gray-600">Kembalian</span>
-                                            <span id="changeAmount" class="text-lg font-semibold text-green-500">
-                                                Rp 0
-                                            </span>
+                                        <!-- Tombol Aksi -->
+                                        <div class="flex gap-3">
+                                            <button onclick="cancelTransaction()" 
+                                                    class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors">
+                                                Batal
+                                            </button>
+                                            <button onclick="showConfirmModal()" 
+                                                    class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">
+                                                Bayar
+                                            </button>
                                         </div>
-                                    </div>
-
-                                    <!-- Tombol Aksi -->
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <button onclick="cancelTransaction()" 
-                                                class="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 
-                                                       transition-all duration-200 hover:shadow-lg hover:shadow-gray-200/50">
-                                            Batal
-                                        </button>
-                                        <button onclick="processPayment()" 
-                                                class="w-full px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 
-                                                       transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/50">
-                                            Bayar
-                                        </button>
                                     </div>
                                 </div>
                             <?php endif; ?>
@@ -701,19 +832,19 @@ try {
                                     List Produk
                                 </h2>
                                 
-                                <!-- Search Box -->
-                                <div class="relative">
+                                <!-- Search Input -->
+                                <div class="relative mb-6">
                                     <input type="text" 
                                            id="searchInput"
-                                           placeholder="Cari produk..." 
-                                           class="w-72 pl-12 pr-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm 
-                                                  focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
-                                    <div class="absolute left-4 top-2.5 text-gray-400">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                                        </svg>
-                                    </div>
+                                           placeholder="Cari produk..."
+                                           class="w-full px-4 py-3 pl-11 bg-gray-50/50 border border-gray-100 rounded-xl
+                                                  focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
+                                                  transition-all duration-300 outline-none">
+                                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" 
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    </svg>
                                 </div>
                             </div>
                             
@@ -821,47 +952,50 @@ try {
 
     <!-- Modal Konfirmasi -->
     <div id="confirmationModal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
-        <div class="relative z-50 min-h-screen flex items-center justify-center p-4">
-            <div class="bg-white rounded-3xl shadow-2xl p-6 w-[480px] mx-auto">
-                <h3 class="text-2xl font-bold text-gray-800 mb-6">Konfirmasi Pembayaran</h3>
-                <p class="text-gray-500 mb-6">Periksa kembali detail transaksi</p>
-
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="relative min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-md rounded-2xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Konfirmasi Pembayaran</h3>
+                <p class="text-sm text-gray-600 mb-4">Periksa kembali detail transaksi</p>
+                
+                <div class="space-y-3 mb-6">
+                    <div class="flex justify-between">
                         <span class="text-gray-600">Nama Pembeli</span>
-                        <span id="confirm-buyer-name" class="font-medium"></span>
+                        <span class="font-medium" id="confirm-buyer-name"></span>
                     </div>
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between">
                         <span class="text-gray-600">Total Items</span>
-                        <span id="confirm-total-items" class="font-medium"></span>
+                        <span class="font-medium" id="confirm-total-items"></span>
                     </div>
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between">
                         <span class="text-gray-600">Total Belanja</span>
-                        <span id="confirm-total" class="font-medium"></span>
+                        <span class="font-medium" id="confirm-total"></span>
                     </div>
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between">
                         <span class="text-gray-600">Pembayaran</span>
-                        <span id="confirm-payment" class="font-medium text-green-600"></span>
+                        <span class="font-medium text-blue-600" id="confirm-payment"></span>
                     </div>
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between">
                         <span class="text-gray-600">Kembalian</span>
-                        <span id="confirm-change" class="font-medium text-blue-600"></span>
+                        <span class="font-medium text-green-600" id="confirm-change"></span>
                     </div>
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between">
                         <span class="text-gray-600">Marketplace</span>
-                        <span id="confirm-marketplace" class="font-medium"></span>
+                        <span class="font-medium" id="confirm-marketplace"></span>
+                    </div>
+                    <div id="confirm-daerah-container" class="flex justify-between hidden">
+                        <span class="text-gray-600">Provinsi</span>
+                        <span class="font-medium" id="confirm-daerah"></span>
                     </div>
                 </div>
 
-                <!-- Buttons -->
-                <div class="flex gap-3 mt-6">
+                <div class="flex gap-3">
                     <button onclick="hideConfirmModal()" 
-                            class="flex-1 px-6 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium">
+                            class="flex-1 px-4 py-2 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
                         Batal
                     </button>
-                    <button onclick="executePayment()" 
-                            class="flex-1 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transform hover:scale-[1.02] transition-all duration-200 font-medium">
+                    <button onclick="processPayment()" 
+                            class="flex-1 px-4 py-2 text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors">
                         Konfirmasi Pembayaran
                     </button>
                 </div>
@@ -869,51 +1003,53 @@ try {
         </div>
     </div>
 
-    <!-- Modal Sukses -->
+    <!-- Modal Sukses Pembayaran -->
     <div id="successModal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
-        <div class="relative z-50 min-h-screen flex items-center justify-center p-4">
-            <div class="bg-white rounded-3xl shadow-2xl p-6 w-[480px] mx-auto">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="relative min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-md rounded-2xl p-6">
                 <div class="text-center mb-6">
-                    <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-800">Pembayaran Berhasil!</h3>
-                    <p class="text-sm text-gray-500 mt-1" id="success-date"></p>
+                    <h3 class="text-xl font-semibold text-gray-800">Pembayaran Berhasil!</h3>
                 </div>
 
-                <div class="bg-gray-50 rounded-2xl p-4 space-y-3">
-                    <div class="detail-item flex justify-between items-center">
+                <div class="space-y-3 mb-6">
+                    <div class="flex justify-between">
                         <span class="text-gray-600">No. Transaksi</span>
-                        <span id="success-transaction-id" class="font-medium"></span>
+                        <span class="font-medium" id="success-transaction-id"></span>
                     </div>
-                    <div class="detail-item flex justify-between items-center">
+                    <div class="flex justify-between">
                         <span class="text-gray-600">Nama Pembeli</span>
-                        <span id="success-buyer-name" class="font-medium"></span>
+                        <span class="font-medium" id="success-buyer-name"></span>
                     </div>
-                    <div class="detail-item flex justify-between items-center">
+                    <div class="flex justify-between">
                         <span class="text-gray-600">Total Belanja</span>
-                        <span id="success-total" class="font-medium"></span>
+                        <span class="font-medium" id="success-total"></span>
                     </div>
-                    <div class="detail-item flex justify-between items-center">
+                    <div class="flex justify-between">
                         <span class="text-gray-600">Pembayaran</span>
-                        <span id="success-payment" class="font-medium text-green-600"></span>
+                        <span class="font-medium text-blue-600" id="success-payment"></span>
                     </div>
-                    <div class="detail-item flex justify-between items-center">
+                    <div class="flex justify-between">
                         <span class="text-gray-600">Kembalian</span>
-                        <span id="success-change" class="font-medium text-blue-600"></span>
+                        <span class="font-medium text-green-600" id="success-change"></span>
                     </div>
-                    <div class="detail-item flex justify-between items-center">
+                    <div class="flex justify-between">
                         <span class="text-gray-600">Marketplace</span>
-                        <span id="success-marketplace" class="font-medium"></span>
+                        <span class="font-medium" id="success-marketplace"></span>
+                    </div>
+                    <div id="success-daerah-container" class="flex justify-between hidden">
+                        <span class="text-gray-600">Provinsi</span>
+                        <span class="font-medium" id="success-daerah"></span>
                     </div>
                 </div>
 
-                <button onclick="closeSuccessModal()" 
-                        class="w-full px-6 py-3 bg-green-500 text-white rounded-xl mt-6
-                               hover:bg-green-600 transition-all duration-200">
+                <button onclick="window.location.reload()" 
+                        class="w-full py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors">
                     Selesai
                 </button>
             </div>
@@ -999,262 +1135,157 @@ try {
 
     function calculateChange() {
         const total = <?= $grandTotal ?>;
-        const payment = parseFloat(document.getElementById('paymentAmount').value) || 0;
-        const change = payment - total;
+        const pembayaran = parseFloat(document.getElementById('paymentAmount').value) || 0;
+        const kembalian = pembayaran - total;
         
-        document.getElementById('changeAmount').textContent = 
-            `Rp ${Math.max(0, change).toLocaleString('id-ID')}`;
+        // Update tampilan kembalian
+        const changeDisplay = document.getElementById('changeAmount');
+        
+        if (!pembayaran) {
+            // Jika belum ada input pembayaran
+            changeDisplay.textContent = 'Rp 0';
+            changeDisplay.classList.remove('text-green-600', 'text-red-600');
+            changeDisplay.classList.add('text-gray-600');
+        } else if (kembalian >= 0) {
+            // Jika pembayaran cukup
+            changeDisplay.textContent = `Rp ${kembalian.toLocaleString('id-ID')}`;
+            changeDisplay.classList.remove('text-red-600', 'text-gray-600');
+            changeDisplay.classList.add('text-green-600');
+        } else {
+            // Jika pembayaran kurang
+            changeDisplay.textContent = `Rp ${Math.abs(kembalian).toLocaleString('id-ID')} (Kurang)`;
+            changeDisplay.classList.remove('text-green-600', 'text-gray-600');
+            changeDisplay.classList.add('text-red-600');
+        }
     }
 
-    function processPayment() {
+    function showConfirmModal() {
         const namaPembeli = document.getElementById('buyerName').value;
-        const jumlahBayar = parseFloat(document.getElementById('paymentAmount').value) || 0;
-        const marketplace = document.getElementById('marketplace').value || 'offline';
+        const marketplace = document.getElementById('marketplace').value;
+        const daerah = document.getElementById('daerah')?.value;
+        const pembayaran = parseFloat(document.getElementById('paymentAmount').value) || 0;
         const total = <?= $grandTotal ?>;
+        const kembalian = pembayaran - total;
 
+        // Validasi input
         if (!namaPembeli) {
             showAlert('Nama pembeli harus diisi!');
             return;
         }
-
-        if (jumlahBayar < total) {
-            showAlert('Jumlah pembayaran kurang!');
-            return;
-        }
-
         if (!marketplace) {
             showAlert('Pilih marketplace terlebih dahulu!');
             return;
         }
+        if (pembayaran < total) {
+            showAlert('Pembayaran kurang dari total belanja!');
+            return;
+        }
+        if (['shopee', 'tokopedia', 'tiktok'].includes(marketplace) && !daerah) {
+            showAlert('Silakan pilih provinsi pembeli!');
+            return;
+        }
 
-        // Update modal konfirmasi
+        // Update modal content
         document.getElementById('confirm-buyer-name').textContent = namaPembeli;
         document.getElementById('confirm-total-items').textContent = '<?= $totalItems ?> items';
         document.getElementById('confirm-total').textContent = `Rp ${total.toLocaleString('id-ID')}`;
-        document.getElementById('confirm-payment').textContent = `Rp ${jumlahBayar.toLocaleString('id-ID')}`;
-        document.getElementById('confirm-change').textContent = `Rp ${(jumlahBayar - total).toLocaleString('id-ID')}`;
-        document.getElementById('confirm-marketplace').textContent = marketplace.charAt(0).toUpperCase() + marketplace.slice(1);
+        document.getElementById('confirm-payment').textContent = `Rp ${pembayaran.toLocaleString('id-ID')}`;
+        document.getElementById('confirm-change').textContent = `Rp ${kembalian.toLocaleString('id-ID')}`;
+        document.getElementById('confirm-marketplace').textContent = marketplace;
 
-        showConfirmModal();
-    }
+        // Handle daerah display
+        const daerahContainer = document.getElementById('confirm-daerah-container');
+        if (['shopee', 'tokopedia', 'tiktok'].includes(marketplace) && daerah) {
+            document.getElementById('confirm-daerah').textContent = daerah;
+            daerahContainer.classList.remove('hidden');
+        } else {
+            daerahContainer.classList.add('hidden');
+        }
 
-    function showConfirmModal() {
+        // Show modal with animation
         const modal = document.getElementById('confirmationModal');
-        const overlay = modal.querySelector('.absolute');
-        const content = modal.querySelector('.bg-white');
-        const backdrop = document.getElementById('backdrop');
-        
-        backdrop.classList.remove('hidden');
-        backdrop.style.opacity = '0';
-        
-        requestAnimationFrame(() => {
-            backdrop.style.opacity = '1';
-            modal.classList.remove('hidden');
-            overlay.classList.add('overlay-enter');
-            content.classList.add('modal-enter');
-        });
-        
-        document.body.style.overflow = 'hidden';
+        modal.classList.remove('hidden');
     }
 
     function hideConfirmModal() {
         const modal = document.getElementById('confirmationModal');
-        const overlay = modal.querySelector('.absolute');
-        const content = modal.querySelector('.bg-white');
-        const backdrop = document.getElementById('backdrop');
-        
-        overlay.classList.add('overlay-leave');
-        content.classList.add('modal-leave');
-        backdrop.style.opacity = '0';
-        
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            overlay.classList.remove('overlay-leave');
-            content.classList.remove('modal-leave');
-            backdrop.classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }, 300);
+        modal.classList.add('hidden');
     }
 
-    function executePayment() {
+    function processPayment() {
         const namaPembeli = document.getElementById('buyerName').value;
-        const jumlahBayar = parseFloat(document.getElementById('paymentAmount').value) || 0;
-        const marketplace = document.getElementById('marketplace').value || 'offline';
+        const marketplace = document.getElementById('marketplace').value;
+        const daerah = document.getElementById('daerah')?.value;
+        const pembayaran = parseFloat(document.getElementById('paymentAmount').value);
         const total = <?= $grandTotal ?>;
+        const kembalian = pembayaran - total;
 
+        // Hide confirmation modal
         hideConfirmModal();
 
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('action', 'process_transaction');
+        formData.append('pembeli', namaPembeli);
+        formData.append('marketplace', marketplace);
+        formData.append('total_harga', total);
+        formData.append('pembayaran', pembayaran);
+        formData.append('kembalian', kembalian);
+        if (daerah) formData.append('daerah', daerah);
+
+        // Send to server
         fetch('penjualan.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `action=process_payment&buyer_name=${encodeURIComponent(namaPembeli)}&payment_amount=${jumlahBayar}&total=${total}&marketplace=${encodeURIComponent(marketplace)}`
+            body: formData
         })
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                // Update success modal content
-                document.getElementById('success-date').textContent = new Date().toLocaleDateString('id-ID', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
+                // Show success modal with transaction details
+                showSuccessModal({
+                    transaksi_id: data.transaksi_id,
+                    pembeli: namaPembeli,
+                    total: total,
+                    pembayaran: pembayaran,
+                    kembalian: kembalian,
+                    marketplace: marketplace,
+                    daerah: daerah
                 });
-                document.getElementById('success-transaction-id').textContent = `#${data.transaksi_id}`;
-                document.getElementById('success-buyer-name').textContent = namaPembeli;
-                document.getElementById('success-total').textContent = `Rp ${total.toLocaleString('id-ID')}`;
-                document.getElementById('success-payment').textContent = `Rp ${jumlahBayar.toLocaleString('id-ID')}`;
-                document.getElementById('success-change').textContent = `Rp ${data.kembalian.toLocaleString('id-ID')}`;
-                document.getElementById('success-marketplace').textContent = marketplace.charAt(0).toUpperCase() + marketplace.slice(1);
-                showSuccessModal();
             } else {
-                alert(data.message);
+                showAlert(data.message, 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('Terjadi kesalahan saat memproses pembayaran');
+            showAlert('Terjadi kesalahan saat memproses transaksi', 'error');
         });
     }
 
-    function showSuccessModal() {
-        const modal = document.getElementById('successModal');
-        const detailItems = modal.querySelectorAll('.detail-item');
+    function showSuccessModal(data) {
+        // Format nomor transaksi dengan padding zeros
+        const formattedId = String(data.transaksi_id).padStart(4, '0');
         
-        // Tampilkan modal terlebih dahulu
-        modal.classList.remove('hidden');
-        
-        // Reset opacity untuk animasi baru
-        detailItems.forEach(item => {
-            item.style.opacity = '0';
-            item.classList.remove('detail-item-enter');
-        });
-        
-        // Animate items dengan delay
-        detailItems.forEach((item, index) => {
-            setTimeout(() => {
-                item.style.opacity = '1';
-                item.classList.add('detail-item-enter');
-            }, index * 100);
-        });
-    }
+        // Update content modal sukses
+        document.getElementById('success-transaction-id').textContent = `TRX-${formattedId}`;
+        document.getElementById('success-buyer-name').textContent = data.pembeli;
+        document.getElementById('success-total').textContent = `Rp ${data.total.toLocaleString('id-ID')}`;
+        document.getElementById('success-payment').textContent = `Rp ${data.pembayaran.toLocaleString('id-ID')}`;
+        document.getElementById('success-change').textContent = `Rp ${data.kembalian.toLocaleString('id-ID')}`;
+        document.getElementById('success-marketplace').textContent = data.marketplace;
 
-    function closeSuccessModal() {
-        const modal = document.getElementById('successModal');
-        const content = modal.querySelector('.bg-white');
-        
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            location.reload();
-        }, 300);
-    }
+        // Handle daerah display
+        const daerahContainer = document.getElementById('success-daerah-container');
+        if (['shopee', 'tokopedia', 'tiktok'].includes(data.marketplace) && data.daerah) {
+            document.getElementById('success-daerah').textContent = data.daerah;
+            daerahContainer.classList.remove('hidden');
+        } else {
+            daerahContainer.classList.add('hidden');
+        }
 
-    // Update event listener untuk close modal saat klik outside
-    document.addEventListener('click', function(e) {
-        const confirmationModal = document.getElementById('confirmationModal');
+        // Show success modal
         const successModal = document.getElementById('successModal');
-        const backdrop = document.getElementById('backdrop');
-        
-        if (e.target === confirmationModal || e.target.classList.contains('absolute')) {
-            hideConfirmModal();
-            backdrop.classList.add('hidden');
-        }
-        if (e.target === successModal || e.target.classList.contains('absolute')) {
-            closeSuccessModal();
-            backdrop.classList.add('hidden');
-        }
-    });
-
-    // Auto calculate change when payment amount changes
-    document.getElementById('paymentAmount')?.addEventListener('input', calculateChange);
-
-    // Fungsi pencarian dengan debounce
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
+        successModal.classList.remove('hidden');
     }
-
-    // Fungsi untuk melakukan pencarian
-    function searchProducts(e) {
-        const keyword = e.target.value.trim();
-        
-        if (!keyword) {
-            window.location.reload();
-            return;
-        }
-        
-        fetch('penjualan.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `action=search&keyword=${encodeURIComponent(keyword)}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            const productContainer = document.querySelector('#productContainer');
-            
-            if (data.results && data.results.length > 0) {
-                let productsHTML = '';
-                data.results.forEach(product => {
-                    productsHTML += `
-                        <div class="product-item group bg-gray-50/50 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300">
-                            <div class="aspect-square bg-gray-100 relative overflow-hidden">
-                                ${product.gambar ? 
-                                    `<img src="../uploads/${product.gambar}" 
-                                          alt="${product.nama_barang}"
-                                          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">` :
-                                    `<div class="w-full h-full flex items-center justify-center text-gray-400">
-                                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
-                                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                        </svg>
-                                    </div>`
-                                }
-                            </div>
-                            <div class="p-4">
-                                <h3 class="font-medium text-gray-800">${product.nama_barang}</h3>
-                                <p class="text-sm text-gray-500 mb-3">${product.nama_kategori}</p>
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-lg font-semibold text-blue-600">
-                                            Rp ${parseInt(product.harga).toLocaleString('id-ID')}
-                                        </p>
-                                        <p class="text-sm text-green-600">Stok: ${product.stok}</p>
-                                    </div>
-                                    <button onclick="addToCart(${product.id})" 
-                                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                productContainer.innerHTML = productsHTML;
-            } else {
-                productContainer.innerHTML = `
-                    <div class="col-span-3 text-center py-8">
-                        <p class="text-gray-500">Tidak ada produk yang sesuai dengan pencarian</p>
-                    </div>
-                `;
-            }
-        });
-    }
-
-    // Inisialisasi pencarian dengan debounce
-    const debouncedSearch = debounce(searchProducts, 300);
-    document.getElementById('searchInput').addEventListener('input', debouncedSearch);
 
     function showAlert(message) {
         document.getElementById('alertMessage').textContent = message;
@@ -1311,11 +1342,11 @@ try {
                     <p class="text-gray-600 text-center mb-8">${message}</p>
                     <div class="flex justify-center gap-3">
                         <button onclick="hideCancelModal(this.closest('.fixed'))" 
-                                class="px-6 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200">
+                                class="px-6 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors">
                             Tidak
                         </button>
                         <button onclick="confirmCancel(this.closest('.fixed'))" 
-                                class="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all duration-200">
+                                class="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors">
                             Ya, Batalkan
                         </button>
                     </div>
@@ -1360,6 +1391,160 @@ try {
             }
         });
     }
+
+    // Event listener untuk marketplace
+    document.getElementById('marketplace').addEventListener('change', function() {
+        const daerahPembeli = document.getElementById('daerahPembeli');
+        const daerahSelect = document.getElementById('daerah');
+        
+        if (['shopee', 'tokopedia', 'tiktok'].includes(this.value)) {
+            // Tampilkan dropdown daerah dengan animasi
+            daerahPembeli.classList.remove('hidden');
+            daerahPembeli.style.opacity = '0';
+            daerahPembeli.style.transform = 'translateY(-10px)';
+            
+            // Animasi smooth
+            setTimeout(() => {
+                daerahPembeli.style.transition = 'all 0.3s ease';
+                daerahPembeli.style.opacity = '1';
+                daerahPembeli.style.transform = 'translateY(0)';
+            }, 10);
+            
+            // Reset pilihan daerah
+            daerahSelect.value = '';
+        } else {
+            // Sembunyikan dropdown daerah dengan animasi
+            daerahPembeli.style.opacity = '0';
+            daerahPembeli.style.transform = 'translateY(-10px)';
+            
+            setTimeout(() => {
+                daerahPembeli.classList.add('hidden');
+                daerahSelect.value = '';
+            }, 300);
+        }
+    });
+
+    // Tambahkan validasi saat submit
+    function validateForm() {
+        const marketplace = document.getElementById('marketplace').value;
+        const daerah = document.getElementById('daerah').value;
+        
+        if (['shopee', 'tokopedia', 'tiktok'].includes(marketplace) && !daerah) {
+            showAlert('Silakan pilih provinsi pembeli untuk marketplace online');
+            return false;
+        }
+        return true;
+    }
+
+    // Event listener untuk input pembayaran
+    document.getElementById('paymentAmount').addEventListener('input', calculateChange);
+
+    // Inisialisasi tampilan kembalian saat halaman dimuat
+    document.addEventListener('DOMContentLoaded', function() {
+        const changeDisplay = document.getElementById('changeAmount');
+        
+        // Set tampilan awal ke 0
+        changeDisplay.textContent = 'Rp 0';
+        changeDisplay.classList.remove('text-green-600', 'text-red-600');
+        changeDisplay.classList.add('text-gray-600');
+    });
+
+    // Fungsi pencarian dengan debounce
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // Fungsi untuk melakukan pencarian
+    function searchProducts(e) {
+        const keyword = e.target.value.trim();
+        const productContainer = document.querySelector('#productContainer');
+        
+        if (!keyword) {
+            window.location.reload();
+            return;
+        }
+        
+        fetch('penjualan.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `action=search&keyword=${encodeURIComponent(keyword)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.results && data.results.length > 0) {
+                let productsHTML = '';
+                data.results.forEach(product => {
+                    const isOutOfStock = product.stok <= 0;
+                    productsHTML += `
+                        <div class="product-item group bg-gray-50/50 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300">
+                            <div class="aspect-square bg-gray-100 relative overflow-hidden">
+                                ${product.gambar ? 
+                                    `<img src="../uploads/${product.gambar}" 
+                                          alt="${product.nama_barang}"
+                                          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">` :
+                                    `<div class="w-full h-full flex items-center justify-center text-gray-400">
+                                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                    </div>`
+                                }
+                                ${isOutOfStock ? 
+                                    `<div class="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                        <span class="text-white font-medium">Stok Habis</span>
+                                    </div>` : ''
+                                }
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-medium text-gray-800">${product.nama_barang}</h3>
+                                <p class="text-sm text-gray-500 mb-3">${product.nama_kategori}</p>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-lg font-semibold text-blue-600">
+                                            Rp ${parseInt(product.harga).toLocaleString('id-ID')}
+                                        </p>
+                                        <p class="text-sm ${isOutOfStock ? 'text-red-500' : 'text-green-600'}">
+                                            Stok: ${product.stok}
+                                        </p>
+                                    </div>
+                                    <button onclick="addToCart(${product.id})" 
+                                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            ${isOutOfStock ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                productContainer.innerHTML = productsHTML;
+            } else {
+                productContainer.innerHTML = `
+                    <div class="col-span-3 text-center py-8">
+                        <p class="text-gray-500">Tidak ada produk yang sesuai dengan pencarian</p>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    // Inisialisasi pencarian dengan debounce
+    const debouncedSearch = debounce(searchProducts, 300);
+    document.getElementById('searchInput').addEventListener('input', debouncedSearch);
     </script>
 </body>
 </html>

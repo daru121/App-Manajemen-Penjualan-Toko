@@ -1,6 +1,7 @@
 <?php
 require_once '../backend/check_session.php';
 require_once '../backend/database.php';
+require_once('../vendor/tecnickcom/tcpdf/tcpdf.php');
 
 try {
     // Get date range
@@ -38,24 +39,32 @@ try {
         $stmt->execute([$start_date]);
     } else if ($view_type === 'monthly') {
         // Query untuk laporan bulanan
-        $query = "SELECT 
-            DATE_FORMAT(t.tanggal, '%Y-%m') as bulan,
-            DATE_FORMAT(t.tanggal, '%M %Y') as nama_bulan,
-            COUNT(DISTINCT t.id) as total_transaksi,
-            SUM(t.total_harga) as total_penjualan,
-            SUM((dt.harga - b.harga_modal) * dt.jumlah) as total_profit,
-            GROUP_CONCAT(DISTINCT t.marketplace) as marketplaces,
-            SUM(CASE WHEN t.marketplace = 'offline' THEN 1 ELSE 0 END) as offline_count,
-            SUM(CASE WHEN t.marketplace = 'shopee' THEN 1 ELSE 0 END) as shopee_count,
-            SUM(CASE WHEN t.marketplace = 'tokopedia' THEN 1 ELSE 0 END) as tokopedia_count,
-            SUM(CASE WHEN t.marketplace = 'tiktok' THEN 1 ELSE 0 END) as tiktok_count
-        FROM transaksi t
+        $query = "WITH monthly_stats AS (
+            SELECT 
+                DATE_FORMAT(t.tanggal, '%Y-%m') as bulan,
+                DATE_FORMAT(t.tanggal, '%M %Y') as nama_bulan,
+                COUNT(DISTINCT t.id) as total_transaksi,
+                SUM(t.total_harga) as total_penjualan,
+                GROUP_CONCAT(DISTINCT t.marketplace) as marketplaces,
+                SUM(CASE WHEN t.marketplace = 'offline' THEN 1 ELSE 0 END) as offline_count,
+                SUM(CASE WHEN t.marketplace = 'shopee' THEN 1 ELSE 0 END) as shopee_count,
+                SUM(CASE WHEN t.marketplace = 'tokopedia' THEN 1 ELSE 0 END) as tokopedia_count,
+                SUM(CASE WHEN t.marketplace = 'tiktok' THEN 1 ELSE 0 END) as tiktok_count
+            FROM transaksi t
+            WHERE DATE_FORMAT(t.tanggal, '%Y-%m') = DATE_FORMAT(?, '%Y-%m')
+            GROUP BY DATE_FORMAT(t.tanggal, '%Y-%m'), DATE_FORMAT(t.tanggal, '%M %Y')
+        )
+        SELECT 
+            ms.*,
+            COALESCE(SUM((dt.harga - b.harga_modal) * dt.jumlah), 0) as total_profit
+        FROM monthly_stats ms
+        JOIN transaksi t ON DATE_FORMAT(t.tanggal, '%Y-%m') = ms.bulan
         JOIN detail_transaksi dt ON t.id = dt.transaksi_id
         JOIN barang b ON dt.barang_id = b.id
-        WHERE DATE_FORMAT(t.tanggal, '%Y-%m') = DATE_FORMAT(?, '%Y-%m')
-        GROUP BY DATE_FORMAT(t.tanggal, '%Y-%m')
-        ORDER BY bulan DESC";
-        
+        GROUP BY ms.bulan, ms.nama_bulan, ms.total_transaksi, ms.total_penjualan, 
+                 ms.marketplaces, ms.offline_count, ms.shopee_count, 
+                 ms.tokopedia_count, ms.tiktok_count";
+
         $stmt = $conn->prepare($query);
         $stmt->execute([$start_date]);
     } else {
@@ -93,9 +102,132 @@ try {
 
     $transactions = $stmt->fetchAll();
 
+    $grand_total_penjualan = 0;
+    $grand_total_profit = 0;
+
+    if ($view_type === 'monthly' || $view_type === 'yearly') {
+        foreach ($transactions as $row) {
+            $grand_total_penjualan += $row['total_penjualan'];
+            $grand_total_profit += $row['total_profit'];
+        }
+    } else {
+        foreach ($transactions as $transaction) {
+            $grand_total_penjualan += $transaction['total_harga'];
+            $grand_total_profit += $transaction['profit'];
+        }
+    }
+
 } catch(PDOException $e) {
     echo "Error: " . $e->getMessage();
     $transactions = [];
+}
+
+if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
+    // Prevent any output
+    ob_clean();
+    
+    // Create new PDF document
+    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+    
+    // Set document information
+    $pdf->SetCreator('PAksesories');
+    $pdf->SetAuthor('PAksesories');
+    $pdf->SetTitle('Laporan Penjualan');
+    
+    // Remove default header/footer
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(false);
+    
+    // Set margins
+    $pdf->SetMargins(15, 15, 15);
+    
+    // Add a page
+    $pdf->AddPage();
+    
+    // Set font
+    $pdf->SetFont('helvetica', '', 12);
+    
+    // Add logo and company name
+    $pdf->Image('../img/gambar.jpg', 15, 15, 30);
+    $pdf->Cell(0, 10, '', 0, 1);
+    $pdf->SetFont('helvetica', 'B', 20);
+    $pdf->Cell(0, 10, 'Laporan Penjualan PAksesories', 0, 1, 'C');
+    
+    // Add period information
+    $pdf->SetFont('helvetica', '', 12);
+    if ($view_type === 'monthly') {
+        $period = 'Periode: ' . date('F Y', strtotime($start_date));
+    } elseif ($view_type === 'yearly') {
+        $period = 'Periode: Tahun ' . date('Y', strtotime($start_date));
+    } else {
+        $period = 'Periode: ' . date('d F Y', strtotime($start_date));
+    }
+    $pdf->Cell(0, 10, $period, 0, 1, 'C');
+    $pdf->Ln(10);
+    
+    // Add table header
+    $pdf->SetFont('helvetica', 'B', 11);
+    $pdf->SetFillColor(240, 240, 240);
+    
+    if ($view_type === 'monthly' || $view_type === 'yearly') {
+        $header = array('Periode', 'Total Transaksi', 'Total Penjualan', 'Total Profit');
+        $w = array(50, 40, 50, 50);
+        
+        foreach($header as $i => $col) {
+            $pdf->Cell($w[$i], 10, $col, 1, 0, 'C', true);
+        }
+        $pdf->Ln();
+        
+        // Add table data
+        $pdf->SetFont('helvetica', '', 10);
+        foreach($transactions as $row) {
+            $period = $view_type === 'monthly' ? $row['nama_bulan'] : $row['tahun'];
+            $pdf->Cell($w[0], 10, $period, 1);
+            $pdf->Cell($w[1], 10, number_format($row['total_transaksi']) . ' Transaksi', 1);
+            $pdf->Cell($w[2], 10, 'Rp ' . number_format($row['total_penjualan'], 0, ',', '.'), 1);
+            $pdf->Cell($w[3], 10, 'Rp ' . number_format($row['total_profit'], 0, ',', '.'), 1);
+            $pdf->Ln();
+        }
+    } else {
+        $header = array('No', 'Tanggal', 'Pembeli', 'Total', 'Profit');
+        $w = array(15, 40, 50, 40, 40);
+        
+        foreach($header as $i => $col) {
+            $pdf->Cell($w[$i], 10, $col, 1, 0, 'C', true);
+        }
+        $pdf->Ln();
+        
+        // Add table data
+        $pdf->SetFont('helvetica', '', 10);
+        foreach($transactions as $i => $transaction) {
+            $pdf->Cell($w[0], 10, $i + 1, 1);
+            $pdf->Cell($w[1], 10, date('d/m/Y H:i', strtotime($transaction['tanggal'])), 1);
+            $pdf->Cell($w[2], 10, $transaction['nama_pembeli'], 1);
+            $pdf->Cell($w[3], 10, 'Rp ' . number_format($transaction['total_harga'], 0, ',', '.'), 1);
+            $pdf->Cell($w[4], 10, 'Rp ' . number_format($transaction['profit'], 0, ',', '.'), 1);
+            $pdf->Ln();
+        }
+    }
+    
+    // Add total row
+    $pdf->SetFont('helvetica', 'B', 11);
+    $pdf->Cell(array_sum($w) - 90, 10, 'Total:', 1, 0, 'R');
+    $pdf->Cell(45, 10, 'Rp ' . number_format($grand_total_penjualan, 0, ',', '.'), 1);
+    $pdf->Cell(45, 10, 'Rp ' . number_format($grand_total_profit, 0, ',', '.'), 1);
+    
+    // Add signature section
+    $pdf->Ln(20);
+    $pdf->SetFont('helvetica', '', 11);
+    $pdf->Cell(0, 10, 'Dibuat oleh:', 0, 1, 'R');
+    $pdf->Ln(15);
+    $pdf->Cell(0, 10, '(_____________________)', 0, 1, 'R');
+    
+    // Pastikan tidak ada output sebelum PDF
+    if (ob_get_length()) ob_clean();
+    
+    // Output PDF
+    $pdf->Output('Laporan_Penjualan_' . date('Y-m-d') . '.pdf', 'I');
+    exit;
 }
 ?>
 
@@ -141,10 +273,10 @@ try {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                             </svg>
                         </button>
-                        <button onclick="exportToExcel()" 
+                        <button onclick="exportToPDF()" 
                                 class="p-2.5 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all duration-200">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                             </svg>
                         </button>
                     </div>
@@ -221,7 +353,7 @@ try {
                                         <?php foreach ($marketplaces as $marketplace): ?>
                                         <span class="px-3 py-1 rounded-lg text-sm font-medium relative group
                                             <?php 
-                                                switch(strtolower($marketplace)) {
+                                                switch(strtolower(trim($marketplace))) {
                                                     case 'shopee':
                                                         echo 'bg-orange-100 text-orange-700';
                                                         break;
@@ -231,29 +363,24 @@ try {
                                                     case 'tiktok':
                                                         echo 'bg-gray-100 text-gray-700';
                                                         break;
-                                                    default:
+                                                    case 'offline':
                                                         echo 'bg-blue-100 text-blue-700';
+                                                        break;
+                                                    default:
+                                                        echo 'bg-gray-100 text-gray-700';
                                                 }
                                             ?>">
-                                            <?= ucfirst(htmlspecialchars($marketplace)) ?>
-                                            <!-- Individual Tooltip -->
-                                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 
-                                                        bg-gray-800 rounded-lg text-white text-xs whitespace-nowrap
-                                                        opacity-0 invisible group-hover:opacity-100 group-hover:visible 
-                                                        pointer-events-none transition-all duration-200 z-10">
-                                                <?php
-                                                $count_key = strtolower($marketplace) . '_count';
-                                                echo $row[$count_key] . ' transaksi';
-                                                ?>
-                                                <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 
-                                                            w-2 h-2 bg-gray-800 transform rotate-45">
-                                                </div>
-                                            </div>
+                                            <?= ucfirst(trim($marketplace)) ?>
+                                            <?php if ($row[strtolower(trim($marketplace)) . '_count'] > 0): ?>
+                                                <span class="ml-1 text-xs opacity-60">
+                                                    <?= $row[strtolower(trim($marketplace)) . '_count'] ?>
+                                                </span>
+                                            <?php endif; ?>
                                         </span>
                                         <?php endforeach; ?>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-800 font-medium">
+                                <td class="px-6 py-4 text-sm text-gray-800">
                                     Rp <?= number_format($row['total_penjualan'], 0, ',', '.') ?>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
@@ -263,21 +390,23 @@ try {
                                 </td>
                             </tr>
                         <?php endforeach; ?>
-                        <!-- Grand Total Row -->
-                        <tr class="bg-gray-50/80">
-                            <td colspan="3" class="px-6 py-4 text-sm text-gray-800 font-semibold text-right">
+                    </tbody>
+                    <!-- Footer dengan total -->
+                    <tfoot class="bg-gray-50/50 border-t border-gray-100">
+                        <tr>
+                            <td colspan="3" class="px-6 py-4 text-sm font-medium text-gray-800">
                                 Total Keseluruhan:
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-800 font-semibold">
+                            <td class="px-6 py-4 text-sm text-gray-800 font-medium">
                                 Rp <?= number_format($grand_total_penjualan, 0, ',', '.') ?>
                             </td>
                             <td class="px-6 py-4 text-sm">
-                                <span class="<?= $grand_total_profit >= 0 ? 'text-green-600' : 'text-red-600' ?> font-semibold">
+                                <span class="<?= $grand_total_profit >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
                                     Rp <?= number_format($grand_total_profit, 0, ',', '.') ?>
                                 </span>
                             </td>
                         </tr>
-                    </tbody>
+                    </tfoot>
                     <?php elseif ($view_type === 'yearly'): ?>
                     <thead class="bg-gray-50/50 border-b border-gray-100">
                         <tr>
@@ -311,7 +440,7 @@ try {
                                         <?php foreach ($marketplaces as $marketplace): ?>
                                         <span class="px-3 py-1 rounded-lg text-sm font-medium relative group
                                             <?php 
-                                                switch(strtolower($marketplace)) {
+                                                switch(strtolower(trim($marketplace))) {
                                                     case 'shopee':
                                                         echo 'bg-orange-100 text-orange-700';
                                                         break;
@@ -321,29 +450,24 @@ try {
                                                     case 'tiktok':
                                                         echo 'bg-gray-100 text-gray-700';
                                                         break;
-                                                    default:
+                                                    case 'offline':
                                                         echo 'bg-blue-100 text-blue-700';
+                                                        break;
+                                                    default:
+                                                        echo 'bg-gray-100 text-gray-700';
                                                 }
                                             ?>">
-                                            <?= ucfirst(htmlspecialchars($marketplace)) ?>
-                                            <!-- Individual Tooltip -->
-                                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 
-                                                        bg-gray-800 rounded-lg text-white text-xs whitespace-nowrap
-                                                        opacity-0 invisible group-hover:opacity-100 group-hover:visible 
-                                                        pointer-events-none transition-all duration-200 z-10">
-                                                <?php
-                                                $count_key = strtolower($marketplace) . '_count';
-                                                echo $row[$count_key] . ' transaksi';
-                                                ?>
-                                                <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 
-                                                            w-2 h-2 bg-gray-800 transform rotate-45">
-                                                </div>
-                                            </div>
+                                            <?= ucfirst(trim($marketplace)) ?>
+                                            <?php if ($row[strtolower(trim($marketplace)) . '_count'] > 0): ?>
+                                                <span class="ml-1 text-xs opacity-60">
+                                                    <?= $row[strtolower(trim($marketplace)) . '_count'] ?>
+                                                </span>
+                                            <?php endif; ?>
                                         </span>
                                         <?php endforeach; ?>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-800 font-medium">
+                                <td class="px-6 py-4 text-sm text-gray-800">
                                     Rp <?= number_format($row['total_penjualan'], 0, ',', '.') ?>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
@@ -353,21 +477,23 @@ try {
                                 </td>
                             </tr>
                         <?php endforeach; ?>
-                        <!-- Grand Total Row -->
-                        <tr class="bg-gray-50/80">
-                            <td colspan="3" class="px-6 py-4 text-sm text-gray-800 font-semibold text-right">
+                    </tbody>
+                    <!-- Footer dengan total -->
+                    <tfoot class="bg-gray-50/50 border-t border-gray-100">
+                        <tr>
+                            <td colspan="3" class="px-6 py-4 text-sm font-medium text-gray-800">
                                 Total Keseluruhan:
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-800 font-semibold">
+                            <td class="px-6 py-4 text-sm text-gray-800 font-medium">
                                 Rp <?= number_format($grand_total_penjualan, 0, ',', '.') ?>
                             </td>
                             <td class="px-6 py-4 text-sm">
-                                <span class="<?= $grand_total_profit >= 0 ? 'text-green-600' : 'text-red-600' ?> font-semibold">
+                                <span class="<?= $grand_total_profit >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
                                     Rp <?= number_format($grand_total_profit, 0, ',', '.') ?>
                                 </span>
                             </td>
                         </tr>
-                    </tbody>
+                    </tfoot>
                     <?php else: ?>
                     <thead class="bg-gray-50/50 border-b border-gray-100">
                         <tr>
@@ -485,9 +611,10 @@ try {
             const currentTab = document.querySelector('button[class*="text-blue-600"]').id.toLowerCase();
             
             if (currentTab.includes('bulanan')) {
-                window.location.href = `laporan.php?type=monthly&start_date=${selectedDate}-01`;
+                // Format: YYYY-MM-01 untuk memastikan mengambil bulan yang tepat
+                const [year, month] = selectedDate.split('-');
+                window.location.href = `laporan.php?type=monthly&start_date=${year}-${month}-01`;
             } else if (currentTab.includes('tahunan')) {
-                // Pastikan format tanggal untuk tahunan benar
                 const yearDate = `${selectedDate}-01-01`;
                 window.location.href = `laporan.php?type=yearly&start_date=${yearDate}`;
             } else {
@@ -495,15 +622,20 @@ try {
             }
         }
 
-        function exportToExcel() {
+        function exportToPDF() {
             const selectedDate = document.getElementById('selected_date').value;
-            const currentTab = document.querySelector('button.bg-blue-600').id.toLowerCase();
+            const currentTab = document.querySelector('button[class*="text-blue-600"]').id.toLowerCase();
+            let url = 'laporan.php?';
             
             if (currentTab.includes('bulanan')) {
-                window.location.href = `export_excel.php?type=monthly&start_date=${selectedDate}-01`;
+                url += `type=monthly&start_date=${selectedDate}-01&export=pdf`;
+            } else if (currentTab.includes('tahunan')) {
+                url += `type=yearly&start_date=${selectedDate}-01-01&export=pdf`;
             } else {
-                window.location.href = `export_excel.php?start_date=${selectedDate}&end_date=${selectedDate}`;
+                url += `start_date=${selectedDate}&end_date=${selectedDate}&export=pdf`;
             }
+            
+            window.open(url, '_blank');
         }
     </script>
 </body>
