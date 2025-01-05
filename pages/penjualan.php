@@ -126,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $buyer_name = $_POST['buyer_name'];
                 $payment_amount = $_POST['payment_amount'];
                 $total = $_POST['total'];
-                $marketplace = $_POST['marketplace'];
+                $marketplace = $_POST['marketplace'] ?? 'offline';
                 $kembalian = $payment_amount - $total;
                 
                 if ($kembalian < 0) {
@@ -141,10 +141,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $stmt->execute([$buyer_name]);
                 $pembeli_id = $conn->lastInsertId();
                 
-                // Insert transaksi
-                $stmt = $conn->prepare("INSERT INTO transaksi (user_id, pembeli_id, total_harga, pembayaran, kembalian, tanggal) 
-                                        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
-                $stmt->execute([$_SESSION['user_id'], $pembeli_id, $total, $payment_amount, $kembalian]);
+                // Insert transaksi dengan marketplace
+                $stmt = $conn->prepare("INSERT INTO transaksi (user_id, pembeli_id, total_harga, pembayaran, kembalian, tanggal, marketplace) 
+                                        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)");
+                $stmt->execute([
+                    $_SESSION['user_id'], 
+                    $pembeli_id, 
+                    $total, 
+                    $payment_amount, 
+                    $kembalian,
+                    $marketplace
+                ]);
                 $transaksi_id = $conn->lastInsertId();
                 
                 // Insert detail transaksi and update stock
@@ -1002,7 +1009,7 @@ try {
     function processPayment() {
         const namaPembeli = document.getElementById('buyerName').value;
         const jumlahBayar = parseFloat(document.getElementById('paymentAmount').value) || 0;
-        const marketplace = document.getElementById('marketplace').value.toLowerCase() || 'offline';
+        const marketplace = document.getElementById('marketplace').value || 'offline';
         const total = <?= $grandTotal ?>;
 
         if (!namaPembeli) {
@@ -1072,7 +1079,7 @@ try {
     function executePayment() {
         const namaPembeli = document.getElementById('buyerName').value;
         const jumlahBayar = parseFloat(document.getElementById('paymentAmount').value) || 0;
-        const marketplace = document.getElementById('marketplace').value.toLowerCase() || 'offline';
+        const marketplace = document.getElementById('marketplace').value || 'offline';
         const total = <?= $grandTotal ?>;
 
         hideConfirmModal();
@@ -1080,7 +1087,7 @@ try {
         fetch('penjualan.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `action=process_payment&buyer_name=${encodeURIComponent(namaPembeli)}&payment_amount=${jumlahBayar}&total=${total}&marketplace=${marketplace}`
+            body: `action=process_payment&buyer_name=${encodeURIComponent(namaPembeli)}&payment_amount=${jumlahBayar}&total=${total}&marketplace=${encodeURIComponent(marketplace)}`
         })
         .then(response => response.json())
         .then(data => {
@@ -1177,7 +1184,6 @@ try {
     function searchProducts(e) {
         const keyword = e.target.value.trim();
         
-        // Jika keyword kosong, tampilkan semua produk
         if (!keyword) {
             window.location.reload();
             return;
@@ -1192,7 +1198,6 @@ try {
         })
         .then(response => response.json())
         .then(data => {
-            // Target container produk yang benar
             const productContainer = document.querySelector('#productContainer');
             
             if (data.results && data.results.length > 0) {
@@ -1223,7 +1228,7 @@ try {
                                         </p>
                                         <p class="text-sm text-green-600">Stok: ${product.stok}</p>
                                     </div>
-                                    <button onclick="addToCart(${product.id}))" 
+                                    <button onclick="addToCart(${product.id})" 
                                             class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -1359,4 +1364,3 @@ try {
 </body>
 </html>
 ?>
-
