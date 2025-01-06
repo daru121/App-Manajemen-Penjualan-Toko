@@ -290,7 +290,7 @@ $marketplaceData = $stmtMarketplace->fetchAll();
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium <?= ($todayStats['total_transaksi'] ?? 0) >= $transaksiKemarin ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' ?>">
                                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                          d="<?= ($todayStats['total_transaksi'] ?? 0) >= $transaksiKemarin ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' : 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6' ?>">
+                                          d="<?= ($todayStats['total_transaksi'] ?? 0) >= $transaksiKemarin ? 'M13 7h8m0 0v8m0-8l-8 8-4 4-6-6' : 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6' ?>">
                                     </path>
                                 </svg>
                                 <?= number_format(abs((($todayStats['total_transaksi'] ?? 0) - $transaksiKemarin) / $transaksiKemarin * 100), 1) ?>%
@@ -375,7 +375,7 @@ $marketplaceData = $stmtMarketplace->fetchAll();
             </div>
 
             <!-- Charts Section dengan desain yang lebih modern -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <!-- Line Chart Container -->
                 <div class="bg-white rounded-2xl p-6 shadow-sm">
                     <div class="flex justify-between items-center mb-8">
@@ -416,7 +416,7 @@ $marketplaceData = $stmtMarketplace->fetchAll();
                     </div>
                 </div>
 
-                <!-- Donut Chart Container -->
+                <!-- Products Container -->
                 <div class="bg-white rounded-2xl p-6 shadow-sm">
                     <div class="flex justify-between items-center mb-6">
                         <div>
@@ -476,9 +476,9 @@ $marketplaceData = $stmtMarketplace->fetchAll();
             </div>
 
             <!-- Grid Container untuk Marketplace dan Daerah -->
-            <div class="grid grid-cols-12 gap-6 mt-6">
-                <!-- Marketplace Analytics Section -->
-                <div class="col-span-5">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Ringkasan Penjualan Section -->
+                <div class="w-full">
                     <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-sm border border-gray-100">
                         <div class="flex justify-between items-center mb-6">
                             <div>
@@ -567,9 +567,135 @@ $marketplaceData = $stmtMarketplace->fetchAll();
                     </div>
                 </div>
 
-                <!-- Placeholder untuk Section Daerah -->
-                <div class="col-span-7">
-                    <!-- Section Daerah akan ditambahkan di sini -->
+                <!-- Section Top 3 Performing Regions -->
+                <div class="w-full">
+                    <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h2 class="text-xl font-semibold text-gray-800">Top 3 Performing Regions</h2>
+                                <p class="text-sm text-gray-500 mt-1">Daerah dengan performa penjualan tertinggi</p>
+                            </div>
+                            <a href="informasi.php?tab=daerah" class="text-blue-500 hover:text-blue-600 text-sm font-medium flex items-center gap-1 transition-colors">
+                                Lihat Semua
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </a>
+                        </div>
+
+                        <!-- Chart Container -->
+                        <div class="flex flex-col">
+                            <!-- Bar Chart -->
+                            <div class="w-full" style="height: 300px;">
+                                <canvas id="regionBarChart"></canvas>
+                            </div>
+                            
+                            <!-- Region Info Cards -->
+                            <div class="mt-4 space-y-3">
+                                <?php
+                                try {
+                                    $queryDaerah = $conn->prepare("SELECT 
+                                        daerah,
+                                        COUNT(*) as total_transaksi,
+                                        SUM(total_harga) as total_pendapatan,
+                                        AVG(total_harga) as rata_rata
+                                    FROM transaksi 
+                                    WHERE daerah IS NOT NULL 
+                                    GROUP BY daerah 
+                                    ORDER BY total_pendapatan DESC 
+                                    LIMIT 3");
+                                    
+                                    $queryDaerah->execute();
+                                    $daerahData = $queryDaerah->fetchAll(PDO::FETCH_ASSOC);
+
+                                    foreach ($daerahData as $index => $data): ?>
+                                        <div class="bg-gray-50/80 rounded-xl p-3">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-xl">
+                                                        <?= $index === 0 ? '🥇' : ($index === 1 ? '🥈' : '🥉') ?>
+                                                    </span>
+                                                    <h3 class="text-sm font-medium text-blue-600">
+                                                        <?= htmlspecialchars($data['daerah']) ?>
+                                                    </h3>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="text-base font-semibold text-gray-800">
+                                                        Rp <?= number_format($data['total_pendapatan'], 0, ',', '.') ?>
+                                                    </p>
+                                                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                                                        <span><?= $data['total_transaksi'] ?> Transaksi</span>
+                                                        <span>·</span>
+                                                        <span>Rata-rata: Rp <?= number_format($data['rata_rata'], 0, ',', '.') ?></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+
+                                    <script>
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        const regionCtx = document.getElementById('regionBarChart').getContext('2d');
+                                        const regionData = {
+                                            labels: <?= json_encode(array_column($daerahData, 'daerah')) ?>,
+                                            datasets: [{
+                                                data: <?= json_encode(array_column($daerahData, 'total_pendapatan')) ?>,
+                                                backgroundColor: ['#3B82F6', '#6366F1', '#8B5CF6'],
+                                                borderRadius: 6,
+                                                maxBarThickness: 40
+                                            }]
+                                        };
+
+                                        new Chart(regionCtx, {
+                                            type: 'bar',
+                                            data: regionData,
+                                            options: {
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+                                                plugins: {
+                                                    legend: {
+                                                        display: false
+                                                    },
+                                                    tooltip: {
+                                                        callbacks: {
+                                                            label: function(context) {
+                                                                return 'Rp ' + context.raw.toLocaleString('id-ID');
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                scales: {
+                                                    y: {
+                                                        beginAtZero: true,
+                                                        grid: {
+                                                            display: true,
+                                                            drawBorder: false,
+                                                            color: 'rgba(0, 0, 0, 0.05)'
+                                                        },
+                                                        ticks: {
+                                                            callback: function(value) {
+                                                                return 'Rp ' + value.toLocaleString('id-ID');
+                                                            }
+                                                        }
+                                                    },
+                                                    x: {
+                                                        grid: {
+                                                            display: false
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    });
+                                    </script>
+                                <?php
+                                } catch (PDOException $e) {
+                                    echo "<div class='text-center text-red-500'>Terjadi kesalahan: " . $e->getMessage() . "</div>";
+                                }
+                                ?>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -732,7 +858,7 @@ $marketplaceData = $stmtMarketplace->fetchAll();
                                 beginAtZero: true,
                                 grid: {
                                     drawBorder: false,
-                                    color: 'rgba(0,0,0,0.05)',
+                                    color: 'rgba(0, 0, 0, 0.05)',
                                     drawTicks: false
                                 },
                                 ticks: {
@@ -1067,7 +1193,6 @@ $marketplaceData = $stmtMarketplace->fetchAll();
         // Initialize chart with bar type
         toggleChartType('bar');
     </script>
-
     <!-- Tambahkan style untuk animasi smooth -->
     <style>
         .chart-container {
@@ -1299,6 +1424,34 @@ $marketplaceData = $stmtMarketplace->fetchAll();
         .opacity-50 {
             opacity: 0.5;
         }
+
+        /* Gradient text colors */
+        .gradient-text-blue {
+            background: linear-gradient(to right, #3B82F6, #60A5FA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-text-indigo {
+            background: linear-gradient(to right, #6366F1, #818CF8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-text-violet {
+            background: linear-gradient(to right, #8B5CF6, #A78BFA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Enhanced glass effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
     </style>
 </body>
 </html>
+

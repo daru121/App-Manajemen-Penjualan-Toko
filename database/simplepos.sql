@@ -24,6 +24,7 @@ CREATE TABLE kategori (
 CREATE TABLE barang (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nama_barang VARCHAR(100) NOT NULL,
+    gambar VARCHAR(255) NULL,
     kategori_id INT,
     harga_modal DECIMAL(10,2) NOT NULL,
     harga DECIMAL(10,2) NOT NULL,
@@ -73,6 +74,18 @@ CREATE TABLE detail_transaksi (
     FOREIGN KEY (barang_id) REFERENCES barang(id)
 );
 
+-- Create notifications table
+CREATE TABLE notifications (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    type VARCHAR(50) NOT NULL, -- 'low_stock', 'out_of_stock', 'high_profit', 'new_order', etc
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reference_id INT NULL, -- ID referensi ke tabel lain (misal: id_barang)
+    reference_type VARCHAR(50) NULL -- Tipe referensi ('product', 'order', etc)
+);
+
 -- Insert default admin user
 INSERT INTO users (nama, email, password, role, status) VALUES 
 ('Admin', 'admin@admin.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin', 'Aktif');
@@ -100,5 +113,7 @@ INSERT INTO stok (barang_id, jumlah) VALUES
 (4, 30),
 (5, 60);
 
+-- Add daerah column to transaksi table if not exists
 ALTER TABLE transaksi 
 ADD COLUMN IF NOT EXISTS daerah VARCHAR(50) NULL;
+

@@ -765,8 +765,21 @@ try {
                                                     <option value="Kalimantan Barat">Kalimantan Barat</option>
                                                     <option value="Kalimantan Tengah">Kalimantan Tengah</option>
                                                     <option value="Kalimantan Selatan">Kalimantan Selatan</option>
-                                                    <option value="Kalimantan Timur">Kalimantan Timur</option>
                                                     <option value="Kalimantan Utara">Kalimantan Utara</option>
+                                                </optgroup>
+                                                <optgroup label="Kota/Kabupaten Kalimantan Timur">
+                                                    <option value="Kabupaten Berau">Kabupaten Berau</option>
+                                                    <option value="Kabupaten Kutai Barat">Kabupaten Kutai Barat</option>
+                                                    <option value="Kabupaten Kutai Kartanegara">Kabupaten Kutai Kartanegara</option>
+                                                    <option value="Kabupaten Kutai Timur">Kabupaten Kutai Timur</option>
+                                                    <option value="Mahakam Ulu">Mahakam Ulu</option>
+                                                    <option value="Kabupaten Paser">Kabupaten Paser</option>
+                                                    <option value="Kabupaten Penjaman Paser Utara">Kabupaten Penjaman Paser Utara</option>
+                                                    <option value="Kabupaten Bulungan">Kabupaten Bulungan</option>
+                                                    <option value="Kota Balikpapan">Kota Balikpapan</option>
+                                                    <option value="Kota Samarinda">Kota Samarinda</option>
+                                                    <option value="Kota Bontang">Kota Bontang</option>
+                                                    <option value="Kota Tarakan">Kota Tarakan</option>  
                                                 </optgroup>
                                                 <optgroup label="Pulau Sulawesi">
                                                     <option value="Sulawesi Utara">Sulawesi Utara</option>
