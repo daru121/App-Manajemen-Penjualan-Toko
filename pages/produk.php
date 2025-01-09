@@ -16,6 +16,11 @@ $queryKategori = "SELECT * FROM kategori ORDER BY nama_kategori ASC";
 $stmtKategori = $conn->query($queryKategori);
 $categories = $stmtKategori->fetchAll();
 
+// Query untuk mengambil supplier untuk dropdown
+$querySupplier = "SELECT * FROM supplier ORDER BY nama_supplier ASC";
+$stmtSupplier = $conn->query($querySupplier);
+$suppliers = $stmtSupplier->fetchAll();
+
 // Tambahkan fungsi untuk handle upload gambar
 function uploadImage($file) {
     $target_dir = "../uploads/";
@@ -63,9 +68,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $gambar = uploadImage($_FILES['gambar']);
                 }
                 
-                // Insert produk with image
-                $stmt = $conn->prepare("INSERT INTO barang (nama_barang, gambar, kategori_id, harga_modal, harga) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$nama_barang, $gambar, $kategori_id, $harga_modal, $harga_jual]);
+                // Insert produk with image and supplier
+                $stmt = $conn->prepare("INSERT INTO barang (nama_barang, gambar, kategori_id, supplier_id, harga_modal, harga) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$nama_barang, $gambar, $kategori_id, $_POST['supplier_id'], $harga_modal, $harga_jual]);
                 $barang_id = $conn->lastInsertId();
 
                 // Insert stok
@@ -102,12 +107,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $gambar = uploadImage($_FILES['gambar']);
                     
                     // Update with new image
-                    $stmt = $conn->prepare("UPDATE barang SET nama_barang = ?, gambar = ?, kategori_id = ?, harga_modal = ?, harga = ? WHERE id = ?");
-                    $stmt->execute([$nama_barang, $gambar, $kategori_id, $harga_modal, $harga_jual, $id]);
+                    $stmt = $conn->prepare("UPDATE barang SET nama_barang = ?, gambar = ?, kategori_id = ?, supplier_id = ?, harga_modal = ?, harga = ? WHERE id = ?");
+                    $stmt->execute([$nama_barang, $gambar, $kategori_id, $_POST['supplier_id'], $harga_modal, $harga_jual, $id]);
                 } else {
                     // Update without changing image
-                    $stmt = $conn->prepare("UPDATE barang SET nama_barang = ?, kategori_id = ?, harga_modal = ?, harga = ? WHERE id = ?");
-                    $stmt->execute([$nama_barang, $kategori_id, $harga_modal, $harga_jual, $id]);
+                    $stmt = $conn->prepare("UPDATE barang SET nama_barang = ?, kategori_id = ?, supplier_id = ?, harga_modal = ?, harga = ? WHERE id = ?");
+                    $stmt->execute([$nama_barang, $kategori_id, $_POST['supplier_id'], $harga_modal, $harga_jual, $id]);
                 }
 
                 // Check if stok record exists
@@ -409,6 +414,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30">
                         <?php foreach ($categories as $category): ?>
                             <option value="<?= $category['id'] ?>"><?= htmlspecialchars($category['nama_kategori']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700">Supplier</label>
+                    <select name="supplier_id" id="supplierId" required
+                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                        <option value="">Pilih Supplier</option>
+                        <?php foreach ($suppliers as $supplier): ?>
+                            <option value="<?= $supplier['id'] ?>"><?= htmlspecialchars($supplier['nama_supplier']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

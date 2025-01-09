@@ -168,14 +168,18 @@ function markAllAsRead() {
             <div class="flex items-center">
                 <!-- Breadcrumb Navigation -->
                 <div class="flex items-center gap-2 text-sm">
-                    <a href="dashboard.php" class="text-gray-500 hover:text-gray-700 transition-colors">Beranda</a>
                     <?php
                     $current_page = basename($_SERVER['PHP_SELF'], '.php');
+                    
+                    // Only show Beranda for dashboard.php
+                    if ($current_page === 'dashboard') {
+                        echo '<span class="text-gray-500">Dashboard</span>';
+                    }
                     
                     // Define page hierarchy
                     $breadcrumbs = [];
                     
-                    if ($current_page === 'kategori' || $current_page === 'produk') {
+                    if ($current_page === 'kategori' || $current_page === 'produk' || $current_page === 'supplier') {
                         $breadcrumbs[] = [
                             'text' => 'Master Data',
                             'url' => '#',
@@ -196,6 +200,13 @@ function markAllAsRead() {
                             $breadcrumbs[] = [
                                 'text' => 'Produk',
                                 'url' => 'produk.php',
+                                'active' => true
+                            ];
+                            break;
+                        case 'supplier':
+                            $breadcrumbs[] = [
+                                'text' => 'Supplier',
+                                'url' => 'supplier.php',
                                 'active' => true
                             ];
                             break;
@@ -222,7 +233,7 @@ function markAllAsRead() {
                                 'url' => 'informasi.php',
                                 'active' => true
                             ];
-                            break;
+                            break;                
                         case 'laporan':
                             $breadcrumbs[] = [
                                 'text' => 'Penjualan',
@@ -235,14 +246,34 @@ function markAllAsRead() {
                                 'active' => true
                             ];
                             break;
-                        // Add more cases as needed
+                        case 'users':
+                            $breadcrumbs[] = [
+                                'text' => 'Users',
+                                'url' => 'users.php',
+                                'active' => true
+                            ];
+                            break;
+                        case 'pengeluaran':
+                            $breadcrumbs[] = [
+                                'text' => 'Operasional',
+                                'url' => '#',
+                                'active' => false
+                            ];
+                            $breadcrumbs[] = [
+                                'text' => 'Pengeluaran',
+                                'url' => 'pengeluaran.php',
+                                'active' => true
+                            ];
+                            break;
                     }
 
-                    // Display breadcrumbs
+                    // Output breadcrumbs
                     foreach ($breadcrumbs as $index => $crumb) {
-                        echo '<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                              </svg>';
+                        if ($index > 0) {
+                            echo '<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                  </svg>';
+                        }
                         
                         if ($crumb['active']) {
                             echo '<span class="text-gray-800 font-medium">' . $crumb['text'] . '</span>';

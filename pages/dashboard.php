@@ -22,6 +22,27 @@ function getMarketplaceData() {
     return $stmt->fetchAll();
 }
 
+// Tambahkan fungsi untuk mengambil data region berdasarkan periode
+function getRegionData($days) {
+    global $conn;
+    $query = "SELECT 
+        t.daerah,
+        COUNT(*) as total_transaksi,
+        SUM(t.total_harga) as total_pendapatan,
+        AVG(t.total_harga) as rata_rata
+    FROM transaksi t
+    WHERE t.daerah IS NOT NULL 
+        AND t.tanggal >= DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY)
+        AND t.tanggal <= CURRENT_DATE()
+    GROUP BY t.daerah 
+    ORDER BY total_pendapatan DESC 
+    LIMIT 3";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->execute([$days]);
+    return $stmt->fetchAll();
+}
+
 // Ambil semua data marketplace
 $marketplaceData = getMarketplaceData();
 
@@ -43,6 +64,42 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateMarketplace') {
             'avgOrderValue' => array_sum(array_column($data, 'total_revenue')) / array_sum(array_column($data, 'total_orders'))
         ]
     ]);
+    exit;
+}
+
+// Tambahkan endpoint AJAX untuk update data region
+if (isset($_POST['action']) && $_POST['action'] === 'updateRegion') {
+    header('Content-Type: application/json');
+    $days = isset($_POST['days']) ? (int)$_POST['days'] : 7;
+    
+    try {
+        $query = "SELECT 
+            t.daerah,
+            COUNT(*) as total_transaksi,
+            SUM(t.total_harga) as total_pendapatan,
+            AVG(t.total_harga) as rata_rata
+        FROM transaksi t
+        WHERE t.daerah IS NOT NULL 
+            AND t.tanggal >= DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY)
+            AND t.tanggal <= CURRENT_DATE()
+        GROUP BY t.daerah 
+        ORDER BY total_pendapatan DESC 
+        LIMIT 3";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->execute([$days]);
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode([
+            'success' => true,
+            'data' => $data
+        ]);
+    } catch(PDOException $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
     exit;
 }
 
@@ -175,6 +232,10 @@ ORDER BY total_revenue DESC";
 $stmtMarketplace = $conn->prepare($queryMarketplace);
 $stmtMarketplace->execute();
 $marketplaceData = $stmtMarketplace->fetchAll();
+
+// Ambil data untuk kedua periode
+$regionData7Days = getRegionData(7);
+$regionData30Days = getRegionData(30);
 
 ?>
 
@@ -423,9 +484,13 @@ $marketplaceData = $stmtMarketplace->fetchAll();
                             <h2 class="text-xl font-semibold text-gray-800">5 Produk Terlaris</h2>
                             <p class="text-sm text-gray-500 mt-1">Berdasarkan jumlah penjualan</p>
                         </div>
-                        <a href="informasi.php?tab=produk-terlaris" class="text-blue-500 hover:text-blue-600 text-sm font-medium flex items-center gap-1 transition-colors">
-                            Lihat Semua
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <a href="informasi.php?tab=produk-terlaris" 
+                           class="group flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all duration-300">
+                            <span class="text-sm font-medium bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-indigo-700 transition-all">
+                                Lihat Semua
+                            </span>
+                            <svg class="w-4 h-4 text-blue-500 transform transition-transform duration-300 group-hover:translate-x-0.5" 
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                             </svg>
                         </a>
@@ -476,10 +541,10 @@ $marketplaceData = $stmtMarketplace->fetchAll();
             </div>
 
             <!-- Grid Container untuk Marketplace dan Daerah -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                 <!-- Ringkasan Penjualan Section -->
                 <div class="w-full">
-                    <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-sm border border-gray-100 h-full">
                         <div class="flex justify-between items-center mb-6">
                             <div>
                                 <h2 class="text-xl font-semibold text-gray-800">Ringkasan Penjualan</h2>
@@ -567,20 +632,20 @@ $marketplaceData = $stmtMarketplace->fetchAll();
                     </div>
                 </div>
 
-                <!-- Section Top 3 Performing Regions -->
+                <!-- Top 3 Performing Regions Section -->
                 <div class="w-full">
-                    <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-sm border border-gray-100">
-                        <div class="flex justify-between items-center mb-4">
+                    <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-sm border border-gray-100 h-full">
+                        <div class="flex justify-between items-center mb-6">
                             <div>
                                 <h2 class="text-xl font-semibold text-gray-800">Top 3 Performing Regions</h2>
                                 <p class="text-sm text-gray-500 mt-1">Daerah dengan performa penjualan tertinggi</p>
                             </div>
-                            <a href="informasi.php?tab=daerah" class="text-blue-500 hover:text-blue-600 text-sm font-medium flex items-center gap-1 transition-colors">
-                                Lihat Semua
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                </svg>
-                            </a>
+                            <!-- Tambahkan select untuk filter periode -->
+                            <select id="regionPeriodSelect" 
+                                    class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="7">7 Hari Terakhir</option>
+                                <option value="30">30 Hari Terakhir</option>
+                            </select>
                         </div>
 
                         <!-- Chart Container -->
@@ -601,54 +666,64 @@ $marketplaceData = $stmtMarketplace->fetchAll();
                                         AVG(total_harga) as rata_rata
                                     FROM transaksi 
                                     WHERE daerah IS NOT NULL 
+                                        AND tanggal >= DATE_SUB(NOW(), INTERVAL 7 DAY) 
+                                        AND tanggal <= NOW()
                                     GROUP BY daerah 
                                     ORDER BY total_pendapatan DESC 
                                     LIMIT 3");
                                     
                                     $queryDaerah->execute();
                                     $daerahData = $queryDaerah->fetchAll(PDO::FETCH_ASSOC);
+                                } catch(PDOException $e) {
+                                    $daerahData = [];
+                                }
 
-                                    foreach ($daerahData as $index => $data): ?>
-                                        <div class="bg-gray-50/80 rounded-xl p-3">
-                                            <div class="flex items-center justify-between">
-                                                <div class="flex items-center gap-2">
-                                                    <span class="text-xl">
-                                                        <?= $index === 0 ? '🥇' : ($index === 1 ? '🥈' : '🥉') ?>
-                                                    </span>
-                                                    <h3 class="text-sm font-medium text-blue-600">
-                                                        <?= htmlspecialchars($data['daerah']) ?>
-                                                    </h3>
-                                                </div>
-                                                <div class="text-right">
-                                                    <p class="text-base font-semibold text-gray-800">
-                                                        Rp <?= number_format($data['total_pendapatan'], 0, ',', '.') ?>
-                                                    </p>
-                                                    <div class="flex items-center gap-2 text-xs text-gray-500">
-                                                        <span><?= $data['total_transaksi'] ?> Transaksi</span>
-                                                        <span>·</span>
-                                                        <span>Rata-rata: Rp <?= number_format($data['rata_rata'], 0, ',', '.') ?></span>
-                                                    </div>
+                                foreach ($daerahData as $index => $data): ?>
+                                    <div class="bg-gray-50/80 rounded-xl p-3">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xl">
+                                                    <?= $index === 0 ? '🥇' : ($index === 1 ? '🥈' : '🥉') ?>
+                                                </span>
+                                                <h3 class="text-sm font-medium text-blue-600">
+                                                    <?= htmlspecialchars($data['daerah']) ?>
+                                                </h3>
+                                            </div>
+                                            <div class="text-right">
+                                                <p class="text-base font-semibold text-gray-800">
+                                                    Rp <?= number_format($data['total_pendapatan'], 0, ',', '.') ?>
+                                                </p>
+                                                <div class="flex items-center gap-2 text-xs text-gray-500">
+                                                    <span><?= $data['total_transaksi'] ?> Transaksi</span>
+                                                    <span>·</span>
+                                                    <span>Rata-rata: Rp <?= number_format($data['rata_rata'], 0, ',', '.') ?></span>
                                                 </div>
                                             </div>
                                         </div>
-                                    <?php endforeach; ?>
+                                    </div>
+                                <?php endforeach; ?>
 
-                                    <script>
-                                    document.addEventListener('DOMContentLoaded', function() {
-                                        const regionCtx = document.getElementById('regionBarChart').getContext('2d');
-                                        const regionData = {
-                                            labels: <?= json_encode(array_column($daerahData, 'daerah')) ?>,
-                                            datasets: [{
-                                                data: <?= json_encode(array_column($daerahData, 'total_pendapatan')) ?>,
-                                                backgroundColor: ['#3B82F6', '#6366F1', '#8B5CF6'],
-                                                borderRadius: 6,
-                                                maxBarThickness: 40
-                                            }]
-                                        };
+                                <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const regionCtx = document.getElementById('regionBarChart').getContext('2d');
+                                    let regionChart; // Declare chart variable in wider scope
 
-                                        new Chart(regionCtx, {
+                                    function initRegionChart(data) {
+                                        if (regionChart) {
+                                            regionChart.destroy();
+                                        }
+
+                                        regionChart = new Chart(regionCtx, {
                                             type: 'bar',
-                                            data: regionData,
+                                            data: {
+                                                labels: data.map(item => item.daerah),
+                                                datasets: [{
+                                                    data: data.map(item => item.total_pendapatan),
+                                                    backgroundColor: ['#00c83c', '#0187ff', '#8B5CF6'],
+                                                    borderRadius: 15,
+                                                    maxBarThickness: 150
+                                                }]
+                                            },
                                             options: {
                                                 responsive: true,
                                                 maintainAspectRatio: false,
@@ -686,13 +761,79 @@ $marketplaceData = $stmtMarketplace->fetchAll();
                                                 }
                                             }
                                         });
+
+                                        // Store chart instance globally
+                                        window.regionChart = regionChart;
+                                    }
+
+                                    // Initialize with default data (7 days)
+                                    initRegionChart(<?= json_encode($daerahData) ?>);
+
+                                    // Handle period change
+                                    document.getElementById('regionPeriodSelect').addEventListener('change', function(e) {
+                                        const days = e.target.value;
+                                        
+                                        // Show loading state
+                                        const cards = document.querySelectorAll('.bg-gray-50\\/80.rounded-xl');
+                                        const chart = document.getElementById('regionBarChart');
+                                        
+                                        cards.forEach(card => card.style.opacity = '0.5');
+                                        if (chart) chart.style.opacity = '0.5';
+                                        
+                                        // Fetch updated data
+                                        fetch('dashboard.php', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/x-www-form-urlencoded',
+                                            },
+                                            body: `action=updateRegion&days=${days}`
+                                        })
+                                        .then(response => response.json())
+                                        .then(result => {
+                                            if (result.success) {
+                                                // Update cards
+                                                const container = document.querySelector('.mt-4.space-y-3');
+                                                container.innerHTML = result.data.map((region, index) => `
+                                                    <div class="bg-gray-50/80 rounded-xl p-3">
+                                                        <div class="flex items-center justify-between">
+                                                            <div class="flex items-center gap-2">
+                                                                <span class="text-xl">
+                                                                    ${index === 0 ? '🥇' : (index === 1 ? '🥈' : '🥉')}
+                                                                </span>
+                                                                <h3 class="text-sm font-medium text-blue-600">
+                                                                    ${region.daerah}
+                                                                </h3>
+                                                            </div>
+                                                            <div class="text-right">
+                                                                <p class="text-base font-semibold text-gray-800">
+                                                                    Rp ${Number(region.total_pendapatan).toLocaleString('id-ID')}
+                                                                </p>
+                                                                <div class="flex items-center gap-2 text-xs text-gray-500">
+                                                                    <span>${region.total_transaksi} Transaksi</span>
+                                                                    <span>·</span>
+                                                                    <span>Rata-rata: Rp ${Number(region.rata_rata).toLocaleString('id-ID')}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                `).join('');
+                                                
+                                                // Update chart with new data
+                                                initRegionChart(result.data);
+                                                
+                                                // Remove loading state
+                                                cards.forEach(card => card.style.opacity = '1');
+                                                if (chart) chart.style.opacity = '1';
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.error('Error:', error);
+                                            cards.forEach(card => card.style.opacity = '1');
+                                            if (chart) chart.style.opacity = '1';
+                                        });
                                     });
-                                    </script>
-                                <?php
-                                } catch (PDOException $e) {
-                                    echo "<div class='text-center text-red-500'>Terjadi kesalahan: " . $e->getMessage() . "</div>";
-                                }
-                                ?>
+                                });
+                                </script>
                             </div>
                         </div>
                     </div>
@@ -1192,6 +1333,11 @@ $marketplaceData = $stmtMarketplace->fetchAll();
 
         // Initialize chart with bar type
         toggleChartType('bar');
+
+        // Tambahkan class untuk cards agar bisa diselect
+        document.querySelectorAll('.bg-gray-50\\/80.backdrop-blur-sm.rounded-xl').forEach(card => {
+            card.classList.add('region-card');
+        });
     </script>
     <!-- Tambahkan style untuk animasi smooth -->
     <style>
@@ -1450,6 +1596,19 @@ $marketplaceData = $stmtMarketplace->fetchAll();
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes shine {
+            from {
+                transform: translateX(-100%) rotate(45deg);
+            }
+            to {
+                transform: translateX(100%) rotate(45deg);
+            }
+        }
+
+        .group:hover::after {
+            animation: shine 1s ease-in-out;
         }
     </style>
 </body>

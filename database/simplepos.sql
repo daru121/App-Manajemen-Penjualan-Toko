@@ -117,3 +117,14 @@ INSERT INTO stok (barang_id, jumlah) VALUES
 ALTER TABLE transaksi 
 ADD COLUMN IF NOT EXISTS daerah VARCHAR(50) NULL;
 
+-- Create pengeluaran table
+CREATE TABLE IF NOT EXISTS pengeluaran (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    tanggal DATE NOT NULL,
+    kategori VARCHAR(50) NOT NULL,
+    deskripsi TEXT NOT NULL,
+    jumlah DECIMAL(10,2) NOT NULL,
+    bukti_foto VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+

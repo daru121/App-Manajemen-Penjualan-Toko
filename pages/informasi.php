@@ -278,6 +278,28 @@ try {
             display: flex;
             animation: fadeIn 0.3s ease;
         }
+
+        .scrollbar-thin {
+            scrollbar-width: thin;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #F9FAFB;
+            border-radius: 3px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #E5E7EB;
+            border-radius: 3px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: #D1D5DB;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -534,69 +556,72 @@ try {
                     </table>
                 <?php elseif (isset($_GET['tab']) && $_GET['tab'] === 'daerah'): ?>
                     <!-- Tabel Daerah -->
-                    <table class="w-full">
-                        <thead class="bg-gray-50/50 border-b border-gray-100">
-                            <tr>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NO</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">DAERAH</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL TRANSAKSI</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL PENJUALAN</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">PROFIT</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">AKSI</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <?php
-                            // Query untuk data daerah
-                            $query = "SELECT 
-                                t.daerah,
-                                COUNT(DISTINCT t.id) as total_transaksi,
-                                SUM(t.total_harga) as total_penjualan,
-                                SUM(dt.jumlah * (dt.harga - b.harga_modal)) as profit
-                            FROM transaksi t
-                            JOIN detail_transaksi dt ON t.id = dt.transaksi_id
-                            JOIN barang b ON dt.barang_id = b.id
-                            WHERE t.daerah IS NOT NULL
-                            GROUP BY t.daerah
-                            ORDER BY total_transaksi DESC, total_penjualan DESC";
-                            
-                            $stmt = $conn->prepare($query);
-                            $stmt->execute();
-                            $daerahData = $stmt->fetchAll();
-                            
-                            foreach ($daerahData as $index => $data):
-                            ?>
-                            <tr class="hover:bg-gray-50/50">
-                                <td class="px-6 py-4 text-sm text-gray-600"><?= $index + 1 ?></td>
-                                <td class="px-6 py-4 text-sm text-gray-800 font-medium">
-                                    <?= htmlspecialchars($data['daerah']) ?>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="px-3 py-1 rounded-lg text-sm font-medium bg-blue-100 text-blue-700">
-                                        <?= number_format($data['total_transaksi']) ?> Transaksi
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
-                                    Rp <?= number_format($data['total_penjualan'], 0, ',', '.') ?>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="<?= $data['profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
-                                        Rp <?= number_format($data['profit'], 0, ',', '.') ?>
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <button onclick="showDaerahDetail('<?= htmlspecialchars($data['daerah']) ?>')" 
-                                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                        </svg>
-                                    </button>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <div class="max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-gray-50">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NO</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DAERAH</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TOTAL TRANSAKSI</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TOTAL PENDAPATAN</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PROFIT</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <?php
+                                    // Query untuk data daerah
+                                    $query = "SELECT 
+                                        t.daerah,
+                                        COUNT(DISTINCT t.id) as total_transaksi,
+                                        SUM(t.total_harga) as total_penjualan,
+                                        SUM(dt.jumlah * (dt.harga - b.harga_modal)) as profit
+                                    FROM transaksi t
+                                    JOIN detail_transaksi dt ON t.id = dt.transaksi_id
+                                    JOIN barang b ON dt.barang_id = b.id
+                                    WHERE t.daerah IS NOT NULL
+                                    GROUP BY t.daerah
+                                    ORDER BY total_transaksi DESC, total_penjualan DESC";
+                                    
+                                    $stmt = $conn->prepare($query);
+                                    $stmt->execute();
+                                    $daerahData = $stmt->fetchAll();
+                                    
+                                    foreach ($daerahData as $index => $data):
+                                    ?>
+                                    <tr class="hover:bg-gray-50/50">
+                                        <td class="px-6 py-4 text-sm text-gray-600"><?= $index + 1 ?></td>
+                                        <td class="px-6 py-4 text-sm text-gray-800 font-medium">
+                                            <?= htmlspecialchars($data['daerah']) ?>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-3 py-1 rounded-lg text-sm font-medium bg-blue-100 text-blue-700">
+                                                <?= number_format($data['total_transaksi']) ?> Transaksi
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">
+                                            Rp <?= number_format($data['total_penjualan'], 0, ',', '.') ?>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="<?= $data['profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
+                                                Rp <?= number_format($data['profit'], 0, ',', '.') ?>
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <button onclick="showDaerahDetail('<?= htmlspecialchars($data['daerah']) ?>')" 
+                                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>
