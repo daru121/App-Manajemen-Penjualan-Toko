@@ -70,24 +70,45 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateMarketplace') {
 // Tambahkan endpoint AJAX untuk update data region
 if (isset($_POST['action']) && $_POST['action'] === 'updateRegion') {
     header('Content-Type: application/json');
-    $days = isset($_POST['days']) ? (int)$_POST['days'] : 7;
     
     try {
-        $query = "SELECT 
-            t.daerah,
-            COUNT(*) as total_transaksi,
-            SUM(t.total_harga) as total_pendapatan,
-            AVG(t.total_harga) as rata_rata
-        FROM transaksi t
-        WHERE t.daerah IS NOT NULL 
-            AND t.tanggal >= DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY)
-            AND t.tanggal <= CURRENT_DATE()
-        GROUP BY t.daerah 
-        ORDER BY total_pendapatan DESC 
-        LIMIT 3";
+        if (isset($_POST['startDate']) && isset($_POST['endDate'])) {
+            // Query untuk custom period
+            $query = "SELECT 
+                t.daerah,
+                COUNT(*) as total_transaksi,
+                SUM(t.total_harga) as total_pendapatan,
+                AVG(t.total_harga) as rata_rata
+            FROM transaksi t
+            WHERE t.daerah IS NOT NULL 
+                AND DATE(t.tanggal) >= ?
+                AND DATE(t.tanggal) <= ?
+            GROUP BY t.daerah 
+            ORDER BY total_pendapatan DESC 
+            LIMIT 3";
+            
+            $stmt = $conn->prepare($query);
+            $stmt->execute([$_POST['startDate'], $_POST['endDate']]);
+        } else {
+            // Query untuk periode default (7 atau 30 hari)
+            $days = isset($_POST['days']) ? (int)$_POST['days'] : 7;
+            $query = "SELECT 
+                t.daerah,
+                COUNT(*) as total_transaksi,
+                SUM(t.total_harga) as total_pendapatan,
+                AVG(t.total_harga) as rata_rata
+            FROM transaksi t
+            WHERE t.daerah IS NOT NULL 
+                AND t.tanggal >= DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY)
+                AND t.tanggal <= CURRENT_DATE()
+            GROUP BY t.daerah 
+            ORDER BY total_pendapatan DESC 
+            LIMIT 3";
+            
+            $stmt = $conn->prepare($query);
+            $stmt->execute([$days]);
+        }
         
-        $stmt = $conn->prepare($query);
-        $stmt->execute([$days]);
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         echo json_encode([
@@ -485,14 +506,14 @@ $regionData30Days = getRegionData(30);
                             <p class="text-sm text-gray-500 mt-1">Berdasarkan jumlah penjualan</p>
                         </div>
                         <a href="informasi.php?tab=produk-terlaris" 
-                           class="group flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all duration-300">
-                            <span class="text-sm font-medium bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-indigo-700 transition-all">
-                                Lihat Semua
-                            </span>
-                            <svg class="w-4 h-4 text-blue-500 transform transition-transform duration-300 group-hover:translate-x-0.5" 
-                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
+                           class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200">
+                            <div class="w-8 h-8 bg-gradient-to-br from-gray-50 to-white rounded-full flex items-center justify-center">
+                                <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24">
+                                    <circle cx="5" cy="12" r="2" fill="currentColor"/>
+                                    <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                                    <circle cx="19" cy="12" r="2" fill="currentColor"/>
+                                </svg>
+                            </div>
                         </a>
                     </div>
 
@@ -640,12 +661,35 @@ $regionData30Days = getRegionData(30);
                                 <h2 class="text-xl font-semibold text-gray-800">Top 3 Performing Regions</h2>
                                 <p class="text-sm text-gray-500 mt-1">Daerah dengan performa penjualan tertinggi</p>
                             </div>
-                            <!-- Tambahkan select untuk filter periode -->
-                            <select id="regionPeriodSelect" 
-                                    class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="7">7 Hari Terakhir</option>
-                                <option value="30">30 Hari Terakhir</option>
-                            </select>
+                            <div class="flex items-center gap-3">
+                                <select id="regionPeriodSelect" 
+                                        class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="7">7 Hari Terakhir</option>
+                                    <option value="30">30 Hari Terakhir</option>
+                                    <option value="custom">Pilih Periode</option>
+                                </select>
+                                
+                                <!-- Tambahkan date picker container yang awalnya hidden -->
+                                <div id="datePickerContainer" class="hidden flex items-center gap-2">
+                                    <input type="date" id="startDate" 
+                                           class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <span class="text-gray-500">s/d</span>
+                                    <input type="date" id="endDate" 
+                                           class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+
+                                <!-- Tambahkan ikon titik tiga -->
+                                <a href="informasi.php?tab=daerah" 
+                                   class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-gray-50 to-white rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24">
+                                            <circle cx="5" cy="12" r="2" fill="currentColor"/>
+                                            <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                                            <circle cx="19" cy="12" r="2" fill="currentColor"/>
+                                        </svg>
+                                    </div>
+                                </a>
+                            </div>
                         </div>
 
                         <!-- Chart Container -->
@@ -720,8 +764,8 @@ $regionData30Days = getRegionData(30);
                                                 datasets: [{
                                                     data: data.map(item => item.total_pendapatan),
                                                     backgroundColor: ['#00c83c', '#0187ff', '#8B5CF6'],
-                                                    borderRadius: 15,
-                                                    maxBarThickness: 150
+                                                    borderRadius: 30,
+                                                    maxBarThickness: 200
                                                 }]
                                             },
                                             options: {
@@ -771,8 +815,32 @@ $regionData30Days = getRegionData(30);
 
                                     // Handle period change
                                     document.getElementById('regionPeriodSelect').addEventListener('change', function(e) {
-                                        const days = e.target.value;
+                                        const selectedValue = e.target.value;
+                                        const datePickerContainer = document.getElementById('datePickerContainer');
                                         
+                                        if (selectedValue === 'custom') {
+                                            datePickerContainer.classList.remove('hidden');
+                                            return;
+                                        } else {
+                                            datePickerContainer.classList.add('hidden');
+                                            updateRegionData({ days: selectedValue });
+                                        }
+                                    });
+
+                                    // Tambahkan event listener untuk date inputs
+                                    ['startDate', 'endDate'].forEach(id => {
+                                        document.getElementById(id).addEventListener('change', function() {
+                                            const startDate = document.getElementById('startDate').value;
+                                            const endDate = document.getElementById('endDate').value;
+                                            
+                                            if (startDate && endDate) {
+                                                updateRegionData({ startDate, endDate });
+                                            }
+                                        });
+                                    });
+
+                                    // Fungsi untuk update data region
+                                    function updateRegionData(params) {
                                         // Show loading state
                                         const cards = document.querySelectorAll('.bg-gray-50\\/80.rounded-xl');
                                         const chart = document.getElementById('regionBarChart');
@@ -780,18 +848,27 @@ $regionData30Days = getRegionData(30);
                                         cards.forEach(card => card.style.opacity = '0.5');
                                         if (chart) chart.style.opacity = '0.5';
                                         
+                                        // Prepare form data
+                                        const formData = new FormData();
+                                        formData.append('action', 'updateRegion');
+                                        
+                                        // Add parameters based on type
+                                        if (params.days) {
+                                            formData.append('days', params.days);
+                                        } else {
+                                            formData.append('startDate', params.startDate);
+                                            formData.append('endDate', params.endDate);
+                                        }
+                                        
                                         // Fetch updated data
                                         fetch('dashboard.php', {
                                             method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/x-www-form-urlencoded',
-                                            },
-                                            body: `action=updateRegion&days=${days}`
+                                            body: formData
                                         })
                                         .then(response => response.json())
                                         .then(result => {
                                             if (result.success) {
-                                                // Update cards
+                                                // Update cards dan chart seperti sebelumnya
                                                 const container = document.querySelector('.mt-4.space-y-3');
                                                 container.innerHTML = result.data.map((region, index) => `
                                                     <div class="bg-gray-50/80 rounded-xl p-3">
@@ -818,7 +895,7 @@ $regionData30Days = getRegionData(30);
                                                     </div>
                                                 `).join('');
                                                 
-                                                // Update chart with new data
+                                                // Update chart
                                                 initRegionChart(result.data);
                                                 
                                                 // Remove loading state
@@ -831,7 +908,7 @@ $regionData30Days = getRegionData(30);
                                             cards.forEach(card => card.style.opacity = '1');
                                             if (chart) chart.style.opacity = '1';
                                         });
-                                    });
+                                    }
                                 });
                                 </script>
                             </div>
@@ -1041,8 +1118,7 @@ $regionData30Days = getRegionData(30);
                             },
                             x: {
                                 grid: {
-                                    display: false,
-                                    drawBorder: false
+                                    display: false
                                 },
                                 ticks: {
                                     font: {
