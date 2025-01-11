@@ -405,9 +405,21 @@ function markAllAsRead() {
                             class="flex items-center gap-3 p-1.5 rounded-xl hover:bg-gray-50 transition-all duration-300">
                         <div class="relative">
                             <div class="w-9 h-9 rounded-xl overflow-hidden ring-2 ring-gray-100 transition-transform duration-300 hover:scale-105">
-                                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=<?= isset($_SESSION['nama']) ? $_SESSION['nama'] : 'default' ?>&backgroundColor=6366F1&textureChance=50&mouthChance=100&sidesChance=100&spots=50&eyes=happy" 
-                                     alt="Profile" 
-                                     class="w-full h-full object-cover">
+                                <?php if (isset($_SESSION['user_id'])): 
+                                    $stmt = $conn->prepare("SELECT avatar FROM users WHERE id = ?");
+                                    $stmt->execute([$_SESSION['user_id']]);
+                                    $userAvatar = $stmt->fetch(PDO::FETCH_COLUMN);
+                                    
+                                    if ($userAvatar && file_exists("../uploads/avatars/" . $userAvatar)): ?>
+                                        <img src="../uploads/avatars/<?= htmlspecialchars($userAvatar) ?>" 
+                                             alt="Profile" 
+                                             class="w-full h-full object-cover">
+                                    <?php else: ?>
+                                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=<?= $_SESSION['nama'] ?>&backgroundColor=6366F1&textureChance=50&mouthChance=100&sidesChance=100&spots=50&eyes=happy" 
+                                             alt="Profile" 
+                                             class="w-full h-full object-cover">
+                                    <?php endif; ?>
+                                <?php endif; ?>
                             </div>
                             <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
                         </div>
@@ -451,7 +463,7 @@ function markAllAsRead() {
 
                             <!-- Menu Items -->
                             <div class="p-2 space-y-1">
-                                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-xl transition-colors duration-200">
+                                <a href="profile.php" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-xl transition-colors duration-200">
                                     <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                     </svg>

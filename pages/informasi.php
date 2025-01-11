@@ -45,6 +45,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_detail' && isset($_GET['i
             t.id,
             t.tanggal,
             t.total_harga,
+            t.marketplace,
             p.nama as buyer_name
         FROM transaksi t
         LEFT JOIN pembeli p ON t.pembeli_id = p.id
@@ -55,13 +56,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_detail' && isset($_GET['i
         $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($transaction) {
-            // Get items details with profit calculation
+            // Get items details
             $query = "SELECT 
-                b.nama_barang as nama_barang,
+                b.nama_barang,
                 dt.jumlah,
                 dt.harga,
                 (dt.jumlah * dt.harga) as subtotal,
-                (dt.jumlah * (dt.harga - b.harga_modal)) as profit
+                ((dt.harga - b.harga_modal) * dt.jumlah) as profit
             FROM detail_transaksi dt
             JOIN barang b ON dt.barang_id = b.id
             WHERE dt.transaksi_id = ?";
@@ -236,6 +237,75 @@ try {
     echo "Error: " . $e->getMessage();
     $transactions = [];
 }
+
+// Tambahkan setelah query daerah yang sudah ada
+if (isset($_GET['tab']) && $_GET['tab'] === 'marketplace') {
+    // Buat array marketplace yang tersedia
+    $available_marketplaces = ['Shopee', 'Tokopedia', 'Tiktok', 'Offline'];
+    
+    // Buat temporary table untuk marketplace
+    $conn->exec("CREATE TEMPORARY TABLE IF NOT EXISTS temp_marketplace (marketplace VARCHAR(50))");
+    $insertStmt = $conn->prepare("INSERT INTO temp_marketplace (marketplace) VALUES (?)");
+    foreach ($available_marketplaces as $mp) {
+        $insertStmt->execute([$mp]);
+    }
+    
+    // Query untuk mendapatkan data transaksi per marketplace
+    $query = "SELECT 
+        COALESCE(m.marketplace, 'Offline') as nama,
+        COUNT(DISTINCT t.id) as total_transaksi,
+        COALESCE(SUM(t.total_harga), 0) as total_pendapatan,
+        COALESCE(SUM((dt.harga - b.harga_modal) * dt.jumlah), 0) as profit
+    FROM temp_marketplace m
+    LEFT JOIN transaksi t ON t.marketplace = m.marketplace
+    LEFT JOIN detail_transaksi dt ON t.id = dt.transaksi_id
+    LEFT JOIN barang b ON dt.barang_id = b.id
+    GROUP BY m.marketplace
+    ORDER BY total_transaksi DESC, m.marketplace ASC";
+
+    $stmt = $conn->prepare($query);
+    $stmt->execute();
+    $marketplaces = $stmt->fetchAll();
+
+    // Hapus temporary table
+    $conn->exec("DROP TEMPORARY TABLE IF EXISTS temp_marketplace");
+}
+
+// Tambahkan handler untuk detail marketplace
+if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
+    header('Content-Type: application/json');
+    try {
+        $marketplace = $_GET['marketplace'];
+        
+        $query = "SELECT 
+            t.id,
+            t.tanggal,
+            t.total_harga,
+            p.nama as nama_pembeli,
+            GROUP_CONCAT(CONCAT(b.nama_barang, ' (', dt.jumlah, ')') SEPARATOR ', ') as detail_produk,
+            SUM((dt.harga - b.harga_modal) * dt.jumlah) as profit
+        FROM transaksi t
+        LEFT JOIN pembeli p ON t.pembeli_id = p.id
+        JOIN detail_transaksi dt ON t.id = dt.transaksi_id
+        JOIN barang b ON dt.barang_id = b.id
+        WHERE t.marketplace = ?
+        GROUP BY t.id, t.tanggal, t.total_harga, p.nama
+        ORDER BY t.tanggal DESC";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->execute([$marketplace]);
+        $details = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode([
+            'success' => true,
+            'details' => $details
+        ]);
+        exit;
+    } catch(PDOException $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        exit;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -252,6 +322,10 @@ try {
             inset: 0;
             background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            overflow-y: auto;
         }
         
         .modal.active {
@@ -299,6 +373,42 @@ try {
 
         .scrollbar-thin::-webkit-scrollbar-thumb:hover {
             background: #D1D5DB;
+        }
+
+        .modal-content {
+            max-height: 80vh;
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden; /* Sembunyikan scrollbar horizontal */
+            padding-right: 6px; /* Tambahkan padding untuk scrollbar */
+        }
+
+        /* Custom scrollbar styling */
+        .modal-body::-webkit-scrollbar {
+            width: 6px;
+            position: absolute;
+            right: 0;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
     </style>
 </head>
@@ -359,6 +469,16 @@ try {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                     </svg>
                     Daerah
+                </button>
+                <button onclick="showTab('marketplace')" 
+                        class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
+                               <?= isset($_GET['tab']) && $_GET['tab'] === 'marketplace' ? 
+                                   'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
+                                   'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                    </svg>
+                    Marketplace
                 </button>
             </div>
 
@@ -546,7 +666,8 @@ try {
                                     <button onclick="showProductHistory('<?= htmlspecialchars($product['nama_barang']) ?>')" 
                                             class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                         </svg>
                                     </button>
                                 </td>
@@ -557,69 +678,164 @@ try {
                 <?php elseif (isset($_GET['tab']) && $_GET['tab'] === 'daerah'): ?>
                     <!-- Tabel Daerah -->
                     <div class="overflow-x-auto">
-                        <div class="max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-gray-50">
+                        <table class="w-full">
+                            <thead class="bg-gray-50/50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NO</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DAERAH</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TOTAL TRANSAKSI</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TOTAL PENDAPATAN</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PROFIT</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AKSI</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <?php
+                                // Query untuk data daerah
+                                $query = "SELECT 
+                                    t.daerah,
+                                    COUNT(DISTINCT t.id) as total_transaksi,
+                                    SUM(t.total_harga) as total_penjualan,
+                                    SUM(dt.jumlah * (dt.harga - b.harga_modal)) as profit
+                                FROM transaksi t
+                                JOIN detail_transaksi dt ON t.id = dt.transaksi_id
+                                JOIN barang b ON dt.barang_id = b.id
+                                WHERE t.daerah IS NOT NULL
+                                GROUP BY t.daerah
+                                ORDER BY total_transaksi DESC, total_penjualan DESC";
+                                
+                                $stmt = $conn->prepare($query);
+                                $stmt->execute();
+                                $daerahData = $stmt->fetchAll();
+                                
+                                foreach ($daerahData as $index => $data):
+                                ?>
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="px-6 py-4 text-sm text-gray-600"><?= $index + 1 ?></td>
+                                    <td class="px-6 py-4 text-sm text-gray-800 font-medium">
+                                        <?= htmlspecialchars($data['daerah']) ?>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-3 py-1 rounded-lg text-sm font-medium bg-blue-100 text-blue-700">
+                                            <?= number_format($data['total_transaksi']) ?> Transaksi
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-600">
+                                        Rp <?= number_format($data['total_penjualan'], 0, ',', '.') ?>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="<?= $data['profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
+                                            Rp <?= number_format($data['profit'], 0, ',', '.') ?>
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <button onclick="showDaerahDetail('<?= htmlspecialchars($data['daerah']) ?>')" 
+                                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php elseif (isset($_GET['tab']) && $_GET['tab'] === 'marketplace'): ?>
+                    <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                        <div class="overflow-x-auto">
                             <table class="w-full">
-                                <thead class="bg-gray-50 sticky top-0">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NO</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DAERAH</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TOTAL TRANSAKSI</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TOTAL PENDAPATAN</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PROFIT</th>
+                                <thead>
+                                    <tr class="border-b border-gray-100 bg-gray-50/50">
+                                        <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">NO</th>
+                                        <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">MARKETPLACE</th>
+                                        <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">TOTAL TRANSAKSI</th>
+                                        <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">TOTAL PENDAPATAN</th>
+                                        <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">PROFIT</th>
+                                        <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">AKSI</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    <?php
-                                    // Query untuk data daerah
-                                    $query = "SELECT 
-                                        t.daerah,
-                                        COUNT(DISTINCT t.id) as total_transaksi,
-                                        SUM(t.total_harga) as total_penjualan,
-                                        SUM(dt.jumlah * (dt.harga - b.harga_modal)) as profit
-                                    FROM transaksi t
-                                    JOIN detail_transaksi dt ON t.id = dt.transaksi_id
-                                    JOIN barang b ON dt.barang_id = b.id
-                                    WHERE t.daerah IS NOT NULL
-                                    GROUP BY t.daerah
-                                    ORDER BY total_transaksi DESC, total_penjualan DESC";
-                                    
-                                    $stmt = $conn->prepare($query);
-                                    $stmt->execute();
-                                    $daerahData = $stmt->fetchAll();
-                                    
-                                    foreach ($daerahData as $index => $data):
-                                    ?>
-                                    <tr class="hover:bg-gray-50/50">
-                                        <td class="px-6 py-4 text-sm text-gray-600"><?= $index + 1 ?></td>
-                                        <td class="px-6 py-4 text-sm text-gray-800 font-medium">
-                                            <?= htmlspecialchars($data['daerah']) ?>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <span class="px-3 py-1 rounded-lg text-sm font-medium bg-blue-100 text-blue-700">
-                                                <?= number_format($data['total_transaksi']) ?> Transaksi
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 text-sm text-gray-600">
-                                            Rp <?= number_format($data['total_penjualan'], 0, ',', '.') ?>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <span class="<?= $data['profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
-                                                Rp <?= number_format($data['profit'], 0, ',', '.') ?>
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <button onclick="showDaerahDetail('<?= htmlspecialchars($data['daerah']) ?>')" 
-                                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                                </svg>
-                                            </button>
-                                        </td>
-                                    </tr>
+                                <tbody>
+                                    <?php foreach ($marketplaces as $index => $marketplace): ?>
+                                        <tr class="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                                            <td class="py-4 px-6 text-sm text-gray-600"><?= $index + 1 ?></td>
+                                            <td class="py-4 px-6">
+                                                <span class="px-3 py-1 rounded-lg text-sm font-medium 
+                                                    <?php 
+                                                    switch(strtolower($marketplace['nama'])) {
+                                                        case 'shopee':
+                                                            echo 'bg-orange-50 text-orange-600';
+                                                            break;
+                                                        case 'tokopedia':
+                                                            echo 'bg-green-50 text-green-600';
+                                                            break;
+                                                        case 'tiktok':
+                                                            echo 'bg-gray-50 text-gray-600';
+                                                            break;
+                                                        default:
+                                                            echo 'bg-blue-50 text-blue-600';
+                                                    }
+                                                    ?>">
+                                                    <?= ucfirst(htmlspecialchars($marketplace['nama'])) ?>
+                                                </span>
+                                            </td>
+                                            <td class="py-4 px-6">
+                                                <span class="px-3 py-1 rounded-lg text-sm font-medium bg-blue-50 text-blue-600">
+                                                    <?= $marketplace['total_transaksi'] ?> Transaksi
+                                                </span>
+                                            </td>
+                                            <td class="py-4 px-6 text-sm text-gray-600">
+                                                Rp <?= number_format($marketplace['total_pendapatan'], 0, ',', '.') ?>
+                                            </td>
+                                            <td class="py-4 px-6">
+                                                <span class="text-sm font-medium <?= $marketplace['profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?>">
+                                                    Rp <?= number_format($marketplace['profit'], 0, ',', '.') ?>
+                                                </span>
+                                            </td>
+                                            <td class="py-4 px-6">
+                                                <button onclick="showMarketplaceDetail('<?= htmlspecialchars($marketplace['nama']) ?>')" 
+                                                        class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- Modal Detail Marketplace -->
+                    <div id="marketplaceDetailModal" class="modal">
+                        <div class="modal-content bg-white rounded-2xl overflow-hidden shadow-xl">
+                            <div class="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-center">
+                                <h3 class="text-lg font-semibold text-gray-800" id="marketplaceTitle">Detail Marketplace</h3>
+                                <button onclick="closeMarketplaceModal()" class="text-gray-400 hover:text-gray-500">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                            <div class="p-6">
+                                    <table class="w-full">
+                                        <thead class="sticky top-0 bg-gray-50">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Tanggal</th>
+                                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Pembeli</th>
+                                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Produk</th>
+                                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Total</th>
+                                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Profit</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="marketplaceDetailTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -628,54 +844,52 @@ try {
     </div>
 
     <!-- Detail Modal -->
-    <div id="detailModal" class="modal items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl w-[700px] overflow-hidden">
-            <!-- Modal Header -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+    <div id="detailModal" class="modal">
+        <div class="modal-content bg-white rounded-2xl overflow-hidden shadow-xl">
+            <!-- Header tetap -->
+            <div class="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-center">
                 <h3 class="text-lg font-semibold text-gray-800">Detail Transaksi</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-500">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button onclick="closeDetailModal()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
             
-            <!-- Modal Content -->
+            <!-- Body dengan scroll -->
+            <div class="modal-body">
             <div class="p-6 space-y-6">
                 <h4 class="font-medium text-gray-800">Informasi Transaksi</h4>
                 <div class="space-y-4">
                     <div class="flex">
                         <span class="w-40 text-gray-600">Nama Pembeli</span>
-                        <span class="text-gray-900">: </span>
-                        <span class="ml-2 text-gray-900" id="modalBuyerName"></span>
+                            <span class="text-gray-900" id="detailBuyerName">: </span>
                     </div>
                     <div class="flex">
                         <span class="w-40 text-gray-600">Tanggal</span>
-                        <span class="text-gray-900">: </span>
-                        <span class="ml-2 text-gray-900" id="modalDate"></span>
+                            <span class="text-gray-900" id="detailDate">: </span>
                     </div>
                     <div class="flex">
-                        <span class="w-40 text-gray-600">Total Pembayaran</span>
-                        <span class="text-gray-900">: </span>
-                        <span class="ml-2 text-gray-900" id="modalTotal"></span>
+                            <span class="w-40 text-gray-600">Total</span>
+                            <span class="text-gray-900" id="detailTotal">: </span>
                     </div>
                 </div>
                 
-                <h4 class="font-medium text-gray-800 mt-6">Detail Barang</h4>
+                    <h4 class="font-medium text-gray-800 pt-4">Detail Produk</h4>
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama Barang</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Jumlah</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Harga</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Subtotal</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Profit</th>
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Produk</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Jumlah</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Harga</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Subtotal</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Profit</th>
                             </tr>
                         </thead>
-                        <tbody id="modalDetailItems" class="divide-y divide-gray-200"></tbody>
+                            <tbody id="detailItems" class="divide-y divide-gray-100"></tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -714,31 +928,31 @@ try {
     </div>
 
     <!-- Product History Modal -->
-    <div id="productHistoryModal" class="modal items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl w-[700px] overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-800">Riwayat Penjualan Produk</h3>
+    <div id="productHistoryModal" class="modal">
+        <div class="modal-content bg-white rounded-2xl overflow-hidden shadow-xl">
+            <!-- Header tetap -->
+            <div class="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-gray-800" id="productHistoryTitle">Riwayat Penjualan Produk</h3>
                 <button onclick="closeProductHistory()" class="text-gray-400 hover:text-gray-500">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
-            
-            <div class="p-6 space-y-4">
-                <h4 class="font-medium text-gray-800" id="productHistoryTitle"></h4>
-                <div class="overflow-x-auto">
+            <!-- Body dengan scroll -->
+            <div class="modal-body">
+                <div class="p-6">
                     <table class="w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
+                        <thead class="sticky top-0 bg-gray-50">
                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Pembeli</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Jumlah</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Harga</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">NO</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">TANGGAL</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">PEMBELI</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">JUMLAH</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">HARGA</th>
                             </tr>
                         </thead>
-                        <tbody id="productHistoryItems" class="divide-y divide-gray-200"></tbody>
+                        <tbody id="productHistoryTable"></tbody>
                     </table>
                 </div>
             </div>
@@ -827,33 +1041,28 @@ try {
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Populate modal with transaction data
-                    document.getElementById('modalBuyerName').textContent = data.transaction.buyer_name || '-';
-                    document.getElementById('modalDate').textContent = new Date(data.transaction.tanggal)
-                        .toLocaleString('id-ID', { 
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                    document.getElementById('modalTotal').textContent = `Rp ${Number(data.transaction.total_harga).toLocaleString('id-ID')}`;
+                    const transaction = data.transaction;
+                    const items = data.items;
                     
-                    // Populate items table
-                    const tbody = document.getElementById('modalDetailItems');
-                    tbody.innerHTML = data.items.map((item, index) => `
-                        <tr>
-                            <td class="px-4 py-2 text-sm text-gray-600">${index + 1}</td>
-                            <td class="px-4 py-2 text-sm text-gray-600">${item.nama_barang}</td>
-                            <td class="px-4 py-2 text-sm text-gray-600">${item.jumlah}</td>
-                            <td class="px-4 py-2 text-sm text-gray-600">Rp ${Number(item.harga).toLocaleString('id-ID')}</td>
-                            <td class="px-4 py-2 text-sm text-gray-600">Rp ${Number(item.subtotal).toLocaleString('id-ID')}</td>
-                            <td class="px-4 py-2 text-sm text-gray-600">Rp ${Number(item.profit).toLocaleString('id-ID')}</td>
+                    // Update modal content
+                    document.getElementById('detailBuyerName').textContent = `: ${transaction.buyer_name || 'Tanpa Nama'}`;
+                    document.getElementById('detailDate').textContent = `: ${new Date(transaction.tanggal).toLocaleString('id-ID')}`;
+                    document.getElementById('detailTotal').textContent = `: Rp ${Number(transaction.total_harga).toLocaleString('id-ID')}`;
+                    
+                    // Update items table
+                    document.getElementById('detailItems').innerHTML = items.map(item => `
+                        <tr class="hover:bg-gray-50/50">
+                            <td class="px-4 py-3 text-sm text-gray-600">${item.nama_barang}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">${item.jumlah}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">Rp ${Number(item.harga).toLocaleString('id-ID')}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">Rp ${Number(item.subtotal).toLocaleString('id-ID')}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">Rp ${Number(item.profit).toLocaleString('id-ID')}</td>
                         </tr>
                     `).join('');
                     
                     // Show modal
                     document.getElementById('detailModal').classList.add('active');
+                    document.body.style.overflow = 'hidden';
                 } else {
                     alert(data.message || 'Gagal memuat detail transaksi');
                 }
@@ -863,10 +1072,26 @@ try {
             }
         }
         
-        function closeModal() {
-            document.getElementById('detailModal').classList.remove('active');
+        function closeDetailModal() {
+            const modal = document.getElementById('detailModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
         }
-        
+
+        // Close modal when clicking outside
+        document.getElementById('detailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDetailModal();
+            }
+        });
+
+        // Close modal when pressing Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('detailModal').classList.contains('active')) {
+                closeDetailModal();
+            }
+        });
+
         function applyFilter() {
             const startDate = document.getElementById('start_date').value;
             const endDate = document.getElementById('end_date').value;
@@ -896,13 +1121,6 @@ try {
         document.getElementById('searchInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 applyFilter();
-            }
-        });
-
-        // Close modal when clicking outside
-        document.getElementById('detailModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
             }
         });
 
@@ -942,19 +1160,18 @@ try {
             window.location.href = `informasi.php?${urlParams.toString()}`;
         }
 
-        async function showProductHistory(productName) {
+        async function showProductHistory(product) {
             try {
-                const response = await fetch(`informasi.php?action=get_product_history&product=${encodeURIComponent(productName)}`);
+                const response = await fetch(`informasi.php?action=get_product_history&product=${encodeURIComponent(product)}`);
                 const data = await response.json();
                 
                 if (data.success) {
-                    document.getElementById('productHistoryTitle').textContent = `Riwayat Penjualan: ${productName}`;
+                    document.getElementById('productHistoryTitle').textContent = `Riwayat Penjualan: ${product}`;
                     
-                    const tbody = document.getElementById('productHistoryItems');
-                    tbody.innerHTML = data.history.map((item, index) => `
-                        <tr>
-                            <td class="px-4 py-2 text-sm text-gray-600">${index + 1}</td>
-                            <td class="px-4 py-2 text-sm text-gray-600">
+                    document.getElementById('productHistoryTable').innerHTML = data.history.map((item, index) => `
+                        <tr class="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                            <td class="px-4 py-3 text-sm text-gray-600">${index + 1}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
                                 ${new Date(item.tanggal).toLocaleString('id-ID', {
                                     day: '2-digit',
                                     month: '2-digit',
@@ -963,13 +1180,16 @@ try {
                                     minute: '2-digit'
                                 })}
                             </td>
-                            <td class="px-4 py-2 text-sm text-gray-600">${item.nama_pembeli || '-'}</td>
-                            <td class="px-4 py-2 text-sm text-gray-600">${item.jumlah} Unit</td>
-                            <td class="px-4 py-2 text-sm text-gray-600">Rp ${Number(item.harga).toLocaleString('id-ID')}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">${item.nama_pembeli || 'Tanpa Nama'}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">${item.jumlah} Unit</td>
+                            <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                                Rp ${Number(item.harga).toLocaleString('id-ID')}
+                            </td>
                         </tr>
                     `).join('');
                     
                     document.getElementById('productHistoryModal').classList.add('active');
+                    document.body.style.overflow = 'hidden';
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -979,9 +1199,10 @@ try {
         
         function closeProductHistory() {
             document.getElementById('productHistoryModal').classList.remove('active');
+            document.body.style.overflow = '';
         }
         
-        // Close product history modal when clicking outside
+        // Close modal when clicking outside
         document.getElementById('productHistoryModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeProductHistory();
@@ -1008,8 +1229,12 @@ try {
                                         </span>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-medium text-gray-800">${item.nama_pembeli || 'Tanpa Nama'}</p>
-                                        <p class="text-xs text-gray-500">${item.marketplace}</p>
+                                        <p class="text-sm font-medium text-gray-800">
+                                            ${item.nama_pembeli || 'Tanpa Nama'}
+                                        </p>
+                                        <p class="text-xs text-gray-500">
+                                            ${item.marketplace}
+                                        </p>
                                     </div>
                                 </div>
                             </td>
@@ -1103,6 +1328,62 @@ try {
                     alert('Gagal mengupdate transaksi');
                 }
             });
+        });
+
+        async function showMarketplaceDetail(marketplace) {
+            try {
+                const response = await fetch(`informasi.php?action=get_marketplace_detail&marketplace=${encodeURIComponent(marketplace)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('marketplaceTitle').textContent = `Detail ${marketplace}`;
+                    
+                    document.getElementById('marketplaceDetailTable').innerHTML = data.details.map(item => `
+                        <tr class="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                            <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                                ${new Date(item.tanggal).toLocaleString('id-ID', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                })}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600">${item.nama_pembeli || 'Tanpa Nama'}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">${item.detail_produk}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                                Rp ${Number(item.total_harga).toLocaleString('id-ID')}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span class="text-sm font-medium ${Number(item.profit) >= 0 ? 'text-green-600' : 'text-red-600'}">
+                                    Rp ${Number(item.profit).toLocaleString('id-ID')}
+                                </span>
+                            </td>
+                        </tr>
+                    `).join('');
+                    
+                    document.getElementById('marketplaceDetailModal').classList.add('active');
+                    
+                    // Prevent body scrolling when modal is open
+                    document.body.style.overflow = 'hidden';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat memuat detail marketplace');
+            }
+        }
+
+        function closeMarketplaceModal() {
+            document.getElementById('marketplaceDetailModal').classList.remove('active');
+            // Restore body scrolling
+            document.body.style.overflow = '';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('marketplaceDetailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeMarketplaceModal();
+            }
         });
     </script>
 </body>
