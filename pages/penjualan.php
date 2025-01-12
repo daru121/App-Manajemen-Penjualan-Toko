@@ -1,6 +1,166 @@
 <?php
 require_once '../backend/check_session.php';
 require_once '../backend/database.php';
+require_once '../vendor/tecnickcom/tcpdf/tcpdf.php';
+
+// Tambahkan handler untuk cetak resi
+if (isset($_GET['action']) && $_GET['action'] === 'print_receipt') {
+    // Prevent any output
+    ob_clean();
+    
+    $transaksi_id = $_GET['transaksi_id'];
+    
+    // Get transaction details
+    $query = "SELECT t.*, p.nama as nama_pembeli, u.nama as nama_kasir 
+             FROM transaksi t 
+             JOIN pembeli p ON t.pembeli_id = p.id 
+             JOIN users u ON t.user_id = u.id 
+             WHERE t.id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->execute([$transaksi_id]);
+    $transaksi = $stmt->fetch();
+
+    // Get items
+    $query = "SELECT dt.*, b.nama_barang 
+             FROM detail_transaksi dt 
+             JOIN barang b ON dt.barang_id = b.id 
+             WHERE dt.transaksi_id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->execute([$transaksi_id]);
+    $items = $stmt->fetchAll();
+
+    // Create PDF
+    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, array(80, 200), true, 'UTF-8', false);
+    
+    // Set document information
+    $pdf->SetCreator('PAksesories');
+    $pdf->SetAuthor('PAksesories');
+    $pdf->SetTitle('Receipt #' . $transaksi_id);
+    
+    // Remove default header/footer
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(false);
+    
+    // Set margins
+    $pdf->SetMargins(5, 5, 5);
+    $pdf->SetAutoPageBreak(true, 5);
+    
+    // Add a page
+    $pdf->AddPage();
+    
+    // Set font
+    $pdf->SetFont('helvetica', '', 8);
+    
+    // Add store logo/image
+    $image_file = '../img/gambar.jpg';
+    $pdf->Image($image_file, 5, 5, 15, 15, '', '', '', false, 300, '', false, false, 0);
+    
+    // Store Name - Geser ke kanan agar tidak tertutup logo
+    $pdf->SetFont('helvetica', 'B', 12);
+    $pdf->SetXY(22, 5);
+    $pdf->Cell(53, 5, 'PAksesories', 0, 1, 'L');
+    $pdf->SetFont('helvetica', '', 8);
+    $pdf->SetXY(22, 10);
+    $pdf->Cell(53, 4, 'Jl. Contoh No. 123', 0, 1, 'L');
+    $pdf->SetXY(22, 14);
+    $pdf->Cell(53, 4, 'Telp: 081234567890', 0, 1, 'L');
+    
+    // Reset position for next content
+    $pdf->SetY(22);
+    
+    // Line separator
+    $pdf->Cell(0, 0, str_repeat('=', 48), 0, 1, 'C');
+    $pdf->Ln(2);
+    
+    // Transaction details dengan format yang lebih rapi
+    $pdf->SetFont('helvetica', '', 8);
+    $pdf->Cell(15, 4, 'No', 0, 0, 'L');
+    $pdf->Cell(2, 4, ':', 0, 0, 'L');
+    $pdf->Cell(0, 4, 'TRX-' . str_pad($transaksi_id, 4, '0', STR_PAD_LEFT), 0, 1, 'L');
+    
+    $pdf->Cell(15, 4, 'Tanggal', 0, 0, 'L');
+    $pdf->Cell(2, 4, ':', 0, 0, 'L');
+    $pdf->Cell(0, 4, date('d/m/Y H:i', strtotime($transaksi['tanggal'])), 0, 1, 'L');
+    
+    $pdf->Cell(15, 4, 'Kasir', 0, 0, 'L');
+    $pdf->Cell(2, 4, ':', 0, 0, 'L');
+    $pdf->Cell(0, 4, $transaksi['nama_kasir'], 0, 1, 'L');
+    
+    $pdf->Cell(15, 4, 'Pembeli', 0, 0, 'L');
+    $pdf->Cell(2, 4, ':', 0, 0, 'L');
+    $pdf->Cell(0, 4, $transaksi['nama_pembeli'], 0, 1, 'L');
+    
+    if ($transaksi['marketplace'] != 'offline') {
+        $pdf->Cell(15, 4, 'Market', 0, 0, 'L');
+        $pdf->Cell(2, 4, ':', 0, 0, 'L');
+        $pdf->Cell(0, 4, ucfirst($transaksi['marketplace']), 0, 1, 'L');
+        
+        if ($transaksi['daerah']) {
+            $pdf->Cell(15, 4, 'Provinsi', 0, 0, 'L');
+            $pdf->Cell(2, 4, ':', 0, 0, 'L');
+            $pdf->Cell(0, 4, $transaksi['daerah'], 0, 1, 'L');
+        }
+    }
+    
+    $pdf->Ln(1);
+    // Line separator
+    $pdf->Cell(0, 0, str_repeat('-', 48), 0, 1, 'C');
+    $pdf->Ln(1);
+    
+    // Items header dengan garis bawah
+    $pdf->SetFont('helvetica', 'B', 8);
+    $pdf->Cell(35, 4, 'Item', 0, 0);
+    $pdf->Cell(10, 4, 'Qty', 0, 0, 'C');
+    $pdf->Cell(15, 4, '@Harga', 0, 0, 'R');
+    $pdf->Cell(15, 4, 'Total', 0, 1, 'R');
+    
+    // Line separator
+    $pdf->SetFont('helvetica', '', 8);
+    $pdf->Cell(0, 0, str_repeat('-', 48), 0, 1, 'C');
+    $pdf->Ln(1);
+    
+    // Items dengan format yang lebih rapi
+    foreach ($items as $item) {
+        // Nama item
+        $pdf->MultiCell(35, 4, $item['nama_barang'], 0, 'L', false, 0);
+        $pdf->Cell(10, 4, $item['jumlah'], 0, 0, 'C');
+        $pdf->Cell(15, 4, number_format($item['harga'], 0, ',', '.'), 0, 0, 'R');
+        $pdf->Cell(15, 4, number_format($item['jumlah'] * $item['harga'], 0, ',', '.'), 0, 1, 'R');
+    }
+    
+    // Line separator
+    $pdf->Ln(1);
+    $pdf->Cell(0, 0, str_repeat('-', 48), 0, 1, 'C');
+    $pdf->Ln(1);
+    
+    // Totals dengan format yang lebih rapi
+    $pdf->SetFont('helvetica', 'B', 8);
+    $pdf->Cell(45, 4, 'Total:', 0, 0, 'R');
+    $pdf->Cell(30, 4, 'Rp ' . number_format($transaksi['total_harga'], 0, ',', '.'), 0, 1, 'R');
+    
+    $pdf->SetFont('helvetica', '', 8);
+    $pdf->Cell(45, 4, 'Pembayaran:', 0, 0, 'R');
+    $pdf->Cell(30, 4, 'Rp ' . number_format($transaksi['pembayaran'], 0, ',', '.'), 0, 1, 'R');
+    
+    $pdf->Cell(45, 4, 'Kembalian:', 0, 0, 'R');
+    $pdf->Cell(30, 4, 'Rp ' . number_format($transaksi['kembalian'], 0, ',', '.'), 0, 1, 'R');
+    
+    // Line separator
+    $pdf->Ln(2);
+    $pdf->Cell(0, 0, str_repeat('=', 48), 0, 1, 'C');
+    $pdf->Ln(2);
+    
+    // Thank you message dengan style yang lebih baik
+    $pdf->SetFont('helvetica', '', 8);
+    $pdf->Cell(0, 4, 'Terima kasih atas kunjungan Anda', 0, 1, 'C');
+    $pdf->Cell(0, 4, 'Barang yang sudah dibeli', 0, 1, 'C');
+    $pdf->SetFont('helvetica', 'B', 8);
+    $pdf->Cell(0, 4, 'tidak dapat ditukar/dikembalikan', 0, 1, 'C');
+    
+    // Output PDF
+    $pdf->Output('Receipt_TRX-' . str_pad($transaksi_id, 4, '0', STR_PAD_LEFT) . '.pdf', 'I');
+    exit;
+}
 
 // Handle POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -127,6 +287,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $payment_amount = $_POST['payment_amount'];
                 $total = $_POST['total'];
                 $marketplace = $_POST['marketplace'] ?? 'offline';
+                $daerah = $_POST['daerah'] ?? null;
+                $kurir = $_POST['kurir'] ?? null; 
+                $no_resi = $_POST['no_resi'] ?? null;
                 $kembalian = $payment_amount - $total;
                 
                 if ($kembalian < 0) {
@@ -136,21 +299,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 
                 $conn->beginTransaction();
                 
-                // Insert pembeli terlebih dahulu
+                // Insert pembeli
                 $stmt = $conn->prepare("INSERT INTO pembeli (nama) VALUES (?)");
                 $stmt->execute([$buyer_name]);
                 $pembeli_id = $conn->lastInsertId();
                 
-                // Insert transaksi dengan marketplace
-                $stmt = $conn->prepare("INSERT INTO transaksi (user_id, pembeli_id, total_harga, pembayaran, kembalian, tanggal, marketplace) 
-                                        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)");
+                // Insert transaksi dengan data pengiriman
+                $stmt = $conn->prepare("INSERT INTO transaksi (user_id, pembeli_id, total_harga, pembayaran, kembalian, marketplace, daerah, kurir, no_resi, status_pengiriman) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
                 $stmt->execute([
                     $_SESSION['user_id'], 
                     $pembeli_id, 
                     $total, 
                     $payment_amount, 
                     $kembalian,
-                    $marketplace
+                    $marketplace,
+                    $daerah,
+                    $kurir,
+                    $no_resi
                 ]);
                 $transaksi_id = $conn->lastInsertId();
                 
@@ -245,8 +411,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 }
 
                 // Insert ke tabel transaksi
-                $query = "INSERT INTO transaksi (user_id, pembeli_id, total_harga, pembayaran, kembalian, marketplace, daerah, tanggal) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+                $query = "INSERT INTO transaksi (user_id, pembeli_id, total_harga, pembayaran, kembalian, marketplace, daerah, kurir, no_resi, status_pengiriman) 
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
                 $stmt = $conn->prepare($query);
                 $stmt->execute([
                     $_SESSION['user_id'],
@@ -255,7 +421,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $pembayaran,
                     $kembalian,
                     $marketplace,
-                    $daerah
+                    $daerah ?? null,
+                    $kurir ?? null,
+                    $no_resi ?? null
                 ]);
 
                 $transaksi_id = $conn->lastInsertId();
@@ -806,6 +974,43 @@ try {
                                             </select>
                                         </div>
 
+                                        <!-- Tambahkan di bagian form pembayaran -->
+                                        <div id="pengirimanInfo" class="mb-4 hidden">
+                                            <div class="space-y-4">
+                                                <!-- Kurir Selection -->
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                        Kurir Pengiriman
+                                                    </label>
+                                                    <select id="kurir" name="kurir" class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl
+                                                                            focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
+                                                                            transition-all duration-300 outline-none">
+                                                        <option value="">Pilih Kurir</option>
+                                                            <option value="jne">JNE</option>
+                                                            <option value="jnt">J&T</option>
+                                                            <option value="sicepat">SiCepat</option>
+                                                            <option value="anteraja">AnterAja</option>
+                                                            <option value="jntcargo">J&T Cargo</option>
+                                                            <option value="tiki">Tiki</option>
+                                                            <option value="ninja">Ninja</option>
+                                                            <option value="shopee express">Shopee Express</option>
+                                                    </select>
+                                                </div>
+
+                                                <!-- Nomor Resi -->
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                        Nomor Resi
+                                                    </label>
+                                                    <input type="text" id="noResi" name="no_resi" 
+                                                           class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl
+                                                                  focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
+                                                                  transition-all duration-300 outline-none"
+                                                           placeholder="Masukkan nomor resi">
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <!-- Display Kembalian -->
                                         <div class="mb-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -1059,12 +1264,37 @@ try {
                         <span class="text-gray-600">Provinsi</span>
                         <span class="font-medium" id="success-daerah"></span>
                     </div>
+                    <div id="success-pengiriman-container" class="hidden">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-gray-600">Kurir:</span>
+                            <span id="success-kurir" class="font-medium"></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">No. Resi:</span>
+                            <span id="success-resi" class="font-medium"></span>
+                        </div>
+                    </div>
                 </div>
 
-                <button onclick="window.location.reload()" 
-                        class="w-full py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors">
-                    Selesai
-                </button>
+                <!-- Tambahkan div untuk button group -->
+                <div class="flex gap-3">
+                    <!-- Button Cetak Resi -->
+                    <button onclick="printReceipt()" 
+                            class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">
+                        <span class="flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                            </svg>
+                            Cetak Resi
+                        </span>
+                    </button>
+                    <!-- Button Selesai -->
+                    <button onclick="window.location.reload()" 
+                            class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors">
+                        Selesai
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1226,9 +1456,15 @@ try {
     }
 
     function processPayment() {
+        if (!validateForm()) {
+            return;
+        }
+
         const namaPembeli = document.getElementById('buyerName').value;
         const marketplace = document.getElementById('marketplace').value;
         const daerah = document.getElementById('daerah')?.value;
+        const kurir = document.getElementById('kurir')?.value;
+        const noResi = document.getElementById('noResi')?.value;
         const pembayaran = parseFloat(document.getElementById('paymentAmount').value);
         const total = <?= $grandTotal ?>;
         const kembalian = pembayaran - total;
@@ -1238,13 +1474,14 @@ try {
 
         // Prepare form data
         const formData = new FormData();
-        formData.append('action', 'process_transaction');
-        formData.append('pembeli', namaPembeli);
+        formData.append('action', 'process_payment');
+        formData.append('buyer_name', namaPembeli);
+        formData.append('payment_amount', pembayaran);
+        formData.append('total', total);
         formData.append('marketplace', marketplace);
-        formData.append('total_harga', total);
-        formData.append('pembayaran', pembayaran);
-        formData.append('kembalian', kembalian);
         if (daerah) formData.append('daerah', daerah);
+        if (kurir) formData.append('kurir', kurir);
+        if (noResi) formData.append('no_resi', noResi);
 
         // Send to server
         fetch('penjualan.php', {
@@ -1262,7 +1499,9 @@ try {
                     pembayaran: pembayaran,
                     kembalian: kembalian,
                     marketplace: marketplace,
-                    daerah: daerah
+                    daerah: daerah,
+                    kurir: kurir,
+                    no_resi: noResi
                 });
             } else {
                 showAlert(data.message, 'error');
@@ -1286,18 +1525,27 @@ try {
         document.getElementById('success-change').textContent = `Rp ${data.kembalian.toLocaleString('id-ID')}`;
         document.getElementById('success-marketplace').textContent = data.marketplace;
 
-        // Handle daerah display
+        // Handle daerah & pengiriman display
         const daerahContainer = document.getElementById('success-daerah-container');
-        if (['shopee', 'tokopedia', 'tiktok'].includes(data.marketplace) && data.daerah) {
-            document.getElementById('success-daerah').textContent = data.daerah;
-            daerahContainer.classList.remove('hidden');
+        const pengirimanContainer = document.getElementById('success-pengiriman-container');
+        
+        if (['shopee', 'tokopedia', 'tiktok'].includes(data.marketplace)) {
+            if (data.daerah) {
+                document.getElementById('success-daerah').textContent = data.daerah;
+                daerahContainer.classList.remove('hidden');
+            }
+            if (data.kurir) {
+                document.getElementById('success-kurir').textContent = data.kurir;
+                document.getElementById('success-resi').textContent = data.no_resi || '-';
+                pengirimanContainer.classList.remove('hidden');
+            }
         } else {
             daerahContainer.classList.add('hidden');
+            pengirimanContainer.classList.add('hidden');
         }
 
         // Show success modal
-        const successModal = document.getElementById('successModal');
-        successModal.classList.remove('hidden');
+        document.getElementById('successModal').classList.remove('hidden');
     }
 
     function showAlert(message) {
@@ -1408,43 +1656,65 @@ try {
     // Event listener untuk marketplace
     document.getElementById('marketplace').addEventListener('change', function() {
         const daerahPembeli = document.getElementById('daerahPembeli');
+        const pengirimanInfo = document.getElementById('pengirimanInfo');
         const daerahSelect = document.getElementById('daerah');
+        const kurirSelect = document.getElementById('kurir');
+        const noResiInput = document.getElementById('noResi');
         
         if (['shopee', 'tokopedia', 'tiktok'].includes(this.value)) {
-            // Tampilkan dropdown daerah dengan animasi
+            // Tampilkan form daerah dan pengiriman
             daerahPembeli.classList.remove('hidden');
-            daerahPembeli.style.opacity = '0';
-            daerahPembeli.style.transform = 'translateY(-10px)';
+            pengirimanInfo.classList.remove('hidden');
             
             // Animasi smooth
-            setTimeout(() => {
-                daerahPembeli.style.transition = 'all 0.3s ease';
-                daerahPembeli.style.opacity = '1';
-                daerahPembeli.style.transform = 'translateY(0)';
-            }, 10);
+            [daerahPembeli, pengirimanInfo].forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-10px)';
+                
+                setTimeout(() => {
+                    el.style.transition = 'all 0.3s ease';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, 10);
+            });
             
-            // Reset pilihan daerah
+            // Reset pilihan
             daerahSelect.value = '';
+            kurirSelect.value = '';
+            noResiInput.value = '';
         } else {
-            // Sembunyikan dropdown daerah dengan animasi
-            daerahPembeli.style.opacity = '0';
-            daerahPembeli.style.transform = 'translateY(-10px)';
+            // Sembunyikan form dengan animasi
+            [daerahPembeli, pengirimanInfo].forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-10px)';
+            });
             
             setTimeout(() => {
                 daerahPembeli.classList.add('hidden');
+                pengirimanInfo.classList.add('hidden');
+                // Reset values
                 daerahSelect.value = '';
+                kurirSelect.value = '';
+                noResiInput.value = '';
             }, 300);
         }
     });
 
-    // Tambahkan validasi saat submit
+    // Tambahkan validasi untuk form pengiriman
     function validateForm() {
         const marketplace = document.getElementById('marketplace').value;
         const daerah = document.getElementById('daerah').value;
+        const kurir = document.getElementById('kurir').value;
         
-        if (['shopee', 'tokopedia', 'tiktok'].includes(marketplace) && !daerah) {
-            showAlert('Silakan pilih provinsi pembeli untuk marketplace online');
-            return false;
+        if (['shopee', 'tokopedia', 'tiktok'].includes(marketplace)) {
+            if (!daerah) {
+                showAlert('Silakan pilih provinsi pembeli untuk marketplace online');
+                return false;
+            }
+            if (!kurir) {
+                showAlert('Silakan pilih kurir pengiriman');
+                return false;
+            }
         }
         return true;
     }
@@ -1558,6 +1828,11 @@ try {
     // Inisialisasi pencarian dengan debounce
     const debouncedSearch = debounce(searchProducts, 300);
     document.getElementById('searchInput').addEventListener('input', debouncedSearch);
+
+    function printReceipt() {
+        const transaksi_id = document.getElementById('success-transaction-id').textContent.replace('TRX-', '');
+        window.open(`penjualan.php?action=print_receipt&transaksi_id=${transaksi_id}`, '_blank');
+    }
     </script>
 </body>
 </html>

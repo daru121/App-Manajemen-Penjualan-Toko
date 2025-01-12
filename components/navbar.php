@@ -265,6 +265,17 @@ function markAllAsRead() {
                                 'active' => true
                             ];
                             break;
+                        case 'pengiriman':
+                            $breadcrumbs[] = [
+                                'text' => 'Operasional',
+                                'url' => '#',
+                                'active' => false
+                            ];
+                            $breadcrumbs[] = [
+                                'text' => 'Pengiriman',
+                                'url' => 'pengiriman.php',
+                                'active' => true
+                            ];
                     }
 
                     // Output breadcrumbs

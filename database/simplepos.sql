@@ -128,3 +128,9 @@ CREATE TABLE IF NOT EXISTS pengeluaran (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Add shipping related columns to transaksi table
+ALTER TABLE transaksi 
+ADD COLUMN IF NOT EXISTS no_resi VARCHAR(50) NULL,
+ADD COLUMN IF NOT EXISTS status_pengiriman ENUM('pending', 'dikirim', 'selesai') DEFAULT 'pending',
+ADD COLUMN IF NOT EXISTS kurir VARCHAR(50) NULL;
+
