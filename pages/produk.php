@@ -242,14 +242,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="bg-white/60 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20">
                 <div class="p-8 border-b border-gray-100/80">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <label class="text-sm font-medium text-gray-600">Menampilkan</label>
-                            <div class="px-5 py-2.5 bg-gray-50/50 border border-gray-200/50 rounded-xl text-sm">
-                                <span class="text-gray-600"><?= count($products) ?> Barang</span>
-                            </div>
+                        <!-- Filter Stok -->
+                        <div class="flex gap-3">
+                            <button onclick="filterStock('all')" 
+                                    class="px-4 py-2 rounded-xl bg-white/80 backdrop-blur-xl border border-gray-200 hover:border-gray-300 hover:bg-white transition-all duration-300 group flex items-center gap-2 stock-filter active">
+                                <div class="w-2 h-2 rounded-full bg-gradient-to-br from-gray-400 to-gray-500"></div>
+                                <span class="text-sm font-medium text-gray-700">All</span>
+                                <span class="text-xs text-gray-400">(<?= count($products) ?>)</span>
+                            </button>
+                            
+                            <button onclick="filterStock('banyak')" 
+                                    class="px-4 py-2 rounded-xl bg-white/80 backdrop-blur-xl border border-gray-200 hover:border-gray-300 hover:bg-white transition-all duration-300 group flex items-center gap-2 stock-filter">
+                                <div class="w-2 h-2 rounded-full bg-gradient-to-br from-emerald-400 to-green-500"></div>
+                                <span class="text-sm font-medium text-gray-700">Stock Banyak</span>
+                                <span class="text-xs text-gray-400">(<?= count(array_filter($products, fn($p) => $p['stok'] > 10)) ?>)</span>
+                            </button>
+                            
+                            <button onclick="filterStock('sedikit')" 
+                                    class="px-4 py-2 rounded-xl bg-white/80 backdrop-blur-xl border border-gray-200 hover:border-gray-300 hover:bg-white transition-all duration-300 group flex items-center gap-2 stock-filter">
+                                <div class="w-2 h-2 rounded-full bg-gradient-to-br from-orange-400 to-orange-500"></div>
+                                <span class="text-sm font-medium text-gray-700">Stock Sedikit</span>
+                                <span class="text-xs text-gray-400">(<?= count(array_filter($products, fn($p) => $p['stok'] > 0 && $p['stok'] <= 10)) ?>)</span>
+                            </button>
+                            
+                            <button onclick="filterStock('habis')" 
+                                    class="px-4 py-2 rounded-xl bg-white/80 backdrop-blur-xl border border-gray-200 hover:border-gray-300 hover:bg-white transition-all duration-300 group flex items-center gap-2 stock-filter">
+                                <div class="w-2 h-2 rounded-full bg-gradient-to-br from-red-400 to-red-500"></div>
+                                <span class="text-sm font-medium text-gray-700">Stock Habis</span>
+                                <span class="text-xs text-gray-400">(<?= count(array_filter($products, fn($p) => $p['stok'] == 0)) ?>)</span>
+                            </button>
                         </div>
 
-                        <div class="relative">
+                        <div class="relative ml-auto">
                             <input type="text" 
                                    id="searchInput"
                                    placeholder="Cari produk..." 
@@ -649,6 +673,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 preview.classList.add('hidden');
             }
         }
+
+        // JavaScript untuk filter
+        function filterStock(type) {
+            const rows = document.querySelectorAll('tbody tr');
+            const buttons = document.querySelectorAll('.stock-filter');
+            
+            // Remove active class from all buttons
+            buttons.forEach(btn => btn.classList.remove('active', 'bg-gray-50'));
+            
+            // Add active class to clicked button
+            event.currentTarget.classList.add('active', 'bg-gray-50');
+            
+            rows.forEach(row => {
+                const stok = parseInt(row.querySelector('td:nth-child(4)').textContent);
+                
+                switch(type) {
+                    case 'all':
+                        row.style.display = '';
+                        break;
+                    case 'banyak':
+                        row.style.display = stok > 10 ? '' : 'none';
+                        break;
+                    case 'sedikit':
+                        row.style.display = (stok > 0 && stok <= 10) ? '' : 'none';
+                        break;
+                    case 'habis':
+                        row.style.display = stok === 0 ? '' : 'none';
+                        break;
+                }
+            });
+        }
     </script>
+
+    <style>
+        .stock-filter.active {
+            @apply bg-white border-gray-300 shadow-md;
+            transform: translateY(-1px);
+        }
+
+        .stock-filter.active .rounded-full {
+            transform: scale(1.2);
+        }
+
+        .stock-filter.active span:not(.rounded-lg) {
+            @apply text-gray-900;
+        }
+    </style>
 </body>
 </html>
