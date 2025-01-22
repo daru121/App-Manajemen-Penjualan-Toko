@@ -456,6 +456,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
             exit;
             break;
+
+        // Tambahkan case baru di dalam switch untuk pencarian pembeli
+        case 'search_buyers':
+            try {
+                $keyword = strtolower($_POST['keyword']);
+                
+                $query = "SELECT DISTINCT nama FROM pembeli 
+                         WHERE LOWER(nama) LIKE :keyword 
+                         ORDER BY nama ASC 
+                         LIMIT 5";
+                
+                $stmt = $conn->prepare($query);
+                $stmt->execute(['keyword' => "%{$keyword}%"]);
+                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                echo json_encode(['status' => 'success', 'results' => $results]);
+            } catch (Exception $e) {
+                echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            }
+            exit;
+            break;
     }
 }
 
@@ -504,6 +525,13 @@ try {
     $totalProducts = 0;
     $totalPages = 1;
 }
+
+$user_id = $_SESSION['user_id'];
+$query = "SELECT nama FROM users WHERE id = ?";
+$stmt = $conn->prepare($query);
+$stmt->execute([$user_id]);
+$kasir = $stmt->fetch();
+
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -783,10 +811,14 @@ try {
                 <div class="col-span-5">
                     <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-gray-100 sticky top-24">
                         <div class="p-6">
+                            <!-- Ubah bagian header kasir -->
                             <div class="flex items-center justify-between mb-6">
-                                <h2 class="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                                    Kasir
-                                </h2>
+                                <div class="flex items-center gap-2">
+                                    <h2 class="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                                        Kasir : 
+                                    </h2>
+                                    <span class="text-gray-500 font-bold text-lg "><?= htmlspecialchars($kasir['nama']) ?></span>
+                                </div>
                                 <div class="px-3 py-1 bg-gray-50 rounded-xl text-sm text-gray-500">
                                     <?= date('d/m/Y') ?>
                                 </div>
@@ -863,12 +895,17 @@ try {
                                     <!-- Form Pembayaran -->
                                     <div class="space-y-3">
                                         <!-- Input Nama Pembeli -->
-                                        <input type="text" 
-                                               id="buyerName"
-                                               placeholder="Nama Pembeli"
-                                               class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl
-                                                      focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
-                                                      transition-all duration-300 outline-none">
+                                        <div class="relative">
+                                            <input type="text" 
+                                                   id="buyerName"
+                                                   placeholder="Nama Pembeli"
+                                                   autocomplete="off"
+                                                   class="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl
+                                                          focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
+                                                          transition-all duration-300 outline-none">
+                                            <div id="buyerSuggestions" class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg hidden">
+                                            </div>
+                                        </div>
 
                                         <!-- Input Jumlah Pembayaran -->
                                         <div class="mb-4">
@@ -1833,6 +1870,64 @@ try {
         const transaksi_id = document.getElementById('success-transaction-id').textContent.replace('TRX-', '');
         window.open(`penjualan.php?action=print_receipt&transaksi_id=${transaksi_id}`, '_blank');
     }
+
+    // Tambahkan fungsi untuk pencarian pembeli
+    function searchBuyers(keyword) {
+        if (!keyword) {
+            document.getElementById('buyerSuggestions').classList.add('hidden');
+            return;
+        }
+
+        fetch('penjualan.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `action=search_buyers&keyword=${encodeURIComponent(keyword)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            const suggestionsDiv = document.getElementById('buyerSuggestions');
+            
+            if (data.status === 'success' && data.results.length > 0) {
+                let suggestionsHTML = '';
+                data.results.forEach(buyer => {
+                    suggestionsHTML += `
+                        <div class="px-4 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+                             onclick="selectBuyer('${buyer.nama}')">
+                            ${buyer.nama}
+                        </div>
+                    `;
+                });
+                
+                suggestionsDiv.innerHTML = suggestionsHTML;
+                suggestionsDiv.classList.remove('hidden');
+            } else {
+                suggestionsDiv.classList.add('hidden');
+            }
+        });
+    }
+
+    function selectBuyer(nama) {
+        document.getElementById('buyerName').value = nama;
+        document.getElementById('buyerSuggestions').classList.add('hidden');
+    }
+
+    // Tambahkan event listener untuk input nama pembeli
+    document.getElementById('buyerName').addEventListener('input', (e) => {
+        const keyword = e.target.value.trim();
+        searchBuyers(keyword);
+    });
+
+    // Sembunyikan saran saat klik di luar
+    document.addEventListener('click', (e) => {
+        const suggestionsDiv = document.getElementById('buyerSuggestions');
+        const buyerInput = document.getElementById('buyerName');
+        
+        if (!buyerInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+            suggestionsDiv.classList.add('hidden');
+        }
+    });
     </script>
 </body>
 </html>
