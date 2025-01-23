@@ -21,11 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Insert new user
             $stmt = $conn->prepare("INSERT INTO users (nama, email, password, role, status) VALUES (?, ?, ?, ?, ?)");
             if ($stmt->execute([$nama, $email, $password, $role, $status])) {
-                $_SESSION['success'] = "Registrasi berhasil! Silakan login.";
+                $_SESSION['success'] = "Register Berhasil, Silahkan Login";
                 header("Location: index.php");
-        exit;
-    } else {
-                $error = "Registrasi gagal!";
+                exit;
+            } else {
+                $error = "Registration gagal!";
             }
         }
     } catch(PDOException $e) {
@@ -45,24 +45,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-image: 
-                radial-gradient(circle at top right, rgba(79, 70, 229, 0.15) 0%, transparent 70%),
-                radial-gradient(circle at bottom left, rgba(37, 99, 235, 0.15) 0%, transparent 70%),
-                radial-gradient(circle at center, rgba(255, 255, 255, 0.9) 0%, transparent 100%),
-                linear-gradient(180deg, rgba(219, 234, 254, 0.4) 0%, rgba(199, 210, 254, 0.4) 100%);
-            background-attachment: fixed;
+            background-color: #ffffff;
         }
         
         .glass-card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.1),
-                0 2px 4px rgba(255, 255, 255, 0.1),
-                inset 0 2px 4px rgba(255, 255, 255, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.5) inset,
-                0 0 100px rgba(99, 102, 241, 0.1);
+                0 8px 32px rgba(0, 0, 0, 0.05),
+                0 2px 4px rgba(0, 0, 0, 0.02);
         }
         
         .gradient-border {
@@ -115,12 +106,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             animation: shine 3s linear infinite;
         }
         
+        .input-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
         .input-field {
-            background: linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.8));
-            box-shadow: 
-                0 2px 4px rgba(0, 0, 0, 0.02),
-                0 1px 2px rgba(0, 0, 0, 0.03),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            outline: none;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .input-label {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            padding: 0 0.5rem;
+            margin-top: 0.5px;
+            line-height: 1;
+        }
+        
+        .input-field:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+        
+        .input-field:not(:focus):not(:placeholder-shown) {
+            border-color: #e5e7eb;
+            box-shadow: none;
+        }
+        
+        .input-field:focus + .input-label,
+        .input-field:not(:placeholder-shown) + .input-label {
+            top: 0;
+            font-size: 0.875rem;
+            padding: 0 0.5rem;
+            margin-top: -1px;
+            background-color: white;
+        }
+        
+        .input-field:focus + .input-label {
+            color: #6366f1;
+        }
+        
+        .input-field:not(:focus):not(:placeholder-shown) + .input-label {
+            color: #6b7280;
         }
         
         .btn-shine {
@@ -179,18 +218,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .float-animation {
             animation: float 6s ease-in-out infinite;
         }
+
+        .fixed.inset-0.pointer-events-none.overflow-hidden {
+            display: none;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
-    <!-- Enhanced Background Elements -->
-    <div class="fixed inset-0 pointer-events-none overflow-hidden">
-        <div class="absolute top-0 -right-40 w-[1200px] h-[1200px] bg-gradient-to-br from-indigo-100 to-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse float-animation"></div>
-        <div class="absolute bottom-0 -left-40 w-[1200px] h-[1200px] bg-gradient-to-tr from-blue-100 to-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse float-animation" style="animation-delay: 2s"></div>
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-white rounded-full mix-blend-overlay filter blur-3xl opacity-20"></div>
-        <div class="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.15]"></div>
-        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-transparent"></div>
-    </div>
-
     <div class="w-full max-w-md relative z-10">
         <div class="gradient-border">
             <div class="glass-card p-10 rounded-[23px] luxury-shadow">
@@ -208,68 +242,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         Create Account
                     </h1>
                     <p class="text-gray-500/90 tracking-wide font-medium">Register to get started</p>
-            </div>
+                </div>
 
                 <?php if (isset($error)): ?>
                     <div class="mb-6 p-4 rounded-xl bg-red-50/50 backdrop-blur-sm border border-red-100/50">
                         <p class="text-sm text-red-600"><?= htmlspecialchars($error) ?></p>
-                            </div>
+                    </div>
                 <?php endif; ?>
 
                 <form method="POST" class="space-y-7">
                     <!-- Full Name Field -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-600 ml-1 tracking-wide">
-                            Full Name
-                        </label>
-                        <div class="relative group">
-                            <input type="text" 
-                                   name="nama" 
-                                   required 
-                                   class="w-full px-5 py-4 rounded-xl input-field border border-gray-200/80 hover-lift focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300"
-                                   placeholder="Enter your full name">
-                        </div>
+                    <div class="input-container">
+                        <input type="text" 
+                               name="nama" 
+                               id="nama"
+                               class="input-field"
+                               placeholder=" "
+                               required>
+                        <label for="nama" class="input-label">Full Name</label>
                     </div>
 
                     <!-- Email Field -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-600 ml-1 tracking-wide">
-                            Email Address
-                        </label>
-                        <div class="relative group">
-                            <input type="email" 
-                                   name="email" 
-                                   required 
-                                   class="w-full px-5 py-4 rounded-xl input-field border border-gray-200/80 hover-lift focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300"
-                                   placeholder="Enter your email">
-                            </div>
-                        </div>
+                    <div class="input-container">
+                        <input type="email" 
+                               name="email" 
+                               id="email"
+                               class="input-field"
+                               placeholder=" "
+                               required>
+                        <label for="email" class="input-label">Email</label>
+                    </div>
 
                     <!-- Password Field -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-600 ml-1 tracking-wide">
-                            Password
-                        </label>
-                        <div class="relative group input-group">
-                            <input type="password" 
-                                   name="password" 
-                                   required 
-                                   id="password"
-                                   class="w-full px-5 py-4 rounded-xl input-field border border-gray-200/80 hover-lift focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300"
-                                   placeholder="Create a password">
-                            <div class="input-icon" onclick="togglePassword()">
-                                <svg id="eyeIcon" class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                </svg>
-                            </div>
-                        </div>
+                    <div class="input-container">
+                        <input type="password" 
+                               name="password" 
+                               id="password"
+                               class="input-field"
+                               placeholder=" "
+                               required>
+                        <label for="password" class="input-label">Password</label>
+                        <button type="button" 
+                                onclick="togglePassword('password', 'eyeIcon')"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-full">
+                            <svg id="eyeIcon" class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Confirm Password Field -->
+                    <div class="input-container">
+                        <input type="password" 
+                               name="confirm_password" 
+                               id="confirm_password"
+                               class="input-field"
+                               placeholder=" "
+                               required>
+                        <label for="confirm_password" class="input-label">Confirm Password</label>
+                        <button type="button" 
+                                onclick="togglePassword('confirm_password', 'eyeIconConfirm')"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-full">
+                            <svg id="eyeIconConfirm" class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
                     </div>
 
                     <!-- Register Button -->
                     <button type="submit" 
                             class="w-full py-4 px-5 bg-gradient-to-r from-indigo-600 via-blue-600 to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transform transition-all duration-300 hover:from-indigo-500 hover:via-blue-500 hover:to-blue-600 btn-shine">
-                        <span class="relative z-10 font-semibold tracking-wide">Register</span>
+                        <span class="relative z-10 font-semibold tracking-wide">Create Account</span>
                     </button>
                 </form>
             </div>
@@ -285,9 +330,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const eyeIcon = document.getElementById('eyeIcon');
+        // Copy semua script dari index.php dan tambahkan fungsi untuk confirm password
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('.input-field');
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirm_password');
+
+            inputs.forEach(input => {
+                if (input.value) {
+                    input.classList.add('has-value');
+                }
+                
+                input.addEventListener('input', function() {
+                    if (this.value) {
+                        this.classList.add('has-value');
+                    } else {
+                        this.classList.remove('has-value');
+                    }
+                });
+            });
+
+            // Password validation
+            function validatePasswords() {
+                if (confirmPassword.value === '') {
+                    confirmPassword.style.borderColor = '#e5e7eb';
+                    return;
+                }
+
+                if (password.value !== confirmPassword.value) {
+                    confirmPassword.style.borderColor = '#ef4444';
+                } else {
+                    confirmPassword.style.borderColor = '#e5e7eb';
+                }
+            }
+
+            password.addEventListener('input', validatePasswords);
+            confirmPassword.addEventListener('input', validatePasswords);
+        });
+
+        function togglePassword(inputId, iconId) {
+            const passwordInput = document.getElementById(inputId);
+            const eyeIcon = document.getElementById(iconId);
             
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
@@ -302,6 +385,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 `;
             }
         }
-        </script>
+    </script>
 </body>
 </html> 

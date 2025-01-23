@@ -50,24 +50,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-image: 
-                radial-gradient(circle at top right, rgba(79, 70, 229, 0.15) 0%, transparent 70%),
-                radial-gradient(circle at bottom left, rgba(37, 99, 235, 0.15) 0%, transparent 70%),
-                radial-gradient(circle at center, rgba(255, 255, 255, 0.9) 0%, transparent 100%),
-                linear-gradient(180deg, rgba(219, 234, 254, 0.4) 0%, rgba(199, 210, 254, 0.4) 100%);
-            background-attachment: fixed;
+            background-color: #ffffff;
         }
         
         .glass-card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.1),
-                0 2px 4px rgba(255, 255, 255, 0.1),
-                inset 0 2px 4px rgba(255, 255, 255, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.5) inset,
-                0 0 100px rgba(99, 102, 241, 0.1);
+                0 8px 32px rgba(0, 0, 0, 0.05),
+                0 2px 4px rgba(0, 0, 0, 0.02);
         }
         
         .gradient-border {
@@ -82,8 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 rgba(255, 255, 255, 0.6) 100%
             );
             box-shadow: 
-                0 0 20px rgba(99, 102, 241, 0.15),
-                0 0 40px rgba(59, 130, 246, 0.1);
+                0 0 20px rgba(99, 102, 241, 0.1),
+                0 0 40px rgba(59, 130, 246, 0.05);
         }
         
         .luxury-shadow {
@@ -120,12 +111,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             animation: shine 3s linear infinite;
         }
         
+        .input-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
         .input-field {
-            background: linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.8));
-            box-shadow: 
-                0 2px 4px rgba(0, 0, 0, 0.02),
-                0 1px 2px rgba(0, 0, 0, 0.03),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            outline: none;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .input-label {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            padding: 0 0.5rem;
+            margin-top: 0.5px;
+            line-height: 1;
+        }
+        
+        .input-field:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+        
+        .input-field:not(:focus):not(:placeholder-shown) {
+            border-color: #e5e7eb;
+            box-shadow: none;
+        }
+        
+        .input-field:focus + .input-label,
+        .input-field:not(:placeholder-shown) + .input-label {
+            top: 0;
+            font-size: 0.875rem;
+            padding: 0 0.5rem;
+            margin-top: -1px;
+            background-color: white;
+        }
+        
+        .input-field:focus + .input-label {
+            color: #6366f1;
+        }
+        
+        .input-field:not(:focus):not(:placeholder-shown) + .input-label {
+            color: #6b7280;
         }
         
         .btn-shine {
@@ -184,6 +223,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .float-animation {
             animation: float 6s ease-in-out infinite;
         }
+
+        .fixed.inset-0.pointer-events-none.overflow-hidden {
+            display: none;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -221,40 +264,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 <?php endif; ?>
 
+                <?php if (isset($_SESSION['success'])): ?>
+                    <div class="mb-6 p-4 rounded-xl bg-green-50/50 backdrop-blur-sm border border-green-100/50 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-sm text-green-600"><?= htmlspecialchars($_SESSION['success']) ?></p>
+                    </div>
+                    <?php 
+                    // Clear the success message after displaying it
+                    unset($_SESSION['success']); 
+                    ?>
+                <?php endif; ?>
+
                 <form method="POST" class="space-y-7">
                     <!-- Email Field -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-600 ml-1 tracking-wide">
-                            Email Address
-                        </label>
-                        <div class="relative group">
-                            <input type="email" 
-                                   name="email" 
-                                   required 
-                                   class="w-full px-5 py-4 rounded-xl input-field border border-gray-200/80 hover-lift focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300"
-                                   placeholder="Enter your email">
-                        </div>
+                    <div class="input-container">
+                        <input type="email" 
+                               name="email" 
+                               id="email"
+                               class="input-field"
+                               placeholder=" "
+                               required>
+                        <label for="email" class="input-label">Email</label>
                     </div>
 
                     <!-- Password Field -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-600 ml-1 tracking-wide">
-                            Password
-                        </label>
-                        <div class="relative group input-group">
-                            <input type="password" 
-                                   name="password" 
-                                   required 
-                                   id="password"
-                                   class="w-full px-5 py-4 rounded-xl input-field border border-gray-200/80 hover-lift focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300"
-                                   placeholder="Enter your password">
-                            <div class="input-icon" onclick="togglePassword()">
-                                <svg id="eyeIcon" class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                </svg>
-                            </div>
-                        </div>
+                    <div class="input-container">
+                        <input type="password" 
+                               name="password" 
+                               id="password"
+                               class="input-field"
+                               placeholder=" "
+                               required>
+                        <label for="password" class="input-label">Password</label>
+                        <button type="button" 
+                                onclick="togglePassword()"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-full">
+                            <svg id="eyeIcon" class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
                     </div>
 
                     <!-- Remember Me & Forgot Password -->
@@ -280,13 +331,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Enhanced Footer -->
         <p class="text-center text-sm text-gray-600/90 mt-10 backdrop-blur-sm py-3 tracking-wide">
             Don't have an account? 
-            <a href="#" class="text-indigo-600 hover:text-indigo-700 font-semibold transition-all hover:underline decoration-2 underline-offset-4 hover:decoration-indigo-400">
-                Contact Admin
+            <a href="register.php" class="text-indigo-600 hover:text-indigo-700 font-semibold transition-all hover:underline decoration-2 underline-offset-4 hover:decoration-indigo-400">
+                Register
             </a>
         </p>
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('.input-field');
+            inputs.forEach(input => {
+                if (input.value) {
+                    input.classList.add('has-value');
+                }
+                
+                input.addEventListener('input', function() {
+                    if (this.value) {
+                        this.classList.add('has-value');
+                    } else {
+                        this.classList.remove('has-value');
+                    }
+                });
+            });
+        });
+
         function togglePassword() {
             const passwordInput = document.getElementById('password');
             const eyeIcon = document.getElementById('eyeIcon');
