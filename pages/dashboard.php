@@ -693,39 +693,37 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
                                 <h2 class="text-xl font-semibold text-gray-800">Trend Penjualan & Profit</h2>
                                 <p class="text-sm text-gray-500 mt-1">Analisis performa bisnis</p>
                             </div>
-                            <!-- Legend Indicators with click function -->
-                            <div class="flex items-center gap-4">
-                                <div class="flex items-center gap-2 cursor-pointer hover:opacity-75 transition-opacity" onclick="toggleDataset(0)">
-                                    <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-                                    <span class="text-sm text-gray-600" id="legend-penjualan">Penjualan</span>
+                            <div class="flex items-center gap-6">
+                                <!-- Select Period dipindah ke sini -->
+                                <div class="flex items-center gap-4">
+                                    <select id="periodSelect" class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="7">7 Hari Terakhir</option>
+                                        <option value="30">30 Hari Terakhir</option>
+                                        <option value="custom">Pilih Periode</option>
+                                    </select>
+                                    
+                                    <div id="salesDatePickerContainer" class="hidden flex items-center gap-2">
+                                        <input type="date" id="salesStartDate" class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <span class="text-gray-500">s/d</span>
+                                        <input type="date" id="salesEndDate" class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
                                 </div>
-                                <div class="flex items-center gap-2 cursor-pointer hover:opacity-75 transition-opacity" onclick="toggleDataset(1)">
-                                    <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
-                                    <span class="text-sm text-gray-600" id="legend-profit">Profit</span>
-                                </div>
-                                <div class="flex items-center gap-2 cursor-pointer hover:opacity-75 transition-opacity" onclick="toggleDataset(2)">
-                                    <div class="w-3 h-3 rounded-full bg-orange-500"></div>
-                                    <span class="text-sm text-gray-600" id="legend-margin">Margin</span>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- Filter Period in separate row -->
-                        <div class="flex items-center gap-4">
-                            <!-- Filter Period -->
-                            <select id="periodSelect" class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="7">7 Hari Terakhir</option>
-                                <option value="30">30 Hari Terakhir</option>
-                                <option value="custom">Pilih Periode</option>
-                            </select>
-
-                            <!-- Date picker container -->
-                            <div id="salesDatePickerContainer" class="hidden flex items-center gap-2">
-                                <input type="date" id="salesStartDate" 
-                                    class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <span class="text-gray-500">s/d</span>
-                                <input type="date" id="salesEndDate"
-                                    class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <!-- Legend Indicators -->
+                                <div class="flex items-center gap-4">
+                                    <div class="flex items-center gap-2 cursor-pointer hover:opacity-75 transition-opacity" onclick="toggleDataset(0)">
+                                        <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                                        <span class="text-sm text-gray-600" id="legend-penjualan">Penjualan</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 cursor-pointer hover:opacity-75 transition-opacity" onclick="toggleDataset(1)">
+                                        <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                                        <span class="text-sm text-gray-600" id="legend-profit">Profit</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 cursor-pointer hover:opacity-75 transition-opacity" onclick="toggleDataset(2)">
+                                        <div class="w-3 h-3 rounded-full bg-orange-500"></div>
+                                        <span class="text-sm text-gray-600" id="legend-margin">Margin</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1534,6 +1532,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
                                 pointStyle: 'circle',
                                 font: {
                                     size: 12
+                                    
                                 },
                                 generateLabels: (chart) => {
                                     const data = chart.data;
