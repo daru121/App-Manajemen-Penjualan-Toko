@@ -246,23 +246,26 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                         <?php if ($view_type === 'monthly'): ?>
                             <input type="month" id="selected_date" 
                                    value="<?= date('Y-m', strtotime($start_date)) ?>" 
-                                   class="w-44 h-11 px-4 rounded-xl border border-white/20 focus:border-white/40 bg-white/10 text-white placeholder-white/60">
+                                   class="w-44 h-11 px-4 rounded-xl border border-white/30 focus:border-white/50 bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/20">
                         <?php elseif ($view_type === 'yearly'): ?>
                             <input type="number" id="selected_date" 
                                    value="<?= date('Y', strtotime($start_date)) ?>" 
                                    min="2000" max="2099"
-                                   class="w-44 h-11 px-4 rounded-xl border border-white/20 focus:border-white/40 bg-white/10 text-white placeholder-white/60">
+                                   class="w-44 h-11 px-4 rounded-xl border border-white/30 focus:border-white/50 bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/20">
                         <?php else: ?>
                             <input type="date" id="selected_date" 
                                    value="<?= $start_date ?>" 
-                                   class="w-44 h-11 px-4 rounded-xl border border-white/20 focus:border-white/40 bg-white/10 text-white placeholder-white/60">
+                                   class="w-44 h-11 px-4 rounded-xl border border-white/30 focus:border-white/50 bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/20">
                         <?php endif; ?>
+                        
                         <button onclick="applyFilter()" 
-                                class="h-11 w-11 flex items-center justify-center bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all duration-200">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                class="h-11 px-4 flex items-center gap-2 bg-white/20 text-white rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                             </svg>
+                            <span class="text-sm font-medium">Cari</span>
                         </button>
+                        
                         <button onclick="exportToPDF()" 
                                 class="h-11 px-4 flex items-center gap-2 bg-orange-50 text-orange-600 rounded-xl border border-orange-200 hover:bg-orange-100 transition-all duration-200">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
