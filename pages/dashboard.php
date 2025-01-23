@@ -3,10 +3,11 @@ session_start();
 require_once '../backend/database.php';
 
 // Fungsi untuk mengambil semua data marketplace
-function getMarketplaceData() {
+function getMarketplaceData()
+{
     global $conn;
-    
-        $query = "SELECT 
+
+    $query = "SELECT 
             marketplace,
             COUNT(*) as total_orders,
             COUNT(DISTINCT pembeli_id) as total_customers,
@@ -16,14 +17,15 @@ function getMarketplaceData() {
         WHERE marketplace IS NOT NULL
         GROUP BY marketplace 
         ORDER BY total_revenue DESC";
-        
-        $stmt = $conn->prepare($query);
-        $stmt->execute();
+
+    $stmt = $conn->prepare($query);
+    $stmt->execute();
     return $stmt->fetchAll();
 }
 
 // Tambahkan fungsi untuk mengambil data region berdasarkan periode
-function getRegionData($days) {
+function getRegionData($days)
+{
     global $conn;
     $query = "SELECT 
         t.daerah,
@@ -37,7 +39,7 @@ function getRegionData($days) {
     GROUP BY t.daerah 
     ORDER BY total_pendapatan DESC 
     LIMIT 3";
-    
+
     $stmt = $conn->prepare($query);
     $stmt->execute([$days]);
     return $stmt->fetchAll();
@@ -70,7 +72,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateMarketplace') {
 // Tambahkan endpoint AJAX untuk update data region
 if (isset($_POST['action']) && $_POST['action'] === 'updateRegion') {
     header('Content-Type: application/json');
-    
+
     try {
         if (isset($_POST['startDate']) && isset($_POST['endDate'])) {
             // Query untuk custom period
@@ -86,7 +88,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateRegion') {
             GROUP BY t.daerah 
             ORDER BY total_pendapatan DESC 
             LIMIT 3";
-            
+
             $stmt = $conn->prepare($query);
             $stmt->execute([$_POST['startDate'], $_POST['endDate']]);
         } else {
@@ -104,18 +106,18 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateRegion') {
             GROUP BY t.daerah 
             ORDER BY total_pendapatan DESC 
             LIMIT 3";
-            
+
             $stmt = $conn->prepare($query);
             $stmt->execute([$days]);
         }
-        
+
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         echo json_encode([
             'success' => true,
             'data' => $data
         ]);
-    } catch(PDOException $e) {
+    } catch (PDOException $e) {
         echo json_encode([
             'success' => false,
             'message' => $e->getMessage()
@@ -159,55 +161,149 @@ $queryTopProducts = "SELECT
 $stmt = $conn->query($queryTopProducts);
 $topProducts = $stmt->fetchAll();
 
-// Hitung total penjualan dan profit hari ini
+// Perbaikan query untuk menghitung total penjualan dan profit hari ini dengan lebih akurat
 $queryToday = "SELECT 
-    SUM(total_harga) as total_penjualan,
-    SUM(total_harga - (
+    COALESCE(SUM(t.total_harga), 0) as total_penjualan,
+    COALESCE(SUM(t.total_harga - COALESCE((
         SELECT SUM(dt.jumlah * b.harga_modal)
         FROM detail_transaksi dt
         JOIN barang b ON dt.barang_id = b.id
-        WHERE dt.transaksi_id = transaksi.id
-    )) as total_profit,
-    COUNT(*) as total_transaksi
-    FROM transaksi 
-    WHERE DATE(tanggal) = CURDATE()";
-$stmt = $conn->query($queryToday);
-$todayStats = $stmt->fetch();
+        WHERE dt.transaksi_id = t.id
+    ), 0)), 0) as total_profit,
+    COUNT(t.id) as total_transaksi
+FROM transaksi t
+WHERE DATE(t.tanggal) = CURDATE()";
 
-$totalPenjualan = $todayStats['total_penjualan'] ?? 0;
-$totalProfit = $todayStats['total_profit'] ?? 0;
-$marginProfit = $totalPenjualan > 0 ? ($totalProfit / $totalPenjualan) * 100 : 0;
+// Query untuk data kemarin dengan perhitungan yang sama
+$queryYesterday = "SELECT 
+    COALESCE(SUM(t.total_harga), 0) as total_penjualan,
+    COALESCE(SUM(t.total_harga - COALESCE((
+        SELECT SUM(dt.jumlah * b.harga_modal)
+        FROM detail_transaksi dt
+        JOIN barang b ON dt.barang_id = b.id
+        WHERE dt.transaksi_id = t.id
+    ), 0)), 0) as total_profit,
+    COUNT(t.id) as total_transaksi
+FROM transaksi t
+WHERE DATE(t.tanggal) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+
+// Fungsi untuk menghitung persentase perubahan dengan lebih akurat
+function calculatePercentageChange($current, $previous)
+{
+    if ($previous == 0) {
+        if ($current == 0) {
+            return 0; // Tidak ada perubahan
+        }
+        // Jika sebelumnya 0, hitung kenaikan sebenarnya
+        return ($current > 0) ? (($current - $previous) / 1) * 100 : -100;
+    }
+    // Hitung persentase perubahan normal
+    return (($current - $previous) / abs($previous)) * 100;
+}
+
+try {
+    // Eksekusi query hari ini
+    $stmt = $conn->query($queryToday);
+    $todayStats = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Eksekusi query kemarin
+    $stmt = $conn->query($queryYesterday);
+    $yesterdayStats = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Inisialisasi variabel dengan nilai default jika null
+    $totalPenjualan = floatval($todayStats['total_penjualan'] ?? 0);
+    $totalProfit = floatval($todayStats['total_profit'] ?? 0);
+    $totalTransaksi = intval($todayStats['total_transaksi'] ?? 0);
+
+    $penjualanKemarin = floatval($yesterdayStats['total_penjualan'] ?? 0);
+    $profitKemarin = floatval($yesterdayStats['total_profit'] ?? 0);
+    $transaksiKemarin = intval($yesterdayStats['total_transaksi'] ?? 0);
+
+    // Hitung persentase perubahan menggunakan fungsi baru
+    $persenPenjualan = calculatePercentageChange($totalPenjualan, $penjualanKemarin);
+    $persenProfit = calculatePercentageChange($totalProfit, $profitKemarin);
+    $persenTransaksi = calculatePercentageChange($totalTransaksi, $transaksiKemarin);
+
+    // Hitung margin profit
+    $marginProfit = $totalPenjualan > 0 ? ($totalProfit / $totalPenjualan) * 100 : 0;
+} catch (PDOException $e) {
+    error_log("Database Error: " . $e->getMessage());
+
+    // Set nilai default jika terjadi error
+    $totalPenjualan = 0;
+    $totalProfit = 0;
+    $totalTransaksi = 0;
+    $persenPenjualan = 0;
+    $persenProfit = 0;
+    $persenTransaksi = 0;
+    $marginProfit = 0;
+}
+
+// Pastikan data marketplace tidak kosong
+if (empty($marketplaceData)) {
+    $marketplaceData = [
+        [
+            'marketplace' => 'Default',
+            'total_orders' => 0,
+            'total_customers' => 0,
+            'total_revenue' => 0,
+            'avg_order_value' => 0
+        ]
+    ];
+}
+
+// Pastikan data region tidak kosong
+if (empty($regionData7Days)) {
+    $regionData7Days = [
+        [
+            'daerah' => 'Default',
+            'total_transaksi' => 0,
+            'total_pendapatan' => 0,
+            'rata_rata' => 0
+        ]
+    ];
+}
+
+if (empty($regionData30Days)) {
+    $regionData30Days = $regionData7Days;
+}
+
+// Pastikan data sales tidak kosong
+if (empty($salesData7Days)) {
+    $salesData7Days = [
+        [
+            'tanggal' => date('Y-m-d'),
+            'penjualan' => 0,
+            'profit' => 0
+        ]
+    ];
+}
+
+if (empty($salesData30Days)) {
+    $salesData30Days = $salesData7Days;
+}
 
 // Tambahkan query untuk mendapatkan data kemarin
 $queryYesterday = "SELECT 
-    SUM(total_harga) as total_penjualan,
-    SUM(total_harga - (
-        SELECT SUM(dt.jumlah * b.harga_modal)
+    COALESCE(SUM(total_harga), 0) as total_penjualan,
+    COALESCE(SUM(total_harga - (
+        SELECT COALESCE(SUM(dt.jumlah * b.harga_modal), 0)
         FROM detail_transaksi dt
         JOIN barang b ON dt.barang_id = b.id
         WHERE dt.transaksi_id = transaksi.id
-    )) as total_profit,
+    )), 0) as total_profit,
     COUNT(*) as total_transaksi
     FROM transaksi 
     WHERE DATE(tanggal) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
-$stmt = $conn->query($queryYesterday);
-$yesterdayStats = $stmt->fetch();
 
-// Hitung persentase perubahan
-$penjualanKemarin = $yesterdayStats['total_penjualan'] ?? 1; // Hindari pembagian dengan 0
-$profitKemarin = $yesterdayStats['total_profit'] ?? 1;
-$transaksiKemarin = $yesterdayStats['total_transaksi'] ?? 1;
-
-$persenPenjualan = (($totalPenjualan - $penjualanKemarin) / $penjualanKemarin) * 100;
-$persenProfit = (($totalProfit - $profitKemarin) / $profitKemarin) * 100;
-
-// Query untuk total produk
+// Tambahkan query untuk total produk
 $queryTotalProduk = "SELECT COUNT(*) as total FROM barang";
 $stmt = $conn->query($queryTotalProduk);
 $totalProduk = $stmt->fetch()['total'];
 
 // Tambahkan fungsi untuk mengambil data berdasarkan range
-function getSalesData($days) {
+function getSalesData($days)
+{
     global $conn;
     $query = "SELECT 
         dates.tanggal,
@@ -228,7 +324,7 @@ function getSalesData($days) {
         LEFT JOIN transaksi ON DATE(transaksi.tanggal) = dates.tanggal
         GROUP BY dates.tanggal
         ORDER BY dates.tanggal";
-    
+
     $stmt = $conn->prepare($query);
     $stmt->execute([$days - 1]); // -1 karena interval dimulai dari 0
     return $stmt->fetchAll();
@@ -258,10 +354,137 @@ $marketplaceData = $stmtMarketplace->fetchAll();
 $regionData7Days = getRegionData(7);
 $regionData30Days = getRegionData(30);
 
+// Tambahkan endpoint AJAX untuk update data sales trend
+if (isset($_POST['action']) && $_POST['action'] === 'updateSalesTrend') {
+    header('Content-Type: application/json');
+
+    try {
+        if (isset($_POST['startDate']) && isset($_POST['endDate'])) {
+            // Query untuk custom period
+            $query = "SELECT 
+                dates.tanggal,
+                COALESCE(SUM(transaksi.total_harga), 0) as penjualan,
+                COALESCE(SUM(transaksi.total_harga - (
+                    SELECT SUM(dt.jumlah * b.harga_modal)
+                    FROM detail_transaksi dt
+                    JOIN barang b ON dt.barang_id = b.id
+                    WHERE dt.transaksi_id = transaksi.id
+                )), 0) as profit
+                FROM (
+                    SELECT CURDATE() - INTERVAL (a.a + (10 * b.a) + (100 * c.a)) DAY AS tanggal
+                    FROM (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS a
+                    CROSS JOIN (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2) AS b
+                    CROSS JOIN (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2) AS c
+                    WHERE CURDATE() - INTERVAL (a.a + (10 * b.a) + (100 * c.a)) DAY >= ?
+                    AND CURDATE() - INTERVAL (a.a + (10 * b.a) + (100 * c.a)) DAY <= ?
+                ) as dates
+                LEFT JOIN transaksi ON DATE(transaksi.tanggal) = dates.tanggal
+                GROUP BY dates.tanggal
+                ORDER BY dates.tanggal";
+
+            $stmt = $conn->prepare($query);
+            $stmt->execute([$_POST['startDate'], $_POST['endDate']]);
+        } else {
+            // Query untuk periode default (7 atau 30 hari)
+            $days = isset($_POST['days']) ? (int)$_POST['days'] : 7;
+            $query = "SELECT 
+                dates.tanggal,
+                COALESCE(SUM(transaksi.total_harga), 0) as penjualan,
+                COALESCE(SUM(transaksi.total_harga - (
+                    SELECT SUM(dt.jumlah * b.harga_modal)
+                    FROM detail_transaksi dt
+                    JOIN barang b ON dt.barang_id = b.id
+                    WHERE dt.transaksi_id = transaksi.id
+                )), 0) as profit
+                FROM (
+                    SELECT CURDATE() - INTERVAL (a.a + (10 * b.a) + (100 * c.a)) DAY AS tanggal
+                    FROM (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS a
+                    CROSS JOIN (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2) AS b
+                    CROSS JOIN (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2) AS c
+                    WHERE CURDATE() - INTERVAL (a.a + (10 * b.a) + (100 * c.a)) DAY >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+                ) as dates
+                LEFT JOIN transaksi ON DATE(transaksi.tanggal) = dates.tanggal
+                GROUP BY dates.tanggal
+                ORDER BY dates.tanggal";
+
+            $stmt = $conn->prepare($query);
+            $stmt->execute([$days]);
+        }
+
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode([
+            'success' => true,
+            'data' => $data
+        ]);
+    } catch (PDOException $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+    exit;
+}
+
+// Tambahkan endpoint AJAX untuk update data produk terlaris
+if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
+    header('Content-Type: application/json');
+
+    try {
+        if (isset($_POST['startDate']) && isset($_POST['endDate'])) {
+            // Query untuk custom period
+            $queryTopProducts = "SELECT 
+                b.nama_barang as product_name,
+                SUM(dt.jumlah) as total_sold
+                FROM detail_transaksi dt
+                JOIN barang b ON dt.barang_id = b.id
+                JOIN transaksi t ON dt.transaksi_id = t.id
+                WHERE DATE(t.tanggal) >= ? 
+                AND DATE(t.tanggal) <= ?
+                GROUP BY b.id
+                ORDER BY total_sold DESC
+                LIMIT 5";
+
+            $stmt = $conn->prepare($queryTopProducts);
+            $stmt->execute([$_POST['startDate'], $_POST['endDate']]);
+        } else {
+            // Query untuk periode default (7 atau 30 hari)
+            $days = isset($_POST['days']) ? (int)$_POST['days'] : 7;
+            $queryTopProducts = "SELECT 
+                b.nama_barang as product_name,
+                SUM(dt.jumlah) as total_sold
+                FROM detail_transaksi dt
+                JOIN barang b ON dt.barang_id = b.id
+                JOIN transaksi t ON dt.transaksi_id = t.id
+                WHERE t.tanggal >= DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY)
+                GROUP BY b.id
+                ORDER BY total_sold DESC
+                LIMIT 5";
+
+            $stmt = $conn->prepare($queryTopProducts);
+            $stmt->execute([$days]);
+        }
+
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode([
+            'success' => true,
+            'data' => $data
+        ]);
+    } catch (PDOException $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+    exit;
+}
+
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -272,20 +495,25 @@ $regionData30Days = getRegionData(30);
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
         .dashboard-card {
             transition: all 0.3s ease;
         }
+
         .dashboard-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }f
     </style>
 </head>
+
 <body class="bg-gray-50">
     <?php include '../components/sidebar.php'; ?>
     <?php include '../components/navbar.php'; ?>
-    
+
     <div class="ml-64 pt-16 min-h-screen bg-gray-100">
         <div class="p-8">
             <!-- Header Section -->
@@ -293,7 +521,7 @@ $regionData30Days = getRegionData(30);
                 <!-- Add decorative elements -->
                 <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
                 <div class="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/20 rounded-full translate-y-32 -translate-x-32 blur-3xl"></div>
-                
+
                 <div class="relative">
                     <h1 class="text-4xl font-bold mb-3">Dashboard</h1>
                     <p class="text-blue-100 text-lg">Overview penjualan dan kinerja toko hari ini</p>
@@ -314,9 +542,8 @@ $regionData30Days = getRegionData(30);
                                 </div>
                             </div>
                             <div class="p-3 bg-blue-500 text-white rounded-xl">
-                                <!-- Modern Money/Sales Icon -->
                                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                             </div>
                         </div>
@@ -327,12 +554,12 @@ $regionData30Days = getRegionData(30);
                             <div class="h-1 w-12 bg-blue-500 rounded-full mt-2"></div>
                         </div>
 
-                        <!-- Footer -->
+                        <!-- Footer dengan persentase yang diperbarui -->
                         <div class="flex items-center mt-auto">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium <?= $persenPenjualan >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' ?>">
                                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                          d="<?= $persenPenjualan >= 0 ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' : 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6' ?>">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="<?= $persenPenjualan >= 0 ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' : 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6' ?>">
                                     </path>
                                 </svg>
                                 <?= number_format(abs($persenPenjualan), 1) ?>%
@@ -356,7 +583,7 @@ $regionData30Days = getRegionData(30);
                             <div class="p-3 bg-emerald-500 text-white rounded-xl">
                                 <!-- Modern Transaction Icon -->
                                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                             </div>
                         </div>
@@ -367,15 +594,15 @@ $regionData30Days = getRegionData(30);
                             <div class="h-1 w-12 bg-emerald-500 rounded-full mt-2"></div>
                         </div>
 
-                        <!-- Footer -->
+                        <!-- Footer dengan persentase yang diperbarui -->
                         <div class="flex items-center mt-auto">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium <?= ($todayStats['total_transaksi'] ?? 0) >= $transaksiKemarin ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' ?>">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium <?= $persenTransaksi >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' ?>">
                                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                          d="<?= ($todayStats['total_transaksi'] ?? 0) >= $transaksiKemarin ? 'M13 7h8m0 0v8m0-8l-8 8-4 4-6-6' : 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6' ?>">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="<?= $persenTransaksi >= 0 ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' : 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6' ?>">
                                     </path>
                                 </svg>
-                                <?= number_format(abs((($todayStats['total_transaksi'] ?? 0) - $transaksiKemarin) / $transaksiKemarin * 100), 1) ?>%
+                                <?= number_format(abs($persenTransaksi), 1) ?>%
                             </span>
                             <span class="ml-2 text-sm text-gray-500">vs kemarin</span>
                         </div>
@@ -396,7 +623,7 @@ $regionData30Days = getRegionData(30);
                             <div class="p-3 bg-violet-500 text-white rounded-xl">
                                 <!-- Modern Profit/Chart Icon -->
                                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                             </div>
                         </div>
@@ -407,12 +634,12 @@ $regionData30Days = getRegionData(30);
                             <div class="h-1 w-12 bg-violet-500 rounded-full mt-2"></div>
                         </div>
 
-                        <!-- Footer -->
+                        <!-- Footer dengan persentase yang diperbarui -->
                         <div class="flex items-center mt-auto">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium <?= $persenProfit >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' ?>">
                                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                          d="<?= $persenProfit >= 0 ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' : 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6' ?>">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="<?= $persenProfit >= 0 ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' : 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6' ?>">
                                     </path>
                                 </svg>
                                 <?= number_format(abs($persenProfit), 1) ?>%
@@ -437,7 +664,7 @@ $regionData30Days = getRegionData(30);
                             <div class="p-3 bg-orange-500 text-white rounded-xl">
                                 <!-- Modern Product/Box Icon -->
                                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                             </div>
                         </div>
@@ -460,17 +687,12 @@ $regionData30Days = getRegionData(30);
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <!-- Line Chart Container -->
                 <div class="bg-white rounded-2xl p-6 shadow-sm">
-                    <div class="flex justify-between items-center mb-8">
-                        <div>
-                            <h2 class="text-xl font-semibold text-gray-800">Trend Penjualan & Profit</h2>
-                            <p class="text-sm text-gray-500 mt-1">Analisis performa bisnis</p>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <!-- Filter Period -->
-                            <select id="periodSelect" class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="7">7 Hari Terakhir</option>
-                                <option value="30">30 Hari Terakhir</option>
-                            </select>
+                    <div class="flex flex-col gap-4 mb-8">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h2 class="text-xl font-semibold text-gray-800">Trend Penjualan & Profit</h2>
+                                <p class="text-sm text-gray-500 mt-1">Analisis performa bisnis</p>
+                            </div>
                             <!-- Legend Indicators with click function -->
                             <div class="flex items-center gap-4">
                                 <div class="flex items-center gap-2 cursor-pointer hover:opacity-75 transition-opacity" onclick="toggleDataset(0)">
@@ -487,10 +709,29 @@ $regionData30Days = getRegionData(30);
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Filter Period in separate row -->
+                        <div class="flex items-center gap-4">
+                            <!-- Filter Period -->
+                            <select id="periodSelect" class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="7">7 Hari Terakhir</option>
+                                <option value="30">30 Hari Terakhir</option>
+                                <option value="custom">Pilih Periode</option>
+                            </select>
+
+                            <!-- Date picker container -->
+                            <div id="salesDatePickerContainer" class="hidden flex items-center gap-2">
+                                <input type="date" id="salesStartDate" 
+                                    class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <span class="text-gray-500">s/d</span>
+                                <input type="date" id="salesEndDate"
+                                    class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Chart Container with Loading State -->
-                    <div class="relative">
+                    <div class="relative" style="z-index: 1;">
                         <div id="chartLoading" class="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 hidden">
                             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                         </div>
@@ -500,62 +741,54 @@ $regionData30Days = getRegionData(30);
 
                 <!-- Products Container -->
                 <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <!-- Header Section with Select Option -->
                     <div class="flex justify-between items-center mb-6">
                         <div>
                             <h2 class="text-xl font-semibold text-gray-800">5 Produk Terlaris</h2>
                             <p class="text-sm text-gray-500 mt-1">Berdasarkan jumlah penjualan</p>
                         </div>
-                        <a href="informasi.php?tab=produk-terlaris" 
-                           class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200">
-                            <div class="w-8 h-8 bg-gradient-to-br from-gray-50 to-white rounded-full flex items-center justify-center">
-                                <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24">
-                                    <circle cx="5" cy="12" r="2" fill="currentColor"/>
-                                    <circle cx="12" cy="12" r="2" fill="currentColor"/>
-                                    <circle cx="19" cy="12" r="2" fill="currentColor"/>
-                                </svg>
+                        <div class="flex items-center gap-4">
+                            <!-- Select Period -->
+                            <select id="productPeriodSelect" class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="7">7 Hari Terakhir</option>
+                                <option value="30">30 Hari Terakhir</option>
+                                <option value="custom">Pilih Periode</option>
+                            </select>
+
+                            <!-- Date picker container -->
+                            <div id="productDatePickerContainer" class="hidden flex items-center gap-2">
+                                <input type="date" id="productStartDate" 
+                                    class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <span class="text-gray-500">s/d</span>
+                                <input type="date" id="productEndDate"
+                                    class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             </div>
-                        </a>
+
+                            <!-- Three Dots Menu -->
+                            <a href="informasi.php?tab=produk-terlaris" class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200">
+                                <div class="w-8 h-8 bg-gradient-to-br from-gray-50 to-white rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24">
+                                        <circle cx="5" cy="12" r="2" fill="currentColor" />
+                                        <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                        <circle cx="19" cy="12" r="2" fill="currentColor" />
+                                    </svg>
+                                </div>
+                            </a>
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Donut Chart -->
-                        <div class="relative">
-                            <canvas id="productsChart" class="max-w-full h-[300px]"></canvas>
-                            <!-- Center Stats -->
-                            <div class="absolute inset-0 flex items-center justify-center flex-col">
-                                <span class="text-3xl font-bold text-gray-800"><?= array_sum(array_column($topProducts, 'total_sold')) ?></span>
-                                <span class="text-sm text-gray-500">Total Terjual</span>
-                            </div>
-                        </div>
+                    <!-- Remove the old select container -->
+                    <!-- <div class="flex items-center gap-4">...</div> -->
 
-                        <!-- Products List -->
-                        <div class="flex flex-col justify-center space-y-4">
-                            <?php foreach ($topProducts as $index => $product): 
-                                $colors = [
-                                    'bg-blue-500', 'bg-emerald-500', 'bg-cyan-500', 
-                                    'bg-orange-500', 'bg-violet-500'
-                                ];
-                                $lightColors = [
-                                    'bg-blue-100 text-blue-700', 'bg-emerald-100 text-emerald-700', 
-                                    'bg-cyan-100 text-cyan-700', 'bg-orange-100 text-orange-700', 
-                                    'bg-violet-100 text-violet-700'
-                                ];
-                            ?>
-                            <div class="flex items-center p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                                <div class="flex items-center gap-3 flex-1">
-                                    <div class="w-8 h-8 rounded-lg <?= $colors[$index] ?> flex items-center justify-center text-white font-medium">
-                                        <?= $index + 1 ?>
-                                    </div>
-                                    <div>
-                                        <h3 class="font-medium text-gray-800"><?= $product['product_name'] ?></h3>
-                                        <p class="text-sm text-gray-500"><?= $product['total_sold'] ?> unit terjual</p>
-                                    </div>
-                                </div>
-                                <div class="px-3 py-1 rounded-full text-sm <?= $lightColors[$index] ?>">
-                                    <?= number_format(($product['total_sold'] / array_sum(array_column($topProducts, 'total_sold'))) * 100, 1) ?>%
-                                </div>
+                    <!-- Chart Container -->
+                    <div class="grid grid-cols-1 gap-6">
+                        <!-- Donut Chart -->
+                        <div class="relative w-full" style="height: 400px;">
+                            <canvas id="productsChart"></canvas>
+                            <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                                <span class="text-3xl font-bold text-gray-800 text-right mr-48" id="totalProductsSold">0</span>
+                                <span class="text-sm text-gray-500 text-right mr-48">Total Terjual</span>
                             </div>
-                            <?php endforeach; ?>
                         </div>
                     </div>
                 </div>
@@ -594,7 +827,7 @@ $regionData30Days = getRegionData(30);
                         <!-- Distribusi Penjualan per Marketplace -->
                         <div class="space-y-3">
                             <h3 class="text-sm font-medium text-gray-700 mb-3">Distribusi Penjualan</h3>
-                            <?php foreach ($marketplaceData as $data): 
+                            <?php foreach ($marketplaceData as $data):
                                 $colors = [
                                     'shopee' => ['from-orange-500/20 to-orange-500/5 text-orange-600', 'text-orange-600'],
                                     'tokopedia' => ['from-green-500/20 to-green-500/5 text-green-600', 'text-green-600'],
@@ -602,52 +835,52 @@ $regionData30Days = getRegionData(30);
                                     'offline' => ['from-blue-500/20 to-blue-500/5 text-blue-600', 'text-blue-600']
                                 ];
                                 $color = $colors[strtolower($data['marketplace'])] ?? ['from-blue-500/20 to-blue-500/5 text-blue-600', 'text-blue-600'];
-                                
+
                                 // Hitung persentase dari total
                                 $percentageOfTotal = ($data['total_revenue'] / array_sum(array_column($marketplaceData, 'total_revenue'))) * 100;
                             ?>
-                            <div class="group relative overflow-hidden cursor-pointer" 
-                                 onclick="showMarketplaceDetail('<?= $data['marketplace'] ?>', <?= json_encode($data) ?>)">
-                                <div class="flex items-center justify-between p-4 rounded-xl bg-gradient-to-br <?= $color[0] ?> hover:scale-[1.02] transition-all duration-300">
-                                    <div class="flex items-center gap-3">
-                                        <div class="p-3 rounded-xl bg-white shadow-sm">
-                                            <?php if(strtolower($data['marketplace']) === 'shopee'): ?>
-                                                <img src="../img/shopee.png" alt="Shopee" class="w-7 h-7 object-contain">
-                                            <?php elseif(strtolower($data['marketplace']) === 'tokopedia'): ?>
-                                                <img src="../img/tokopedia.png" alt="Tokopedia" class="w-7 h-7 object-contain">
-                                            <?php elseif(strtolower($data['marketplace']) === 'tiktok'): ?>
-                                                <img src="../img/tiktok.png" alt="Tiktok" class="w-7 h-7 object-contain">
-                                            <?php else: ?>
-                                                <svg class="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z"/>
-                                                </svg>
-                                            <?php endif; ?>
+                                <div class="group relative overflow-hidden cursor-pointer"
+                                    onclick="showMarketplaceDetail('<?= $data['marketplace'] ?>', <?= json_encode($data) ?>)">
+                                    <div class="flex items-center justify-between p-4 rounded-xl bg-gradient-to-br <?= $color[0] ?> hover:scale-[1.02] transition-all duration-300">
+                                        <div class="flex items-center gap-3">
+                                            <div class="p-3 rounded-xl bg-white shadow-sm">
+                                                <?php if (strtolower($data['marketplace']) === 'shopee'): ?>
+                                                    <img src="../img/shopee.png" alt="Shopee" class="w-7 h-7 object-contain">
+                                                <?php elseif (strtolower($data['marketplace']) === 'tokopedia'): ?>
+                                                    <img src="../img/tokopedia.png" alt="Tokopedia" class="w-7 h-7 object-contain">
+                                                <?php elseif (strtolower($data['marketplace']) === 'tiktok'): ?>
+                                                    <img src="../img/tiktok.png" alt="Tiktok" class="w-7 h-7 object-contain">
+                                                <?php else: ?>
+                                                    <svg class="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
+                                                    </svg>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-medium text-gray-800"><?= ucfirst($data['marketplace']) ?></h3>
+                                                <div class="flex items-center gap-2 mt-0.5">
+                                                    <span class="text-xs text-gray-500"><?= $data['total_orders'] ?> Transaksi</span>
+                                                    <span class="text-xs font-medium <?= $color[1] ?>"><?= number_format($percentageOfTotal, 1) ?>% dari total</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 class="font-medium text-gray-800"><?= ucfirst($data['marketplace']) ?></h3>
-                                            <div class="flex items-center gap-2 mt-0.5">
-                                                <span class="text-xs text-gray-500"><?= $data['total_orders'] ?> Transaksi</span>
-                                                <span class="text-xs font-medium <?= $color[1] ?>"><?= number_format($percentageOfTotal, 1) ?>% dari total</span>
+                                        <div class="text-right">
+                                            <div class="text-sm font-semibold text-gray-800">
+                                                Rp <?= number_format($data['total_revenue'], 0, ',', '.') ?>
+                                            </div>
+                                            <div class="text-xs text-gray-500 mt-0.5">
+                                                Rata-rata: Rp <?= number_format($data['avg_order_value'], 0, ',', '.') ?>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="text-right">
-                                        <div class="text-sm font-semibold text-gray-800">
-                                            Rp <?= number_format($data['total_revenue'], 0, ',', '.') ?>
-                                        </div>
-                                        <div class="text-xs text-gray-500 mt-0.5">
-                                            Rata-rata: Rp <?= number_format($data['avg_order_value'], 0, ',', '.') ?>
+
+                                    <!-- Progress bar -->
+                                    <div class="h-1 w-full bg-gray-100 absolute bottom-0 left-0">
+                                        <div class="h-full <?= str_replace(['from-', '/20'], ['bg-', ''], explode(' ', $color[0])[0]) ?>"
+                                            style="width: <?= $percentageOfTotal ?>%">
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <!-- Progress bar -->
-                                <div class="h-1 w-full bg-gray-100 absolute bottom-0 left-0">
-                                    <div class="h-full <?= str_replace(['from-', '/20'], ['bg-', ''], explode(' ', $color[0])[0]) ?>" 
-                                         style="width: <?= $percentageOfTotal ?>%">
-                                    </div>
-                                </div>
-                            </div>
                             <?php endforeach; ?>
                         </div>
                     </div>
@@ -662,30 +895,30 @@ $regionData30Days = getRegionData(30);
                                 <p class="text-sm text-gray-500 mt-1">Daerah dengan performa penjualan tertinggi</p>
                             </div>
                             <div class="flex items-center gap-3">
-                                <select id="regionPeriodSelect" 
-                                        class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <select id="regionPeriodSelect"
+                                    class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <option value="7">7 Hari Terakhir</option>
                                     <option value="30">30 Hari Terakhir</option>
                                     <option value="custom">Pilih Periode</option>
                                 </select>
-                                
+
                                 <!-- Tambahkan date picker container yang awalnya hidden -->
                                 <div id="datePickerContainer" class="hidden flex items-center gap-2">
-                                    <input type="date" id="startDate" 
-                                           class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <input type="date" id="startDate"
+                                        class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <span class="text-gray-500">s/d</span>
-                                    <input type="date" id="endDate" 
-                                           class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <input type="date" id="endDate"
+                                        class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
 
                                 <!-- Tambahkan ikon titik tiga -->
-                                <a href="informasi.php?tab=daerah" 
-                                   class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200">
+                                <a href="informasi.php?tab=daerah"
+                                    class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200">
                                     <div class="w-8 h-8 bg-gradient-to-br from-gray-50 to-white rounded-full flex items-center justify-center">
                                         <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24">
-                                            <circle cx="5" cy="12" r="2" fill="currentColor"/>
-                                            <circle cx="12" cy="12" r="2" fill="currentColor"/>
-                                            <circle cx="19" cy="12" r="2" fill="currentColor"/>
+                                            <circle cx="5" cy="12" r="2" fill="currentColor" />
+                                            <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                            <circle cx="19" cy="12" r="2" fill="currentColor" />
                                         </svg>
                                     </div>
                                 </a>
@@ -698,7 +931,7 @@ $regionData30Days = getRegionData(30);
                             <div class="w-full" style="height: 300px;">
                                 <canvas id="regionBarChart"></canvas>
                             </div>
-                            
+
                             <!-- Region Info Cards -->
                             <div class="mt-4 space-y-3">
                                 <?php
@@ -715,10 +948,10 @@ $regionData30Days = getRegionData(30);
                                     GROUP BY daerah 
                                     ORDER BY total_pendapatan DESC 
                                     LIMIT 3");
-                                    
+
                                     $queryDaerah->execute();
                                     $daerahData = $queryDaerah->fetchAll(PDO::FETCH_ASSOC);
-                                } catch(PDOException $e) {
+                                } catch (PDOException $e) {
                                     $daerahData = [];
                                 }
 
@@ -748,129 +981,134 @@ $regionData30Days = getRegionData(30);
                                 <?php endforeach; ?>
 
                                 <script>
-                                document.addEventListener('DOMContentLoaded', function() {
-                                    const regionCtx = document.getElementById('regionBarChart').getContext('2d');
-                                    let regionChart; // Declare chart variable in wider scope
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        const regionCtx = document.getElementById('regionBarChart').getContext('2d');
+                                        let regionChart; // Declare chart variable in wider scope
 
-                                    function initRegionChart(data) {
-                                        if (regionChart) {
-                                            regionChart.destroy();
-                                        }
+                                        function initRegionChart(data) {
+                                            if (regionChart) {
+                                                regionChart.destroy();
+                                            }
 
-                                        regionChart = new Chart(regionCtx, {
-                                            type: 'bar',
-                                            data: {
-                                                labels: data.map(item => item.daerah),
-                                                datasets: [{
-                                                    data: data.map(item => item.total_pendapatan),
-                                                    backgroundColor: ['#00c83c', '#0187ff', '#8B5CF6'],
-                                                    borderRadius: 30,
-                                                    maxBarThickness: 200
-                                                }]
-                                            },
-                                            options: {
-                                                responsive: true,
-                                                maintainAspectRatio: false,
-                                                plugins: {
-                                                    legend: {
-                                                        display: false
-                                                    },
-                                                    tooltip: {
-                                                        callbacks: {
-                                                            label: function(context) {
-                                                                return 'Rp ' + context.raw.toLocaleString('id-ID');
-                                                            }
-                                                        }
-                                                    }
+                                            regionChart = new Chart(regionCtx, {
+                                                type: 'bar',
+                                                data: {
+                                                    labels: data.map(item => item.daerah),
+                                                    datasets: [{
+                                                        data: data.map(item => item.total_pendapatan),
+                                                        backgroundColor: ['#00c83c', '#0187ff', '#8B5CF6'],
+                                                        borderRadius: 30,
+                                                        maxBarThickness: 200
+                                                    }]
                                                 },
-                                                scales: {
-                                                    y: {
-                                                        beginAtZero: true,
-                                                        grid: {
-                                                            display: true,
-                                                            drawBorder: false,
-                                                            color: 'rgba(0, 0, 0, 0.05)'
+                                                options: {
+                                                    responsive: true,
+                                                    maintainAspectRatio: false,
+                                                    plugins: {
+                                                        legend: {
+                                                            display: false
                                                         },
-                                                        ticks: {
-                                                            callback: function(value) {
-                                                                return 'Rp ' + value.toLocaleString('id-ID');
+                                                        tooltip: {
+                                                            callbacks: {
+                                                                label: function(context) {
+                                                                    return 'Rp ' + context.raw.toLocaleString('id-ID');
+                                                                }
                                                             }
                                                         }
                                                     },
-                                                    x: {
-                                                        grid: {
-                                                            display: false
+                                                    scales: {
+                                                        y: {
+                                                            beginAtZero: true,
+                                                            grid: {
+                                                                display: true,
+                                                                drawBorder: false,
+                                                                color: 'rgba(0, 0, 0, 0.05)'
+                                                            },
+                                                            ticks: {
+                                                                callback: function(value) {
+                                                                    return 'Rp ' + value.toLocaleString('id-ID');
+                                                                }
+                                                            }
+                                                        },
+                                                        x: {
+                                                            grid: {
+                                                                display: false
+                                                            }
                                                         }
                                                     }
                                                 }
+                                            });
+
+                                            // Store chart instance globally
+                                            window.regionChart = regionChart;
+                                        }
+
+                                        // Initialize with default data (7 days)
+                                        initRegionChart(<?= json_encode($daerahData) ?>);
+
+                                        // Handle period change
+                                        document.getElementById('regionPeriodSelect').addEventListener('change', function(e) {
+                                            const selectedValue = e.target.value;
+                                            const datePickerContainer = document.getElementById('datePickerContainer');
+
+                                            if (selectedValue === 'custom') {
+                                                datePickerContainer.classList.remove('hidden');
+                                                return;
+                                            } else {
+                                                datePickerContainer.classList.add('hidden');
+                                                updateRegionData({
+                                                    days: selectedValue
+                                                });
                                             }
                                         });
 
-                                        // Store chart instance globally
-                                        window.regionChart = regionChart;
-                                    }
+                                        // Tambahkan event listener untuk date inputs
+                                        ['startDate', 'endDate'].forEach(id => {
+                                            document.getElementById(id).addEventListener('change', function() {
+                                                const startDate = document.getElementById('startDate').value;
+                                                const endDate = document.getElementById('endDate').value;
 
-                                    // Initialize with default data (7 days)
-                                    initRegionChart(<?= json_encode($daerahData) ?>);
-
-                                    // Handle period change
-                                    document.getElementById('regionPeriodSelect').addEventListener('change', function(e) {
-                                        const selectedValue = e.target.value;
-                                        const datePickerContainer = document.getElementById('datePickerContainer');
-                                        
-                                        if (selectedValue === 'custom') {
-                                            datePickerContainer.classList.remove('hidden');
-                                            return;
-                                        } else {
-                                            datePickerContainer.classList.add('hidden');
-                                            updateRegionData({ days: selectedValue });
-                                        }
-                                    });
-
-                                    // Tambahkan event listener untuk date inputs
-                                    ['startDate', 'endDate'].forEach(id => {
-                                        document.getElementById(id).addEventListener('change', function() {
-                                            const startDate = document.getElementById('startDate').value;
-                                            const endDate = document.getElementById('endDate').value;
-                                            
-                                            if (startDate && endDate) {
-                                                updateRegionData({ startDate, endDate });
-                                            }
+                                                if (startDate && endDate) {
+                                                    updateRegionData({
+                                                        startDate,
+                                                        endDate
+                                                    });
+                                                }
+                                            });
                                         });
-                                    });
 
-                                    // Fungsi untuk update data region
-                                    function updateRegionData(params) {
-                                        // Show loading state
-                                        const cards = document.querySelectorAll('.bg-gray-50\\/80.rounded-xl');
-                                        const chart = document.getElementById('regionBarChart');
-                                        
-                                        cards.forEach(card => card.style.opacity = '0.5');
-                                        if (chart) chart.style.opacity = '0.5';
-                                        
-                                        // Prepare form data
-                                        const formData = new FormData();
-                                        formData.append('action', 'updateRegion');
-                                        
-                                        // Add parameters based on type
-                                        if (params.days) {
-                                            formData.append('days', params.days);
-                                        } else {
-                                            formData.append('startDate', params.startDate);
-                                            formData.append('endDate', params.endDate);
-                                        }
-                                        
-                                        // Fetch updated data
-                                        fetch('dashboard.php', {
-                                            method: 'POST',
-                                            body: formData
-                                        })
-                                        .then(response => response.json())
-                                        .then(result => {
-                                            if (result.success) {
-                                                // Update cards dan chart seperti sebelumnya
-                                                const container = document.querySelector('.mt-4.space-y-3');
-                                                container.innerHTML = result.data.map((region, index) => `
+                                        // Fungsi untuk update data region
+                                        function updateRegionData(params) {
+                                            // Show loading state
+                                            const cards = document.querySelectorAll('.bg-gray-50\\/80.rounded-xl');
+                                            const chart = document.getElementById('regionBarChart');
+
+                                            cards.forEach(card => card.style.opacity = '0.5');
+                                            if (chart) chart.style.opacity = '0.5';
+
+                                            // Prepare form data
+                                            const formData = new FormData();
+                                            formData.append('action', 'updateRegion');
+
+                                            // Add parameters based on type
+                                            if (params.days) {
+                                                formData.append('days', params.days);
+                                            } else {
+                                                formData.append('startDate', params.startDate);
+                                                formData.append('endDate', params.endDate);
+                                            }
+
+                                            // Fetch updated data
+                                            fetch('dashboard.php', {
+                                                    method: 'POST',
+                                                    body: formData
+                                                })
+                                                .then(response => response.json())
+                                                .then(result => {
+                                                    if (result.success) {
+                                                        // Update cards dan chart seperti sebelumnya
+                                                        const container = document.querySelector('.mt-4.space-y-3');
+                                                        container.innerHTML = result.data.map((region, index) => `
                                                     <div class="bg-gray-50/80 rounded-xl p-3">
                                                         <div class="flex items-center justify-between">
                                                             <div class="flex items-center gap-2">
@@ -894,22 +1132,22 @@ $regionData30Days = getRegionData(30);
                                                         </div>
                                                     </div>
                                                 `).join('');
-                                                
-                                                // Update chart
-                                                initRegionChart(result.data);
-                                                
-                                                // Remove loading state
-                                                cards.forEach(card => card.style.opacity = '1');
-                                                if (chart) chart.style.opacity = '1';
-                                            }
-                                        })
-                                        .catch(error => {
-                                            console.error('Error:', error);
-                                            cards.forEach(card => card.style.opacity = '1');
-                                            if (chart) chart.style.opacity = '1';
-                                        });
-                                    }
-                                });
+
+                                                        // Update chart
+                                                        initRegionChart(result.data);
+
+                                                        // Remove loading state
+                                                        cards.forEach(card => card.style.opacity = '1');
+                                                        if (chart) chart.style.opacity = '1';
+                                                    }
+                                                })
+                                                .catch(error => {
+                                                    console.error('Error:', error);
+                                                    cards.forEach(card => card.style.opacity = '1');
+                                                    if (chart) chart.style.opacity = '1';
+                                                });
+                                        }
+                                    });
                                 </script>
                             </div>
                         </div>
@@ -927,7 +1165,7 @@ $regionData30Days = getRegionData(30);
 
         function formatDate(dateString) {
             const date = new Date(dateString);
-            return date.toLocaleDateString('id-ID', { 
+            return date.toLocaleDateString('id-ID', {
                 day: 'numeric',
                 month: 'short'
             });
@@ -961,12 +1199,12 @@ $regionData30Days = getRegionData(30);
                 const labels = data.map(item => formatDate(item.tanggal));
                 const salesValues = data.map(item => parseFloat(item.penjualan));
                 const profitValues = data.map(item => parseFloat(item.profit));
-                const marginProfitValues = data.map(item => 
+                const marginProfitValues = data.map(item =>
                     item.penjualan > 0 ? ((item.profit / item.penjualan) * 100).toFixed(1) : 0
                 );
 
                 const ctx = document.getElementById('salesChart').getContext('2d');
-                
+
                 // Add gradient backgrounds
                 const salesGradient = ctx.createLinearGradient(0, 0, 0, 400);
                 salesGradient.addColorStop(0, 'rgba(99, 102, 241, 0.1)');
@@ -1155,83 +1393,268 @@ $regionData30Days = getRegionData(30);
 
         // Handle period change with loading state
         document.getElementById('periodSelect').addEventListener('change', function(e) {
-            const period = e.target.value;
-            const data = period === '7' ? salesData7Days : salesData30Days;
-            createChart(data);
+            const selectedValue = e.target.value;
+            const datePickerContainer = document.getElementById('salesDatePickerContainer');
+
+            if (selectedValue === 'custom') {
+                datePickerContainer.classList.remove('hidden');
+                return;
+            } else {
+                datePickerContainer.classList.add('hidden');
+                updateSalesData({
+                    days: selectedValue
+                });
+            }
         });
 
-        // Update donut chart configuration
-        const productsData = <?= json_encode($topProducts) ?>;
-        const ctx = document.getElementById('productsChart').getContext('2d');
-        
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: productsData.map(item => item.product_name),
-                datasets: [{
-                    data: productsData.map(item => item.total_sold),
-                    backgroundColor: [
-                        'rgb(99, 102, 241)',
-                        'rgb(16, 185, 129)',
-                        'rgb(6, 182, 212)',
-                        'rgb(249, 115, 22)',
-                        'rgb(139, 92, 246)'
-                    ],
-                    borderColor: 'white',
-                    borderWidth: 2,
-                    hoverOffset: 4,
-                    hoverBorderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '75%',
-                radius: '90%',
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        backgroundColor: 'white',
-                        titleColor: '#1F2937',
-                        bodyColor: '#1F2937',
-                        bodyFont: {
-                            family: "'Inter', sans-serif",
-                            size: 12
+        // Tambahkan event listener untuk date inputs
+        ['salesStartDate', 'salesEndDate'].forEach(id => {
+            document.getElementById(id).addEventListener('change', function() {
+                const startDate = document.getElementById('salesStartDate').value;
+                const endDate = document.getElementById('salesEndDate').value;
+
+                if (startDate && endDate) {
+                    updateSalesData({
+                        startDate,
+                        endDate
+                    });
+                }
+            });
+        });
+
+        // Fungsi untuk update data sales trend
+        function updateSalesData(params) {
+            showLoading();
+
+            const formData = new FormData();
+            formData.append('action', 'updateSalesTrend');
+
+            if (params.days) {
+                formData.append('days', params.days);
+            } else {
+                formData.append('startDate', params.startDate);
+                formData.append('endDate', params.endDate);
+            }
+
+            fetch('dashboard.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    createChart(result.data);
+                } else {
+                    console.error('Error:', result.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                hideLoading();
+            });
+        }
+
+        // Deklarasi variabel global untuk chart
+        let productsChart = null;
+
+        // Function to update products chart
+        function updateProductsChart(data) {
+            let hiddenLabels = [];
+            const totalSold = data.reduce((acc, item) => acc + parseInt(item.total_sold), 0);
+            let currentTotal = totalSold;
+            
+            document.getElementById('totalProductsSold').textContent = currentTotal;
+
+            if (productsChart) {
+                productsChart.destroy();
+            }
+
+            const ctx = document.getElementById('productsChart').getContext('2d');
+            
+            productsChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(item => item.product_name),
+                    datasets: [{
+                        data: data.map(item => item.total_sold),
+                        backgroundColor: [
+                            'rgb(99, 102, 241)',
+                            'rgb(16, 185, 129)',
+                            'rgb(6, 182, 212)',
+                            'rgb(249, 115, 22)',
+                            'rgb(139, 92, 246)'
+                        ],
+                        borderColor: 'white',
+                        borderWidth: 2,
+                        hoverOffset: 4,
+                        cutout: '60%',
+                        radius: '90%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'right',
+                            onClick: (evt, item, legend) => {
+                                // Toggle dataset visibility
+                                const index = item.datasetIndex;
+                                const ci = legend.chart;
+                                const meta = ci.getDatasetMeta(0);
+                                const value = ci.data.datasets[0].data[item.index];
+                                
+                                // Toggle visibility
+                                const alreadyHidden = meta.data[item.index].hidden;
+                                meta.data[item.index].hidden = !alreadyHidden;
+
+                                // Update total
+                                if (alreadyHidden) {
+                                    currentTotal += parseInt(value);
+                                    hiddenLabels = hiddenLabels.filter(label => label !== item.text);
+                                } else {
+                                    currentTotal -= parseInt(value);
+                                    hiddenLabels.push(item.text);
+                                }
+
+                                // Update total display
+                                document.getElementById('totalProductsSold').textContent = currentTotal;
+
+                                // Update legend style
+                                item.hidden = !alreadyHidden;
+                                
+                                ci.update();
+                            },
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                font: {
+                                    size: 12
+                                },
+                                generateLabels: (chart) => {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map((label, i) => {
+                                            const meta = chart.getDatasetMeta(0);
+                                            const value = data.datasets[0].data[i];
+                                            return {
+                                                text: `${label} (${value} pcs)`,
+                                                fillStyle: data.datasets[0].backgroundColor[i],
+                                                hidden: meta.data[i].hidden ?? false,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
                         },
-                        titleFont: {
-                            family: "'Inter', sans-serif",
-                            size: 13,
-                            weight: '600'
-                        },
-                        padding: 12,
-                        borderColor: 'rgba(0,0,0,0.1)',
-                        borderWidth: 1,
-                        displayColors: true,
-                        boxWidth: 8,
-                        boxHeight: 8,
-                        usePointStyle: true,
-                        callbacks: {
-                            label: function(context) {
-                                const value = context.raw;
-                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return `${context.label}: ${value} unit (${percentage}%)`;
+                        tooltip: {
+                            backgroundColor: 'white',
+                            titleColor: '#1F2937',
+                            bodyColor: '#1F2937',
+                            bodyFont: {
+                                family: "'Inter', sans-serif",
+                                size: 12
+                            },
+                            titleFont: {
+                                family: "'Inter', sans-serif",
+                                size: 13,
+                                weight: '600'
+                            },
+                            padding: 12,
+                            borderColor: 'rgba(0,0,0,0.1)',
+                            borderWidth: 1,
+                            displayColors: true,
+                            boxWidth: 8,
+                            boxHeight: 8,
+                            usePointStyle: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${context.label}: ${value} unit (${percentage}%)`;
+                                }
                             }
                         }
+                    },
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 800
                     }
-                },
-                animation: {
-                    animateScale: true,
-                    animateRotate: true,
-                    duration: 2000
-                },
-                hover: {
-                    mode: 'nearest',
-                    intersect: true
                 }
+            });
+        }
+
+        // Function to update products data
+        function updateProductsData(params) {
+            const formData = new FormData();
+            formData.append('action', 'updateTopProducts');
+
+            if (params.days) {
+                formData.append('days', params.days);
+            } else {
+                formData.append('startDate', params.startDate);
+                formData.append('endDate', params.endDate);
             }
+
+            fetch('dashboard.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    updateProductsChart(result.data);
+                } else {
+                    console.error('Error:', result.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Event listeners for product period changes
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle product period change
+            document.getElementById('productPeriodSelect').addEventListener('change', function(e) {
+                const selectedValue = e.target.value;
+                const datePickerContainer = document.getElementById('productDatePickerContainer');
+
+                if (selectedValue === 'custom') {
+                    datePickerContainer.classList.remove('hidden');
+                } else {
+                    datePickerContainer.classList.add('hidden');
+                    updateProductsData({
+                        days: selectedValue
+                    });
+                }
+            });
+
+            // Handle product date picker changes
+            ['productStartDate', 'productEndDate'].forEach(id => {
+                document.getElementById(id).addEventListener('change', function() {
+                    const startDate = document.getElementById('productStartDate').value;
+                    const endDate = document.getElementById('productEndDate').value;
+
+                    if (startDate && endDate) {
+                        updateProductsData({
+                            startDate,
+                            endDate
+                        });
+                    }
+                });
+            });
+
+            // Initialize with 7 days data
+            updateProductsData({ days: 7 });
         });
 
         // Tambahkan style untuk container chart
@@ -1251,7 +1674,7 @@ $regionData30Days = getRegionData(30);
         function toggleDataset(index) {
             const dataset = currentChart.data.datasets[index];
             dataset.hidden = !dataset.hidden;
-            
+
             // Update legend style
             const legendIds = ['legend-penjualan', 'legend-profit', 'legend-margin'];
             const element = document.getElementById(legendIds[index]);
@@ -1260,7 +1683,7 @@ $regionData30Days = getRegionData(30);
             } else {
                 element.classList.remove('opacity-50');
             }
-            
+
             currentChart.update();
         }
 
@@ -1287,20 +1710,20 @@ $regionData30Days = getRegionData(30);
 
         function toggleChartType(type) {
             if (currentChartType === type) return;
-            
+
             currentChartType = type;
-            
+
             // Update button states
             document.querySelectorAll('.chart-type-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             document.getElementById(`${type}ChartBtn`).classList.add('active');
-            
+
             // Destroy existing chart
             if (marketplaceChart) {
                 marketplaceChart.destroy();
             }
-            
+
             // Create new chart with selected type
             marketplaceChart = new Chart(marketplaceCtx, {
                 type: currentChartType,
@@ -1420,7 +1843,7 @@ $regionData30Days = getRegionData(30);
         .chart-container {
             transition: all 0.3s ease;
         }
-        
+
         .chart-container:hover {
             transform: translateY(-5px);
         }
@@ -1428,12 +1851,14 @@ $regionData30Days = getRegionData(30);
         canvas {
             transition: all 0.3s ease;
         }
-        
-        select, button {
+
+        select,
+        button {
             transition: all 0.2s ease;
         }
-        
-        select:hover, button:hover {
+
+        select:hover,
+        button:hover {
             transform: translateY(-2px);
         }
 
@@ -1458,16 +1883,19 @@ $regionData30Days = getRegionData(30);
         }
 
         /* Add smooth transitions */
-        .dashboard-card, .chart-container {
+        .dashboard-card,
+        .chart-container {
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
-        .dashboard-card:hover, .chart-container:hover {
+
+        .dashboard-card:hover,
+        .chart-container:hover {
             transform: translateY(-5px);
         }
 
         /* Enhanced focus states */
-        select:focus, button:focus {
+        select:focus,
+        button:focus {
             outline: none;
             ring: 2px;
             ring-color: rgba(59, 130, 246, 0.5);
@@ -1487,9 +1915,12 @@ $regionData30Days = getRegionData(30);
         }
 
         @keyframes pulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 opacity: 0.5;
             }
+
             50% {
                 opacity: 0.25;
             }
@@ -1504,6 +1935,7 @@ $regionData30Days = getRegionData(30);
             0% {
                 transform: translateX(-100%) translateY(-100%) rotate(45deg);
             }
+
             100% {
                 transform: translateX(100%) translateY(100%) rotate(45deg);
             }
@@ -1520,14 +1952,14 @@ $regionData30Days = getRegionData(30);
 
         /* Enhanced shadows */
         .enhanced-shadow {
-            box-shadow: 
+            box-shadow:
                 0 10px 15px -3px rgba(0, 0, 0, 0.05),
                 0 4px 6px -2px rgba(0, 0, 0, 0.025),
                 0 0 0 1px rgba(0, 0, 0, 0.025);
         }
 
         .enhanced-shadow:hover {
-            box-shadow: 
+            box-shadow:
                 0 20px 25px -5px rgba(0, 0, 0, 0.1),
                 0 10px 10px -5px rgba(0, 0, 0, 0.04),
                 0 0 0 1px rgba(0, 0, 0, 0.025);
@@ -1535,8 +1967,15 @@ $regionData30Days = getRegionData(30);
 
         /* Enhanced animations */
         @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
         }
 
         .group:hover {
@@ -1550,18 +1989,21 @@ $regionData30Days = getRegionData(30);
             left: -100%;
             width: 50%;
             height: 100%;
-            background: linear-gradient(
-                120deg,
-                transparent,
-                rgba(255,255,255,0.6),
-                transparent
-            );
+            background: linear-gradient(120deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.6),
+                    transparent);
             animation: shine-effect 2s linear infinite;
         }
 
         @keyframes shine-effect {
-            0% { left: -100%; }
-            100% { left: 200%; }
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 200%;
+            }
         }
 
         /* Smooth scale on hover */
@@ -1593,15 +2035,15 @@ $regionData30Days = getRegionData(30);
             position: relative;
             overflow: hidden;
         }
-        
+
         .icon-container svg {
             transition: all 0.3s ease;
         }
-        
+
         .icon-container:hover svg {
             transform: scale(1.1);
         }
-        
+
         /* Shine effect for icons */
         .icon-container::after {
             content: '';
@@ -1610,24 +2052,23 @@ $regionData30Days = getRegionData(30);
             left: -50%;
             width: 200%;
             height: 200%;
-            background: linear-gradient(
-                45deg,
-                transparent 0%,
-                rgba(255,255,255,0.1) 50%,
-                transparent 100%
-            );
+            background: linear-gradient(45deg,
+                    transparent 0%,
+                    rgba(255, 255, 255, 0.1) 50%,
+                    transparent 100%);
             transform: rotate(45deg);
             transition: all 0.3s ease;
         }
-        
+
         .icon-container:hover::after {
             animation: shine 0.5s forwards;
         }
-        
+
         @keyframes shine {
             0% {
                 transform: translateX(-100%) rotate(45deg);
             }
+
             100% {
                 transform: translateX(100%) rotate(45deg);
             }
@@ -1678,6 +2119,7 @@ $regionData30Days = getRegionData(30);
             from {
                 transform: translateX(-100%) rotate(45deg);
             }
+
             to {
                 transform: translateX(100%) rotate(45deg);
             }
@@ -1688,5 +2130,5 @@ $regionData30Days = getRegionData(30);
         }
     </style>
 </body>
-</html>
 
+</html>

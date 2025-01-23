@@ -257,6 +257,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 exit;
             }
+
+            // Tambahkan setelah require statements
+            else if ($_POST['action'] === 'input_absensi') {
+                header('Content-Type: application/json');
+                try {
+                    $user_id = $_POST['user_id'];
+                    $tanggal = $_POST['tanggal'];
+                    $jam_masuk = $_POST['jam_masuk'];
+                    $jam_keluar = $_POST['jam_keluar'] ?: null;
+                    $status = $_POST['status'];
+                    $keterangan = $_POST['keterangan'];
+
+                    // Cek apakah sudah ada absensi di tanggal tersebut
+                    $check_query = "SELECT id FROM absensi_karyawan WHERE user_id = ? AND DATE(tanggal) = ?";
+                    $stmt = $conn->prepare($check_query);
+                    $stmt->execute([$user_id, $tanggal]);
+
+                    if ($stmt->rowCount() > 0) {
+                        // Update absensi yang ada
+                        $update_query = "UPDATE absensi_karyawan 
+                                       SET jam_masuk = ?, jam_keluar = ?, status = ?, keterangan = ? 
+                                       WHERE user_id = ? AND DATE(tanggal) = ?";
+                        $stmt = $conn->prepare($update_query);
+                        $stmt->execute([$jam_masuk, $jam_keluar, $status, $keterangan, $user_id, $tanggal]);
+                    } else {
+                        // Insert absensi baru
+                        $insert_query = "INSERT INTO absensi_karyawan 
+                                       (user_id, tanggal, jam_masuk, jam_keluar, status, keterangan) 
+                                       VALUES (?, ?, ?, ?, ?, ?)";
+                        $stmt = $conn->prepare($insert_query);
+                        $stmt->execute([$user_id, $tanggal, $jam_masuk, $jam_keluar, $status, $keterangan]);
+                    }
+
+                    echo json_encode(['success' => true, 'message' => 'Absensi berhasil disimpan']);
+                } catch (PDOException $e) {
+                    echo json_encode(['success' => false, 'message' => 'Gagal menyimpan absensi: ' . $e->getMessage()]);
+                }
+                exit;
+            }
         } catch (PDOException $e) {
             if (isset($conn)) {
                 $conn->rollBack();
@@ -366,16 +405,67 @@ try {
     $targets = [];
 }
 
-// Query untuk absensi hari ini
-$today = date('Y-m-d');
-$queryAbsensi = "SELECT ak.*, u.nama as nama_karyawan
-                FROM absensi_karyawan ak
-                JOIN users u ON ak.user_id = u.id
-                WHERE DATE(ak.tanggal) = ?
-                ORDER BY ak.jam_masuk DESC";
-$stmtAbsensi = $conn->prepare($queryAbsensi);
-$stmtAbsensi->execute([$today]);
-$absensi = $stmtAbsensi->fetchAll();
+// Ubah query untuk absensi dengan filter tanggal
+$today = isset($_GET['tanggal']) ? $_GET['tanggal'] : date('Y-m-d');
+$queryAbsensi = "SELECT 
+    u.id as user_id,
+    u.nama as nama_karyawan, 
+    u.role as role,
+    ak.jam_masuk, 
+    ak.jam_keluar, 
+    COALESCE(ak.status, 'Belum Absen') as status,
+    COALESCE(ak.keterangan, '-') as keterangan,
+    CASE 
+        WHEN ak.jam_keluar IS NOT NULL THEN 
+            TIMEDIFF(ak.jam_keluar, ak.jam_masuk)
+        ELSE NULL
+    END as durasi
+FROM users u 
+LEFT JOIN absensi_karyawan ak ON u.id = ak.user_id 
+    AND DATE(ak.tanggal) = ?
+WHERE u.role IN ('Operator', 'Kasir') AND u.status = 'Aktif'
+ORDER BY ak.jam_masuk DESC, u.nama ASC";
+
+try {
+    $stmtAbsensi = $conn->prepare($queryAbsensi);
+    $stmtAbsensi->execute([$today]);
+    $absensi = $stmtAbsensi->fetchAll();
+
+    // Hitung statistik
+    $totalKaryawan = count($absensi);
+    $hadir = 0;
+    $izinSakit = 0;
+    $telat = 0;
+    $totalDurasi = 0;
+    $countDurasi = 0;
+
+    foreach ($absensi as $data) {
+        if ($data['status'] === 'Hadir') {
+            $hadir++;
+            // Hitung telat (jika masuk setelah jam 8 pagi)
+            if ($data['jam_masuk'] && strtotime($data['jam_masuk']) > strtotime('08:00:00')) {
+                $telat++;
+            }
+        } else if (in_array($data['status'], ['Izin', 'Sakit'])) {
+            $izinSakit++;
+        }
+
+        // Hitung rata-rata durasi
+        if ($data['durasi']) {
+            list($hours, $minutes, $seconds) = explode(':', $data['durasi']);
+            $totalDurasi += ($hours * 3600) + ($minutes * 60) + $seconds;
+            $countDurasi++;
+        }
+    }
+
+    // Hitung rata-rata durasi
+    $averageDurasi = $countDurasi > 0 ? $totalDurasi / $countDurasi : 0;
+    $averageHours = floor($averageDurasi / 3600);
+    $averageMinutes = floor(($averageDurasi % 3600) / 60);
+
+} catch (PDOException $e) {
+    $absensi = [];
+}
 
 // Fungsi PHP untuk warna progress
 function getProgressColor($percentage)
@@ -967,59 +1057,157 @@ function formatNumber($number, $isRupiah = false)
             </div>
         </div>
 
-        <!-- Tab Content: Absensi -->
+        <!-- Di bagian tab absensi -->
         <div id="tab-absensi" class="tab-content <?= $activeTab === 'absensi' ? '' : 'hidden' ?>">
-            <div class="bg-white rounded-xl shadow-sm">
+            <!-- Header Section dengan Glass Effect -->
+
+            <!-- Statistik Cards - Ultra Premium Design -->
+            <div class="grid grid-cols-4 gap-8 mb-10">
+                <!-- Card Hadir -->
+                <div class="group relative">
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                    <div class="relative bg-gradient-to-br from-green-50 via-green-100/50 to-emerald-50 rounded-3xl p-6 border border-green-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+                        <div class="flex items-center gap-6">
+                            <div class="bg-gradient-to-br from-green-600 to-emerald-600 p-4 rounded-2xl shadow-lg transform -rotate-6 group-hover:rotate-0 transition-transform duration-300">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-green-800/80 uppercase tracking-wider">Hadir</div>
+                                <div class="text-4xl font-bold bg-gradient-to-br from-green-600 to-emerald-600 bg-clip-text text-transparent"><?= $hadir ?></div>
+                                <div class="text-xs font-medium text-green-700/60 mt-1">Karyawan</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Izin/Sakit -->
+                <div class="group relative">
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-600 to-yellow-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                    <div class="relative bg-gradient-to-br from-amber-50 via-yellow-100/50 to-amber-50 rounded-3xl p-6 border border-amber-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+                        <div class="flex items-center gap-6">
+                            <div class="bg-gradient-to-br from-amber-600 to-yellow-600 p-4 rounded-2xl shadow-lg transform -rotate-6 group-hover:rotate-0 transition-transform duration-300">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-amber-800/80 uppercase tracking-wider">Izin/Sakit</div>
+                                <div class="text-4xl font-bold bg-gradient-to-br from-amber-600 to-yellow-600 bg-clip-text text-transparent"><?= $izinSakit ?></div>
+                                <div class="text-xs font-medium text-amber-700/60 mt-1">Karyawan</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Telat -->
+                <div class="group relative">
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-rose-600 to-red-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                    <div class="relative bg-gradient-to-br from-rose-50 via-red-100/50 to-rose-50 rounded-3xl p-6 border border-rose-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+                        <div class="flex items-center gap-6">
+                            <div class="bg-gradient-to-br from-rose-600 to-red-600 p-4 rounded-2xl shadow-lg transform -rotate-6 group-hover:rotate-0 transition-transform duration-300">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 4a8 8 0 018 8v4M4 12a8 8 0 018-8v4"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-rose-800/80 uppercase tracking-wider">Telat</div>
+                                <div class="text-4xl font-bold bg-gradient-to-br from-rose-600 to-red-600 bg-clip-text text-transparent"><?= $telat ?></div>
+                                <div class="text-xs font-medium text-rose-700/60 mt-1">Karyawan</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Rata-rata Durasi -->
+                <div class="group relative">
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                    <div class="relative bg-gradient-to-br from-blue-50 via-indigo-100/50 to-blue-50 rounded-3xl p-6 border border-blue-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+                        <div class="flex items-center gap-6">
+                            <div class="bg-gradient-to-br from-blue-600 to-indigo-600 p-4 rounded-2xl shadow-lg transform -rotate-6 group-hover:rotate-0 transition-transform duration-300">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-blue-800/80 uppercase tracking-wider">Rata-rata Durasi</div>
+                                <div class="text-4xl font-bold bg-gradient-to-br from-blue-600 to-indigo-600 bg-clip-text text-transparent"><?= sprintf("%02d:%02d", $averageHours, $averageMinutes) ?></div>
+                                <div class="text-xs font-medium text-blue-700/60 mt-1">Jam</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabel Absensi -->
+            <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-lg font-semibold">Absensi Karyawan</h2>
-                        <div>
-                            <input type="date" id="tanggalAbsensi" value="<?= date('Y-m-d') ?>"
-                                class="border rounded-lg px-3 py-2 mr-2">
-                            <button onclick="showAddAbsensiModal()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                        <h2 class="text-xl font-semibold text-gray-800">Data Absensi Karyawan</h2>
+                        <div class="flex gap-3">
+                                <input type="date" id="tanggal-absensi" value="<?= $today ?>"
+                                    onchange="filterAbsensi(this.value)"
+                                class="px-4 py-2 rounded-xl border border-gray-200">
+                            <button onclick="showInputAbsensiModal()"
+                                class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
                                 Input Absensi
                             </button>
                         </div>
                     </div>
+
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                        <table class="w-full">
                             <thead>
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Karyawan</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jam Masuk</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jam Keluar</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
+                                <tr class="bg-gray-50 border-b border-gray-100">
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">KARYAWAN</th>
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">ROLE</th>
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">JAM MASUK</th>
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">JAM KELUAR</th>
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">DURASI</th>
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">STATUS</th>
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">KETERANGAN</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200">
-                                <?php foreach ($absensi as $a): ?>
-                                    <tr>
-                                        <td class="px-6 py-4"><?= htmlspecialchars($a['nama_karyawan']) ?></td>
-                                        <td class="px-6 py-4"><?= $a['jam_masuk'] ? date('H:i', strtotime($a['jam_masuk'])) : '-' ?></td>
-                                        <td class="px-6 py-4"><?= $a['jam_keluar'] ? date('H:i', strtotime($a['jam_keluar'])) : '-' ?></td>
-                                        <td class="px-6 py-4">
-                                            <span class="px-2 py-1 text-xs rounded-full 
-        <?php
-                                    switch ($a['status']) {
-                                        case 'Hadir':
-                                            echo 'bg-green-100 text-green-800';
-                                            break;
-                                        case 'Izin':
-                                            echo 'bg-yellow-100 text-yellow-800';
-                                            break;
-                                        case 'Sakit':
-                                            echo 'bg-orange-100 text-orange-800';
-                                            break;
-                                        case 'Alfa':
-                                            echo 'bg-red-100 text-red-800';
-                                            break;
-                                    }
-        ?>">
-                                                <?= htmlspecialchars($a['status']) ?>
+                            <tbody>
+                                <?php foreach ($absensi as $data): ?>
+                                    <tr class="border-b border-gray-50 last:border-0">
+                                        <td class="py-4 px-6"><?= htmlspecialchars($data['nama_karyawan']) ?></td>
+                                        <td class="py-4 px-6">
+                                            <span class="px-2 py-1 rounded-lg text-sm <?= $data['role'] === 'Operator' ? 'bg-purple-50 text-purple-600' : 'bg-orange-50 text-orange-600' ?>">
+                                                <?= htmlspecialchars($data['role']) ?>
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4"><?= htmlspecialchars($a['keterangan'] ?? '-') ?></td>
+                                        <td class="py-4 px-6">
+                                            <?php if ($data['jam_masuk']): ?>
+                                                <span class="<?= strtotime($data['jam_masuk']) > strtotime('08:00:00') ? 'text-red-600' : 'text-gray-800' ?>">
+                                                    <?= $data['jam_masuk'] ?>
+                                                </span>
+                                            <?php else: ?>
+                                                -
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="py-4 px-6"><?= $data['jam_keluar'] ?: '-' ?></td>
+                                        <td class="py-4 px-6"><?= $data['durasi'] ?: '00:00' ?></td>
+                                        <td class="py-4 px-6">
+                                            <?php if ($data['status'] === 'Hadir'): ?>
+                                                <span class="px-3 py-1 rounded-full text-sm bg-green-50 text-green-600">
+                                                    Hadir
+                                                </span>
+                                            <?php elseif ($data['status'] === 'Belum Absen'): ?>
+                                                <span class="px-3 py-1 rounded-full text-sm bg-gray-50 text-gray-600">
+                                                    Belum Absen
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="px-3 py-1 rounded-full text-sm bg-yellow-50 text-yellow-600">
+                                                    <?= htmlspecialchars($data['status']) ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="py-4 px-6"><?= htmlspecialchars($data['keterangan']) ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -1203,6 +1391,91 @@ function formatNumber($number, $isRupiah = false)
                         Hapus
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Input Absensi -->
+    <div id="modal-input-absensi" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="min-h-screen px-4 text-center">
+            <div class="inline-block align-middle bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <form id="form-input-absensi" method="POST" class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900">Input Absensi Manual</h3>
+                        <button type="button" onclick="hideInputAbsensiModal()" class="text-gray-400 hover:text-gray-500">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Karyawan -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Karyawan</label>
+                            <select name="user_id" required class="w-full px-4 py-2 rounded-xl border border-gray-200">
+                                <?php foreach ($karyawan as $k): ?>
+                                    <option value="<?= $k['id'] ?>"><?= htmlspecialchars($k['nama']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Tanggal -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
+                            <input type="date" name="tanggal" required value="<?= date('Y-m-d') ?>"
+                                class="w-full px-4 py-2 rounded-xl border border-gray-200">
+                        </div>
+
+                        <!-- Status -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <select name="status" required onchange="toggleJamInputs(this.value)" 
+                                class="w-full px-4 py-2 rounded-xl border border-gray-200">
+                                <option value="Hadir">Hadir</option>
+                                <option value="Izin">Izin</option>
+                                <option value="Sakit">Sakit</option>
+                                <option value="Alfa">Alfa</option>
+                            </select>
+                        </div>
+
+                        <!-- Jam Masuk -->
+                        <div id="jam-masuk-container">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Jam Masuk (Format 24 Jam)</label>
+                            <input type="text" name="jam_masuk" placeholder="07:30"
+                                pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]"
+                                class="w-full px-4 py-2 rounded-xl border border-gray-200">
+                            <small class="text-gray-500">Format: HH:mm (00:00 - 23:59)</small>
+                        </div>
+
+                        <!-- Jam Keluar -->
+                        <div id="jam-keluar-container">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Jam Keluar (Format 24 Jam)</label>
+                            <input type="text" name="jam_keluar" placeholder="17:00"
+                                pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]"
+                                class="w-full px-4 py-2 rounded-xl border border-gray-200">
+                            <small class="text-gray-500">Format: HH:mm (00:00 - 23:59)</small>
+                        </div>
+
+                        <!-- Keterangan -->
+                        <div id="keterangan-container">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan</label>
+                            <textarea name="keterangan" rows="2"
+                                class="w-full px-4 py-2 rounded-xl border border-gray-200"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button type="button" onclick="hideInputAbsensiModal()"
+                            class="px-4 py-2 text-gray-700 hover:text-gray-900">
+                            Batal
+                        </button>
+                        <button type="submit" name="action" value="input_absensi"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
+                            Simpan
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1528,6 +1801,155 @@ function formatNumber($number, $isRupiah = false)
                         showToast('Terjadi kesalahan', 'error');
                     });
             }
+        }
+
+        // Tambahkan event listener untuk form input absensi
+        document.getElementById('form-input-absensi').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Kirim data absensi ke server
+            fetch('karyawan.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `action=input_absensi&user_id=${this.querySelector('[name="user_id"]').value}&tanggal=${this.querySelector('[name="tanggal"]').value}&jam_masuk=${this.querySelector('[name="jam_masuk"]').value}&jam_keluar=${this.querySelector('[name="jam_keluar"]').value}&status=${this.querySelector('[name="status"]').value}&keterangan=${encodeURIComponent(this.querySelector('[name="keterangan"]').value)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Absensi berhasil disimpan', 'success');
+                        // Refresh halaman setelah berhasil input absensi
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        showToast(data.message || 'Gagal menyimpan absensi', 'error');
+                    }
+                })
+                .catch(error => {
+                    showToast('Terjadi kesalahan', 'error');
+                });
+        });
+
+        // Tambahkan fungsi untuk menampilkan modal input absensi
+        function showInputAbsensiModal() {
+            document.getElementById('modal-input-absensi').classList.remove('hidden');
+        }
+
+        // Tambahkan fungsi untuk menyembunyikan modal input absensi
+        function hideInputAbsensiModal() {
+            document.getElementById('modal-input-absensi').classList.add('hidden');
+        }
+
+        // Tambahkan di bagian script
+        function filterAbsensi(tanggal) {
+            window.location.href = `karyawan.php?tab=absensi&tanggal=${tanggal}`;
+        }
+
+        // Update fungsi toggleJamInputs
+        function toggleJamInputs(status) {
+            const jamMasukContainer = document.getElementById('jam-masuk-container');
+            const jamKeluarContainer = document.getElementById('jam-keluar-container');
+            const keteranganContainer = document.getElementById('keterangan-container');
+            const jamMasukInput = document.querySelector('input[name="jam_masuk"]');
+            const jamKeluarInput = document.querySelector('input[name="jam_keluar"]');
+            const keteranganInput = document.querySelector('textarea[name="keterangan"]');
+
+            if (status === 'Hadir') {
+                // Tampilkan input jam
+                jamMasukContainer.style.display = 'block';
+                jamKeluarContainer.style.display = 'block';
+                // Sembunyikan keterangan
+                keteranganContainer.style.display = 'none';
+                // Set required untuk jam masuk
+                jamMasukInput.setAttribute('required', 'required');
+                // Reset dan hapus required keterangan
+                keteranganInput.value = '';
+                keteranganInput.removeAttribute('required');
+            } else {
+                // Sembunyikan input jam
+                jamMasukContainer.style.display = 'none';
+                jamKeluarContainer.style.display = 'none';
+                // Tampilkan keterangan
+                keteranganContainer.style.display = 'block';
+                // Hapus required dan reset input jam
+                jamMasukInput.removeAttribute('required');
+                jamMasukInput.value = '';
+                jamKeluarInput.value = '';
+                // Set required untuk keterangan
+                keteranganInput.setAttribute('required', 'required');
+            }
+        }
+
+        // Panggil fungsi saat modal dibuka untuk set status awal
+        function showInputAbsensiModal() {
+            const modal = document.getElementById('modal-input-absensi');
+            modal.classList.remove('hidden');
+            
+            // Reset form
+            const form = document.getElementById('form-input-absensi');
+            form.reset();
+            
+            // Set status awal
+            const statusSelect = form.querySelector('select[name="status"]');
+            toggleJamInputs(statusSelect.value);
+        }
+
+        // Tambahkan event listener untuk form submit
+        document.getElementById('form-input-absensi').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const status = this.querySelector('select[name="status"]').value;
+            const jamMasuk = this.querySelector('input[name="jam_masuk"]');
+            const jamKeluar = this.querySelector('input[name="jam_keluar"]');
+            
+            // Jika status Hadir, validasi format jam
+            if (status === 'Hadir') {
+                const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+                
+                if (!timeRegex.test(jamMasuk.value)) {
+                    alert('Format jam masuk tidak valid. Gunakan format HH:mm (00:00 - 23:59)');
+                    return;
+                }
+                
+                if (jamKeluar.value && !timeRegex.test(jamKeluar.value)) {
+                    alert('Format jam keluar tidak valid. Gunakan format HH:mm (00:00 - 23:59)');
+                    return;
+                }
+            }
+
+            // Kirim form jika validasi berhasil
+            fetch('karyawan.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams(new FormData(this))
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Absensi berhasil disimpan', 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast(data.message || 'Gagal menyimpan absensi', 'error');
+                }
+            })
+            .catch(error => {
+                showToast('Terjadi kesalahan', 'error');
+            });
+        });
+
+        // Fungsi untuk filter absensi berdasarkan tanggal
+        function filterAbsensi(tanggal) {
+            window.location.href = `karyawan.php?tab=absensi&tanggal=${tanggal}`;
+        }
+
+        // Fungsi untuk menyembunyikan modal input absensi
+        function hideInputAbsensiModal() {
+            document.getElementById('modal-input-absensi').classList.add('hidden');
         }
     </script>
 </body>

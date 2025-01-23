@@ -8,9 +8,12 @@ CREATE TABLE users (
     nama VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role ENUM('Admin', 'Operator', 'Kasir') DEFAULT 'Operator',
+    role ENUM('Admin', 'Operator', 'Kasir') DEFAULT 'Operator' COMMENT 'Operator untuk staff admin, Kasir untuk staff penjualan',
     status ENUM('Aktif', 'Tidak Aktif') DEFAULT 'Aktif',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    telepon VARCHAR(15) NULL,
+    alamat TEXT NULL,
+    tanggal_bergabung DATE NULL
 );
 
 -- Create kategori table
@@ -137,4 +140,41 @@ ADD COLUMN IF NOT EXISTS kurir VARCHAR(50) NULL;
 -- Add cancellation_reason column
 ALTER TABLE transaksi 
 ADD COLUMN cancellation_reason ENUM('dikembalikan ke penjual', 'barang hilang') NULL;
+
+-- Tabel target_penjualan
+CREATE TABLE IF NOT EXISTS target_penjualan (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    periode_mulai DATE NOT NULL,
+    periode_selesai DATE NOT NULL,
+    target_nominal DECIMAL(10,2) DEFAULT 0,
+    insentif_persen DECIMAL(5,2) DEFAULT 0,
+    jenis_target ENUM('omset', 'produk') NOT NULL,
+    status ENUM('Aktif', 'Selesai') DEFAULT 'Aktif',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Tabel target_produk 
+CREATE TABLE IF NOT EXISTS target_produk (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    target_id INT NOT NULL,
+    barang_id INT NOT NULL,
+    jumlah_target INT NOT NULL,
+    insentif_per_unit DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (target_id) REFERENCES target_penjualan(id),
+    FOREIGN KEY (barang_id) REFERENCES barang(id)
+);
+
+CREATE TABLE absensi_karyawan (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    tanggal DATE NOT NULL,
+    jam_masuk TIME,
+    jam_keluar TIME,
+    status ENUM('Hadir', 'Izin', 'Sakit', 'Alfa') DEFAULT 'Hadir',
+    keterangan TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
 
