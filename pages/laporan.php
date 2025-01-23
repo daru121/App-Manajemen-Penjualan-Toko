@@ -10,60 +10,56 @@ try {
     $view_type = $_GET['type'] ?? 'daily';
     
     if ($view_type === 'yearly') {
-        // Query untuk laporan tahunan
-        $query = "WITH yearly_stats AS (
-            SELECT 
-                YEAR(t.tanggal) as tahun,
-                COUNT(DISTINCT t.id) as total_transaksi,
-                SUM(t.total_harga) as total_penjualan,
-                GROUP_CONCAT(DISTINCT t.marketplace) as marketplaces,
-                SUM(CASE WHEN t.marketplace = 'offline' THEN 1 ELSE 0 END) as offline_count,
-                SUM(CASE WHEN t.marketplace = 'shopee' THEN 1 ELSE 0 END) as shopee_count,
-                SUM(CASE WHEN t.marketplace = 'tokopedia' THEN 1 ELSE 0 END) as tokopedia_count,
-                SUM(CASE WHEN t.marketplace = 'tiktok' THEN 1 ELSE 0 END) as tiktok_count
-            FROM transaksi t
-            WHERE YEAR(t.tanggal) = YEAR(?)
-            GROUP BY YEAR(t.tanggal)
-        )
-        SELECT 
-            ys.*,
-            SUM((dt.harga - b.harga_modal) * dt.jumlah) as total_profit
-        FROM yearly_stats ys
-        JOIN transaksi t ON YEAR(t.tanggal) = ys.tahun
+        // Query untuk laporan tahunan (menampilkan semua transaksi dalam tahun)
+        $query = "SELECT 
+            t.id,
+            t.tanggal,
+            t.total_harga,
+            t.marketplace,
+            p.nama as nama_pembeli,
+            GROUP_CONCAT(
+                CONCAT(
+                    dt.jumlah,
+                    'pcs ',
+                    b.nama_barang
+                )
+                SEPARATOR '\n'
+            ) as detail_pembelian,
+            SUM((dt.harga - b.harga_modal) * dt.jumlah) as profit
+        FROM transaksi t
         JOIN detail_transaksi dt ON t.id = dt.transaksi_id
         JOIN barang b ON dt.barang_id = b.id
-        GROUP BY ys.tahun
-        ORDER BY ys.tahun DESC";
+        LEFT JOIN pembeli p ON t.pembeli_id = p.id
+        WHERE YEAR(t.tanggal) = YEAR(?)
+        GROUP BY t.id, t.tanggal, t.total_harga, t.marketplace, p.nama
+        ORDER BY t.tanggal ASC";
         
         $stmt = $conn->prepare($query);
         $stmt->execute([$start_date]);
     } else if ($view_type === 'monthly') {
-        // Query untuk laporan bulanan
-        $query = "WITH monthly_stats AS (
-            SELECT 
-                DATE_FORMAT(t.tanggal, '%Y-%m') as bulan,
-                DATE_FORMAT(t.tanggal, '%M %Y') as nama_bulan,
-                COUNT(DISTINCT t.id) as total_transaksi,
-                SUM(t.total_harga) as total_penjualan,
-                GROUP_CONCAT(DISTINCT t.marketplace) as marketplaces,
-                SUM(CASE WHEN t.marketplace = 'offline' THEN 1 ELSE 0 END) as offline_count,
-                SUM(CASE WHEN t.marketplace = 'shopee' THEN 1 ELSE 0 END) as shopee_count,
-                SUM(CASE WHEN t.marketplace = 'tokopedia' THEN 1 ELSE 0 END) as tokopedia_count,
-                SUM(CASE WHEN t.marketplace = 'tiktok' THEN 1 ELSE 0 END) as tiktok_count
-            FROM transaksi t
-            WHERE DATE_FORMAT(t.tanggal, '%Y-%m') = DATE_FORMAT(?, '%Y-%m')
-            GROUP BY DATE_FORMAT(t.tanggal, '%Y-%m'), DATE_FORMAT(t.tanggal, '%M %Y')
-        )
-        SELECT 
-            ms.*,
-            COALESCE(SUM((dt.harga - b.harga_modal) * dt.jumlah), 0) as total_profit
-        FROM monthly_stats ms
-        JOIN transaksi t ON DATE_FORMAT(t.tanggal, '%Y-%m') = ms.bulan
+        // Query untuk laporan bulanan (menampilkan semua transaksi dalam bulan)
+        $query = "SELECT 
+            t.id,
+            t.tanggal,
+            t.total_harga,
+            t.marketplace,
+            p.nama as nama_pembeli,
+            GROUP_CONCAT(
+                CONCAT(
+                    dt.jumlah,
+                    'pcs ',
+                    b.nama_barang
+                )
+                SEPARATOR '\n'
+            ) as detail_pembelian,
+            SUM((dt.harga - b.harga_modal) * dt.jumlah) as profit
+        FROM transaksi t
         JOIN detail_transaksi dt ON t.id = dt.transaksi_id
         JOIN barang b ON dt.barang_id = b.id
-        GROUP BY ms.bulan, ms.nama_bulan, ms.total_transaksi, ms.total_penjualan, 
-                 ms.marketplaces, ms.offline_count, ms.shopee_count, 
-                 ms.tokopedia_count, ms.tiktok_count";
+        LEFT JOIN pembeli p ON t.pembeli_id = p.id
+        WHERE DATE_FORMAT(t.tanggal, '%Y-%m') = DATE_FORMAT(?, '%Y-%m')
+        GROUP BY t.id, t.tanggal, t.total_harga, t.marketplace, p.nama
+        ORDER BY t.tanggal ASC";
 
         $stmt = $conn->prepare($query);
         $stmt->execute([$start_date]);
@@ -77,13 +73,9 @@ try {
             p.nama as nama_pembeli,
             GROUP_CONCAT(
                 CONCAT(
-                    b.nama_barang,
-                    ', ',
                     dt.jumlah,
-                    ' x Rp ',
-                    FORMAT(dt.harga, 0),
-                    ' = Rp ',
-                    FORMAT(dt.jumlah * dt.harga, 0)
+                    'pcs ',
+                    b.nama_barang
                 )
                 SEPARATOR '\n'
             ) as detail_pembelian,
@@ -105,10 +97,10 @@ try {
     $grand_total_penjualan = 0;
     $grand_total_profit = 0;
 
-    if ($view_type === 'monthly' || $view_type === 'yearly') {
+    if ($view_type === 'yearly') {
         foreach ($transactions as $row) {
-            $grand_total_penjualan += $row['total_penjualan'];
-            $grand_total_profit += $row['total_profit'];
+            $grand_total_penjualan += $row['total_harga'];
+            $grand_total_profit += $row['profit'];
         }
     } else {
         foreach ($transactions as $transaction) {
@@ -139,10 +131,10 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     $pdf->setPrintFooter(false);
     
     // Set margins
-    $pdf->SetMargins(15, 15, 15);
+    $pdf->SetMargins(10, 15, 10); // Reduced left and right margins to fit more columns
     
     // Add a page
-    $pdf->AddPage();
+    $pdf->AddPage('L'); // Changed to Landscape orientation
     
     // Set font
     $pdf->SetFont('helvetica', '', 12);
@@ -166,61 +158,59 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     $pdf->Ln(10);
     
     // Add table header
-    $pdf->SetFont('helvetica', 'B', 11);
+    $pdf->SetFont('helvetica', 'B', 10);
     $pdf->SetFillColor(240, 240, 240);
     
-    if ($view_type === 'monthly' || $view_type === 'yearly') {
-        $header = array('Periode', 'Total Transaksi', 'Total Penjualan', 'Total Profit');
-        $w = array(50, 40, 50, 50);
+    // Semua view menggunakan format yang sama
+    $header = array('No', 'Tanggal', 'Pembeli', 'Marketplace', 'Detail Barang', 'Total', 'Profit');
+    $w = array(15, 35, 40, 30, 90, 35, 35); // Adjusted widths
+    
+    foreach($header as $i => $col) {
+        $pdf->Cell($w[$i], 10, $col, 1, 0, 'C', true);
+    }
+    $pdf->Ln();
+    
+    // Add table data
+    $pdf->SetFont('helvetica', '', 9);
+    foreach($transactions as $i => $transaction) {
+        // Calculate row height based on content
+        $detail_lines = explode("\n", $transaction['detail_pembelian']);
+        $max_height = max(count($detail_lines) * 5, 10);
         
-        foreach($header as $i => $col) {
-            $pdf->Cell($w[$i], 10, $col, 1, 0, 'C', true);
+        $pdf->Cell($w[0], $max_height, $i + 1, 1, 0, 'C');
+        $pdf->Cell($w[1], $max_height, date('d/m/Y H:i', strtotime($transaction['tanggal'])), 1);
+        $pdf->Cell($w[2], $max_height, $transaction['nama_pembeli'], 1);
+        $pdf->Cell($w[3], $max_height, ucfirst($transaction['marketplace']), 1, 0, 'C');
+        
+        // Detail barang cell with multiline support
+        $x = $pdf->GetX();
+        $y = $pdf->GetY();
+
+        // Create a cell with border first
+        $pdf->Cell($w[4], $max_height, '', 1, 0);
+        $pdf->SetXY($x, $y);
+
+        // Group transactions by marketplace
+        if ($i > 0 && $transactions[$i]['marketplace'] != $transactions[$i-1]['marketplace']) {
+            $pdf->Line($x, $y, $x + $w[4], $y);
         }
+
+        $pdf->MultiCell($w[4], 5, $transaction['detail_pembelian'], 0, 'L');
+        $pdf->SetXY($x + $w[4], $y);
+        
+        $pdf->Cell($w[5], $max_height, 'Rp ' . number_format($transaction['total_harga'], 0, ',', '.'), 1, 0, 'R');
+        $pdf->Cell($w[6], $max_height, 'Rp ' . number_format($transaction['profit'], 0, ',', '.'), 1, 0, 'R');
         $pdf->Ln();
-        
-        // Add table data
-        $pdf->SetFont('helvetica', '', 10);
-        foreach($transactions as $row) {
-            $period = $view_type === 'monthly' ? $row['nama_bulan'] : $row['tahun'];
-            $pdf->Cell($w[0], 10, $period, 1);
-            $pdf->Cell($w[1], 10, number_format($row['total_transaksi']) . ' Transaksi', 1);
-            $pdf->Cell($w[2], 10, 'Rp ' . number_format($row['total_penjualan'], 0, ',', '.'), 1);
-            $pdf->Cell($w[3], 10, 'Rp ' . number_format($row['total_profit'], 0, ',', '.'), 1);
-            $pdf->Ln();
-        }
-    } else {
-        $header = array('No', 'Tanggal', 'Pembeli', 'Total', 'Profit');
-        $w = array(15, 40, 50, 40, 40);
-        
-        foreach($header as $i => $col) {
-            $pdf->Cell($w[$i], 10, $col, 1, 0, 'C', true);
-        }
-        $pdf->Ln();
-        
-        // Add table data
-        $pdf->SetFont('helvetica', '', 10);
-        foreach($transactions as $i => $transaction) {
-            $pdf->Cell($w[0], 10, $i + 1, 1);
-            $pdf->Cell($w[1], 10, date('d/m/Y H:i', strtotime($transaction['tanggal'])), 1);
-            $pdf->Cell($w[2], 10, $transaction['nama_pembeli'], 1);
-            $pdf->Cell($w[3], 10, 'Rp ' . number_format($transaction['total_harga'], 0, ',', '.'), 1);
-            $pdf->Cell($w[4], 10, 'Rp ' . number_format($transaction['profit'], 0, ',', '.'), 1);
-            $pdf->Ln();
-        }
     }
     
-    // Add total row
-    $pdf->SetFont('helvetica', 'B', 11);
-    $pdf->Cell(array_sum($w) - 90, 10, 'Total:', 1, 0, 'R');
-    $pdf->Cell(45, 10, 'Rp ' . number_format($grand_total_penjualan, 0, ',', '.'), 1);
-    $pdf->Cell(45, 10, 'Rp ' . number_format($grand_total_profit, 0, ',', '.'), 1);
+    // Total row
+    $pdf->SetFont('helvetica', 'B', 10);
+    $pdf->Cell(array_sum(array_slice($w, 0, 5)), 10, 'Total:', 1, 0, 'R');
+    $pdf->Cell($w[5], 10, 'Rp ' . number_format($grand_total_penjualan, 0, ',', '.'), 1, 0, 'R');
+    $pdf->Cell($w[6], 10, 'Rp ' . number_format($grand_total_profit, 0, ',', '.'), 1, 0, 'R');
     
-    // Add signature section
+    // Remove the signature section completely
     $pdf->Ln(20);
-    $pdf->SetFont('helvetica', '', 11);
-    $pdf->Cell(0, 10, 'Dibuat oleh:', 0, 1, 'R');
-    $pdf->Ln(15);
-    $pdf->Cell(0, 10, '(_____________________)', 0, 1, 'R');
     
     // Pastikan tidak ada output sebelum PDF
     if (ob_get_length()) ob_clean();
@@ -252,32 +242,33 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                         <h1 class="text-3xl font-semibold text-white mb-2">Laporan Penjualan</h1>
                         <p class="text-blue-100/80">Lihat detail laporan penjualan Anda</p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-3">
                         <?php if ($view_type === 'monthly'): ?>
                             <input type="month" id="selected_date" 
                                    value="<?= date('Y-m', strtotime($start_date)) ?>" 
-                                   class="px-4 py-2.5 rounded-xl border border-white/20 focus:border-white/40 bg-white/10 text-white placeholder-white/60">
+                                   class="w-44 h-11 px-4 rounded-xl border border-white/20 focus:border-white/40 bg-white/10 text-white placeholder-white/60">
                         <?php elseif ($view_type === 'yearly'): ?>
                             <input type="number" id="selected_date" 
                                    value="<?= date('Y', strtotime($start_date)) ?>" 
                                    min="2000" max="2099"
-                                   class="px-4 py-2.5 rounded-xl border border-white/20 focus:border-white/40 bg-white/10 text-white placeholder-white/60">
+                                   class="w-44 h-11 px-4 rounded-xl border border-white/20 focus:border-white/40 bg-white/10 text-white placeholder-white/60">
                         <?php else: ?>
                             <input type="date" id="selected_date" 
                                    value="<?= $start_date ?>" 
-                                   class="px-4 py-2.5 rounded-xl border border-white/20 focus:border-white/40 bg-white/10 text-white placeholder-white/60">
+                                   class="w-44 h-11 px-4 rounded-xl border border-white/20 focus:border-white/40 bg-white/10 text-white placeholder-white/60">
                         <?php endif; ?>
                         <button onclick="applyFilter()" 
-                                class="p-2.5 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all duration-200">
+                                class="h-11 w-11 flex items-center justify-center bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all duration-200">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                             </svg>
                         </button>
                         <button onclick="exportToPDF()" 
-                                class="p-2.5 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all duration-200">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                class="h-11 px-4 flex items-center gap-2 bg-orange-50 text-orange-600 rounded-xl border border-orange-200 hover:bg-orange-100 transition-all duration-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                             </svg>
+                            <span class="text-sm font-medium">Export</span>
                         </button>
                     </div>
                 </div>
@@ -320,209 +311,30 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
             <!-- Table Section -->
             <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
                 <table class="w-full">
-                    <?php if ($view_type === 'monthly'): ?>
                     <thead class="bg-gray-50/50 border-b border-gray-100">
                         <tr>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Bulan</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Transaksi</th>
+                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">No</th>
+                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
+                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pembeli</th>
                             <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Marketplace</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Penjualan</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Profit</th>
+                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Detail Barang</th>
+                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Profit</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        <?php 
-                        $grand_total_penjualan = 0;
-                        $grand_total_profit = 0;
-                        foreach ($transactions as $row): 
-                            $grand_total_penjualan += $row['total_penjualan'];
-                            $grand_total_profit += $row['total_profit'];
-                            
-                            // Convert marketplaces string to array
-                            $marketplaces = array_unique(explode(',', $row['marketplaces']));
-                        ?>
+                        <?php foreach ($transactions as $i => $transaction): ?>
                             <tr class="hover:bg-gray-50/50">
-                                <td class="px-6 py-4 text-sm text-gray-800 font-medium">
-                                    <?= $row['nama_bulan'] ?>
-                                </td>
                                 <td class="px-6 py-4 text-sm text-gray-600">
-                                    <?= number_format($row['total_transaksi']) ?> Transaksi
+                                    <?= $i + 1 ?>
                                 </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex flex-wrap gap-2">
-                                        <?php foreach ($marketplaces as $marketplace): ?>
-                                        <span class="px-3 py-1 rounded-lg text-sm font-medium relative group
-                                            <?php 
-                                                switch(strtolower(trim($marketplace))) {
-                                                    case 'shopee':
-                                                        echo 'bg-orange-100 text-orange-700';
-                                                        break;
-                                                    case 'tokopedia':
-                                                        echo 'bg-green-100 text-green-700';
-                                                        break;
-                                                    case 'tiktok':
-                                                        echo 'bg-gray-100 text-gray-700';
-                                                        break;
-                                                    case 'offline':
-                                                        echo 'bg-blue-100 text-blue-700';
-                                                        break;
-                                                    default:
-                                                        echo 'bg-gray-100 text-gray-700';
-                                                }
-                                            ?>">
-                                            <?= ucfirst(trim($marketplace)) ?>
-                                            <?php if ($row[strtolower(trim($marketplace)) . '_count'] > 0): ?>
-                                                <span class="ml-1 text-xs opacity-60">
-                                                    <?= $row[strtolower(trim($marketplace)) . '_count'] ?>
-                                                </span>
-                                            <?php endif; ?>
-                                        </span>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-800">
-                                    Rp <?= number_format($row['total_penjualan'], 0, ',', '.') ?>
-                                </td>
-                                <td class="px-6 py-4 text-sm">
-                                    <span class="<?= $row['total_profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
-                                        Rp <?= number_format($row['total_profit'], 0, ',', '.') ?>
-                                    </span>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                    <!-- Footer dengan total -->
-                    <tfoot class="bg-gray-50/50 border-t border-gray-100">
-                        <tr>
-                            <td colspan="3" class="px-6 py-4 text-sm font-medium text-gray-800">
-                                Total Keseluruhan:
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-800 font-medium">
-                                Rp <?= number_format($grand_total_penjualan, 0, ',', '.') ?>
-                            </td>
-                            <td class="px-6 py-4 text-sm">
-                                <span class="<?= $grand_total_profit >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
-                                    Rp <?= number_format($grand_total_profit, 0, ',', '.') ?>
-                                </span>
-                            </td>
-                        </tr>
-                    </tfoot>
-                    <?php elseif ($view_type === 'yearly'): ?>
-                    <thead class="bg-gray-50/50 border-b border-gray-100">
-                        <tr>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tahun</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Transaksi</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Marketplace</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Penjualan</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Profit</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <?php 
-                        $grand_total_penjualan = 0;
-                        $grand_total_profit = 0;
-                        foreach ($transactions as $row): 
-                            $grand_total_penjualan += $row['total_penjualan'];
-                            $grand_total_profit += $row['total_profit'];
-                            
-                            // Convert marketplaces string to array
-                            $marketplaces = array_unique(explode(',', $row['marketplaces']));
-                        ?>
-                            <tr class="hover:bg-gray-50/50">
-                                <td class="px-6 py-4 text-sm text-gray-800 font-medium">
-                                    <?= $row['tahun'] ?>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
-                                    <?= number_format($row['total_transaksi']) ?> Transaksi
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex flex-wrap gap-2">
-                                        <?php foreach ($marketplaces as $marketplace): ?>
-                                        <span class="px-3 py-1 rounded-lg text-sm font-medium relative group
-                                            <?php 
-                                                switch(strtolower(trim($marketplace))) {
-                                                    case 'shopee':
-                                                        echo 'bg-orange-100 text-orange-700';
-                                                        break;
-                                                    case 'tokopedia':
-                                                        echo 'bg-green-100 text-green-700';
-                                                        break;
-                                                    case 'tiktok':
-                                                        echo 'bg-gray-100 text-gray-700';
-                                                        break;
-                                                    case 'offline':
-                                                        echo 'bg-blue-100 text-blue-700';
-                                                        break;
-                                                    default:
-                                                        echo 'bg-gray-100 text-gray-700';
-                                                }
-                                            ?>">
-                                            <?= ucfirst(trim($marketplace)) ?>
-                                            <?php if ($row[strtolower(trim($marketplace)) . '_count'] > 0): ?>
-                                                <span class="ml-1 text-xs opacity-60">
-                                                    <?= $row[strtolower(trim($marketplace)) . '_count'] ?>
-                                                </span>
-                                            <?php endif; ?>
-                                        </span>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-800">
-                                    Rp <?= number_format($row['total_penjualan'], 0, ',', '.') ?>
-                                </td>
-                                <td class="px-6 py-4 text-sm">
-                                    <span class="<?= $row['total_profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
-                                        Rp <?= number_format($row['total_profit'], 0, ',', '.') ?>
-                                    </span>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                    <!-- Footer dengan total -->
-                    <tfoot class="bg-gray-50/50 border-t border-gray-100">
-                        <tr>
-                            <td colspan="3" class="px-6 py-4 text-sm font-medium text-gray-800">
-                                Total Keseluruhan:
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-800 font-medium">
-                                Rp <?= number_format($grand_total_penjualan, 0, ',', '.') ?>
-                            </td>
-                            <td class="px-6 py-4 text-sm">
-                                <span class="<?= $grand_total_profit >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
-                                    Rp <?= number_format($grand_total_profit, 0, ',', '.') ?>
-                                </span>
-                            </td>
-                        </tr>
-                    </tfoot>
-                    <?php else: ?>
-                    <thead class="bg-gray-50/50 border-b border-gray-100">
-                        <tr>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NO</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TANGGAL</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NAMA PEMBELI</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Marketplace</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">DETAIL PEMBELIAN</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">PROFIT</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <?php 
-                        $total_penjualan = 0;
-                        $total_profit = 0;
-                        foreach ($transactions as $index => $transaction): 
-                            $total_penjualan += $transaction['total_harga'];
-                            $total_profit += $transaction['profit'];
-                        ?>
-                            <tr class="hover:bg-gray-50/50">
-                                <td class="px-6 py-4 text-sm text-gray-600"><?= $index + 1 ?></td>
                                 <td class="px-6 py-4 text-sm text-gray-600">
                                     <?= date('d/m/Y H:i', strtotime($transaction['tanggal'])) ?>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-600">
                                     <?= htmlspecialchars($transaction['nama_pembeli']) ?>
                                 </td>
-                                <td class="px-6 py-4 text-sm">
+                                <td class="px-6 py-4">
                                     <span class="px-3 py-1 rounded-lg text-sm font-medium
                                         <?php 
                                             switch(strtolower($transaction['marketplace'])) {
@@ -555,22 +367,23 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                                 </td>
                             </tr>
                         <?php endforeach; ?>
-                        <!-- Total Row -->
-                        <tr class="bg-gray-50/80">
-                            <td colspan="5" class="px-6 py-4 text-sm text-gray-800 font-semibold text-right">
-                                Total:
+                    </tbody>
+                    <!-- Footer dengan total -->
+                    <tfoot class="bg-gray-50/50 border-t border-gray-100">
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-sm font-medium text-gray-800">
+                                Total Keseluruhan:
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-800 font-semibold">
-                                Rp <?= number_format($total_penjualan, 0, ',', '.') ?>
+                            <td class="px-6 py-4 text-sm text-gray-800 font-medium">
+                                Rp <?= number_format($grand_total_penjualan, 0, ',', '.') ?>
                             </td>
                             <td class="px-6 py-4 text-sm">
-                                <span class="<?= $total_profit >= 0 ? 'text-green-600' : 'text-red-600' ?> font-semibold">
-                                    Rp <?= number_format($total_profit, 0, ',', '.') ?>
+                                <span class="<?= $grand_total_profit >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
+                                    Rp <?= number_format($grand_total_profit, 0, ',', '.') ?>
                                 </span>
                             </td>
                         </tr>
-                    </tbody>
-                    <?php endif; ?>
+                    </tfoot>
                 </table>
             </div>
         </div>
