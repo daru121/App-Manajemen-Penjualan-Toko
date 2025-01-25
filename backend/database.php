@@ -1,8 +1,8 @@
 <?php
 $host = 'localhost';
-$db_name = 'simplepos';
-$username = 'root';
-$password = '';
+$db_name = 'u394234331_kasir';
+$username = 'u394234331_kasir';
+$password = 'lN5e:al@+';
 
 try {
     $conn = new PDO("mysql:host=$host;dbname=$db_name", $username, $password);
