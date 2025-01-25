@@ -122,100 +122,131 @@ $operatorMenuItems = [
 // Pilih menu berdasarkan role
 $menuItems = $_SESSION['role'] === 'Kasir' ? $kasirMenuItems : $operatorMenuItems;
 ?>
-<aside class="fixed inset-y-0 left-0 flex items-center px-4 z-50">
-    <!-- Floating Container dengan efek glass yang lebih baik -->
-    <div class="relative w-64 h-[96%] rounded-[32px] overflow-hidden shadow-[0_0_50px_-12px_rgba(0,0,0,0.25)] border border-white/5 backdrop-blur-2xl">
-        <!-- Background Effect yang lebih halus -->
-        <div class="absolute inset-0">
-            <div class="absolute inset-0 bg-gradient-to-b from-[#0B1437]/90 via-[#1B2B65]/90 to-[#0B1437]/90"></div>
-            <!-- Soft Glow Effect -->
-            <div class="absolute inset-0">
-                <div class="absolute top-0 -left-1/2 w-2/3 h-1/3 bg-blue-500/20 rounded-full blur-3xl"></div>
-                <div class="absolute bottom-0 -right-1/2 w-2/3 h-1/3 bg-blue-400/20 rounded-full blur-3xl"></div>
-            </div>
-            <!-- Subtle Pattern -->
-            <div class="absolute inset-0 opacity-5 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
-        </div>
 
-        <!-- Content Container -->
-        <div class="relative h-full flex flex-col">
-            <!-- Logo Section dengan efek glass yang lebih halus -->
-            <div class="p-6 border-b border-white/5">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-lg relative group">
-                        <div class="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                        <img src="../img/gambar.jpg" alt="PAksesories Logo" class="w-full h-full object-cover">
-                    </div>
-                    <div>
-                        <h1 class="text-lg font-bold text-white/90">PAksesories</h1>
-                        <p class="text-xs text-blue-300/70">Accessories Store</p>
+<!-- Toggle Button untuk Mobile - Style Modern & Rounded -->
+<button id="toggleSidebar" class="fixed z-[60] p-3 bg-white/90 backdrop-blur-xl shadow-lg sm:hidden hover:bg-white/95 transition-all duration-300 active:scale-95 rounded-full border border-white/20
+    <?= isset($_GET['sidebar']) && $_GET['sidebar'] === 'open' ? 'left-[305px]' : 'left-[15px]' ?> top-[10px]">
+    <div class="relative w-6 h-6 flex items-center justify-center">
+        <!-- Menu Icon dengan animasi -->
+        <svg id="menuIcon" class="w-5 h-5 text-gray-700 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+        <!-- Close Icon dengan animasi -->
+        <svg id="closeIcon" class="hidden absolute w-5 h-5 text-gray-700 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+    </div>
+</button>
+
+<!-- Overlay dengan animasi fade -->
+<div id="sidebarOverlay" 
+     class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300 sm:hidden">
+</div>
+
+<!-- Sidebar Container -->
+<aside id="sidebar" 
+       class="fixed inset-y-0 left-0 z-[51] w-[280px] -translate-x-full sm:translate-x-0 transition-transform duration-300">
+    <!-- Inner Container dengan padding -->
+    <div class="h-full p-4">
+        <!-- Floating Container dengan efek glass -->
+        <div class="relative h-full rounded-[32px] overflow-hidden shadow-[0_0_50px_-12px_rgba(0,0,0,0.25)] border border-white/10 backdrop-blur-2xl">
+            <!-- Background Effect -->
+            <div class="absolute inset-0">
+                <div class="absolute inset-0 bg-gradient-to-b from-[#0B1437]/95 via-[#1B2B65]/95 to-[#0B1437]/95"></div>
+                <!-- Soft Glow -->
+                <div class="absolute inset-0">
+                    <div class="absolute top-0 -left-1/2 w-2/3 h-1/3 bg-blue-500/20 rounded-full blur-3xl"></div>
+                    <div class="absolute bottom-0 -right-1/2 w-2/3 h-1/3 bg-blue-400/20 rounded-full blur-3xl"></div>
+                </div>
+                <!-- Pattern -->
+                <div class="absolute inset-0 opacity-5 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+            </div>
+
+            <!-- Content Container -->
+            <div class="relative h-full flex flex-col">
+                <!-- Logo Section -->
+                <div class="p-6 border-b border-white/10">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-lg relative group">
+                            <div class="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+                            <img src="../img/gambar.jpg" alt="PAksesories Logo" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-bold text-white/90">PAksesories</h1>
+                            <p class="text-xs text-blue-300/70">Accessories Store</p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Navigation dengan spacing yang lebih baik -->
-            <nav class="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
-                <?php
-                foreach ($menuItems as $item):
-                    if (isset($item['submenu'])): 
-                        $isActive = in_array(basename($_SERVER['PHP_SELF']), array_column($item['submenu'], 'url'));
-                    ?>
-                        <div class="space-y-1">
-                            <!-- Menu Button dengan efek hover yang lebih halus -->
-                            <button onclick="toggleSubmenu(this)" 
-                                    class="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-300 group
-                                           <?= $isActive ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white' ?>">
+                <!-- Navigation dengan improved scrolling -->
+                <nav class="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+                    <?php
+                    foreach ($menuItems as $item):
+                        if (isset($item['submenu'])): 
+                            $isActive = in_array(basename($_SERVER['PHP_SELF']), array_column($item['submenu'], 'url'));
+                        ?>
+                            <div class="space-y-1">
+                                <!-- Menu Button dengan efek hover yang lebih halus -->
+                                <button onclick="toggleSubmenu(this)" 
+                                        class="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-300 group
+                                               <?= $isActive ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white' ?>">
+                                    <div class="flex items-center justify-center w-10 h-10 mr-3">
+                                        <svg class="w-6 h-6 transition-transform duration-300 group-hover:scale-105" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="<?= $item['icon'] ?>"/>
+                                        </svg>
+                                    </div>
+                                    <span class="font-medium text-[15px]"><?= $item['text'] ?></span>
+                                    <svg class="w-5 h-5 ml-auto transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+
+                                <!-- Submenu dengan transisi yang lebih halus -->
+                                <div class="submenu ml-4 space-y-1 overflow-hidden transition-all duration-300 <?= $isActive ? '' : 'hidden' ?>">
+                                    <?php foreach ($item['submenu'] as $submenu): 
+                                        $isSubmenuActive = basename($_SERVER['PHP_SELF']) === $submenu['url'];
+                                    ?>
+                                        <a href="<?= $submenu['url'] ?>" 
+                                           class="flex items-center px-4 py-3 rounded-xl transition-all duration-300 group
+                                                  <?= $isSubmenuActive ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white' ?>">
+                                            <div class="flex items-center justify-center w-10 h-10 mr-3">
+                                                <svg class="w-6 h-6 transition-transform duration-300 group-hover:scale-105" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="<?= $submenu['icon'] ?>"/>
+                                                </svg>
+                                            </div>
+                                            <span class="font-medium text-[15px]"><?= $submenu['text'] ?></span>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <a href="<?= $item['url'] ?>" 
+                               class="flex items-center px-4 py-3 rounded-xl transition-all duration-300 group
+                                      <?= basename($_SERVER['PHP_SELF']) === $item['url'] ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white' ?>">
                                 <div class="flex items-center justify-center w-10 h-10 mr-3">
                                     <svg class="w-6 h-6 transition-transform duration-300 group-hover:scale-105" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="<?= $item['icon'] ?>"/>
                                     </svg>
                                 </div>
                                 <span class="font-medium text-[15px]"><?= $item['text'] ?></span>
-                                <svg class="w-5 h-5 ml-auto transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-
-                            <!-- Submenu dengan transisi yang lebih halus -->
-                            <div class="submenu ml-4 space-y-1 overflow-hidden transition-all duration-300 <?= $isActive ? '' : 'hidden' ?>">
-                                <?php foreach ($item['submenu'] as $submenu): 
-                                    $isSubmenuActive = basename($_SERVER['PHP_SELF']) === $submenu['url'];
-                                ?>
-                                    <a href="<?= $submenu['url'] ?>" 
-                                       class="flex items-center px-4 py-3 rounded-xl transition-all duration-300 group
-                                              <?= $isSubmenuActive ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white' ?>">
-                                        <div class="flex items-center justify-center w-10 h-10 mr-3">
-                                            <svg class="w-6 h-6 transition-transform duration-300 group-hover:scale-105" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="<?= $submenu['icon'] ?>"/>
-                                            </svg>
-                                        </div>
-                                        <span class="font-medium text-[15px]"><?= $submenu['text'] ?></span>
-                                    </a>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    <?php else: ?>
-                        <a href="<?= $item['url'] ?>" 
-                           class="flex items-center px-4 py-3 rounded-xl transition-all duration-300 group
-                                  <?= basename($_SERVER['PHP_SELF']) === $item['url'] ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white' ?>">
-                            <div class="flex items-center justify-center w-10 h-10 mr-3">
-                                <svg class="w-6 h-6 transition-transform duration-300 group-hover:scale-105" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="<?= $item['icon'] ?>"/>
-                                </svg>
-                            </div>
-                            <span class="font-medium text-[15px]"><?= $item['text'] ?></span>
-                        </a>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </nav>
+                            </a>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </nav>
+            </div>
         </div>
     </div>
 </aside>
 
 <style>
-/* Custom Scrollbar yang lebih halus */
+/* Improved scrollbar */
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
-    width: 3px;
+    width: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -223,41 +254,135 @@ $menuItems = $_SESSION['role'] === 'Kasir' ? $kasirMenuItems : $operatorMenuItem
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
 }
-</style>
 
-<!-- Enhanced JavaScript for smoother animations -->
-<script>
-function toggleSubmenu(button) {
-    const submenu = button.nextElementSibling;
-    const arrow = button.querySelector('svg:last-child');
+/* Mobile Styles */
+@media (max-width: 640px) {
+    #sidebar {
+        width: 85%;
+        max-width: 320px;
+        transform: translateX(-100%);
+    }
     
-    if (submenu.classList.contains('hidden')) {
-        // Show submenu
-        submenu.classList.remove('hidden');
-        setTimeout(() => {
-            submenu.classList.remove('opacity-0', 'scale-95');
-            submenu.classList.add('opacity-100', 'scale-100');
-        }, 10);
-        arrow.style.transform = 'rotate(180deg)';
-    } else {
-        // Hide submenu
-        submenu.classList.add('opacity-0', 'scale-95');
-        setTimeout(() => {
-            submenu.classList.add('hidden');
-        }, 300);
-        arrow.style.transform = 'rotate(0)';
+    #sidebar.active {
+        transform: translateX(0) !important;
+    }
+    
+    #sidebarOverlay.active {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+    
+    #menuIcon.hidden {
+        display: none !important;
+    }
+    
+    #closeIcon.show {
+        display: block !important;
     }
 }
 
-// Initialize active submenu
+/* Improved animations */
+.menu-item {
+    transition: all 0.3s ease;
+}
+
+.menu-item:hover {
+    transform: translateX(4px);
+}
+
+.submenu {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: top;
+}
+
+.submenu.hidden {
+    display: none;
+}
+
+.submenu.opacity-0 {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.submenu.opacity-100 {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Tambahkan style untuk efek hover yang lebih modern */
+#toggleSidebar {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transform-origin: center;
+}
+
+#toggleSidebar:hover {
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.12);
+}
+
+#toggleSidebar:active {
+    transform: scale(0.95);
+}
+
+/* Animasi untuk icon */
+#menuIcon, #closeIcon {
+    transform-origin: center;
+}
+
+#menuIcon.hidden {
+    transform: rotate(-180deg) scale(0.8);
+    opacity: 0;
+}
+
+#closeIcon.show {
+    transform: rotate(0) scale(1);
+    opacity: 1;
+}
+</style>
+
+<script>
+// Modifikasi fungsi toggleSidebar
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const menuIcon = document.getElementById('menuIcon');
+    const closeIcon = document.getElementById('closeIcon');
+    const toggleButton = document.getElementById('toggleSidebar');
+    
+    if (sidebar.classList.contains('active')) {
+        // Menutup sidebar
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+        menuIcon.classList.remove('hidden');
+        closeIcon.classList.remove('show');
+        document.body.style.overflow = '';
+        toggleButton.style.left = '15px'; // Sesuaikan dengan posisi awal di navbar
+    } else {
+        // Membuka sidebar
+        sidebar.classList.add('active');
+        overlay.classList.add('active');
+        menuIcon.classList.add('hidden');
+        closeIcon.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        toggleButton.style.left = '305px'; // Sesuaikan dengan class left-[305px]
+    }
+}
+
+// Event listener untuk overlay
+document.getElementById('sidebarOverlay').addEventListener('click', toggleSidebar);
+
+// Event listener untuk toggle button
+document.getElementById('toggleSidebar').addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleSidebar();
+});
+
+// Enhanced initialization
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize active submenu
     const currentPage = window.location.pathname.split('/').pop();
     const activeSubmenu = document.querySelector(`a[href="${currentPage}"]`)?.closest('.submenu');
     if (activeSubmenu) {
@@ -266,5 +391,67 @@ document.addEventListener('DOMContentLoaded', function() {
         const arrow = activeSubmenu.previousElementSibling.querySelector('svg:last-child');
         arrow.style.transform = 'rotate(180deg)';
     }
+
+    // Handle click outside
+    document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.getElementById('toggleSidebar');
+        
+        if (window.innerWidth < 640) {
+            if (!sidebar.contains(event.target) && 
+                !toggleBtn.contains(event.target) && 
+                sidebar.classList.contains('active')) {
+                toggleSidebar();
+            }
+        }
+    });
+
+    // Handle escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && document.getElementById('sidebar').classList.contains('active')) {
+            toggleSidebar();
+        }
+    });
+
+    // Handle resize
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            if (window.innerWidth >= 640) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                const menuIcon = document.getElementById('menuIcon');
+                const closeIcon = document.getElementById('closeIcon');
+                
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+                menuIcon.classList.remove('hidden');
+                closeIcon.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+        }, 250);
+    });
 });
+
+// Tambahkan kembali fungsi toggleSubmenu
+function toggleSubmenu(button) {
+    const submenu = button.nextElementSibling;
+    const arrow = button.querySelector('svg:last-child');
+    
+    if (submenu.classList.contains('hidden')) {
+        // Show submenu with improved animation
+        submenu.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            submenu.classList.remove('opacity-0', 'scale-95');
+            submenu.classList.add('opacity-100', 'scale-100');
+            arrow.style.transform = 'rotate(180deg)';
+        });
+    } else {
+        // Hide submenu with smooth transition
+        submenu.classList.add('opacity-0', 'scale-95');
+        arrow.style.transform = 'rotate(0)';
+        setTimeout(() => submenu.classList.add('hidden'), 300);
+    }
+}
 </script> 

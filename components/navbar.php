@@ -158,148 +158,199 @@ function markAllAsRead() {
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: #D1D5DB;
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 640px) {
+    .notification-dropdown {
+        width: calc(100vw - 2rem);
+        left: 1rem;
+        right: 1rem;
+    }
+    
+    .profile-dropdown {
+        width: calc(100vw - 2rem);
+        left: 1rem;
+        right: 1rem;
+    }
+
+    /* Tambahkan style untuk memastikan judul tidak terpotong */
+    .truncate {
+        max-width: calc(100vw - 220px); /* Sesuaikan dengan kebutuhan */
+    }
+    
+    /* Tambahkan spacing yang lebih baik */
+    .nav-container {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+}
+
+/* Tambahkan animasi smooth untuk transisi */
+.truncate {
+    transition: all 0.3s ease;
+}
 </style>
 
-<nav class="fixed right-4 top-4 left-[280px] h-[60px] z-30">
+<nav class="fixed right-0 top-0 left-0 sm:left-[280px] h-[60px] z-30 px-4 sm:px-0 sm:right-4 sm:top-4">
     <!-- Clean white container with subtle shadow -->
-    <div class="relative h-full rounded-2xl bg-white/95 backdrop-blur-xl border border-gray-100 shadow-sm">
-        <div class="h-full px-6 flex items-center justify-between">
-            <!-- Left side - Breadcrumbs -->
+    <div class="relative h-full rounded-none sm:rounded-2xl bg-white/95 backdrop-blur-xl border-b sm:border border-gray-100 shadow-sm">
+        <div class="h-full px-4 sm:px-6 flex items-center justify-between">
+            <!-- Left side - Breadcrumbs - Responsive -->
             <div class="flex items-center">
-                <!-- Breadcrumb Navigation -->
-                <div class="flex items-center gap-2 text-sm">
-                    <?php
-                    $current_page = basename($_SERVER['PHP_SELF'], '.php');
-                    
-                    // Only show Beranda for dashboard.php
-                    if ($current_page === 'dashboard') {
-                        echo '<span class="text-gray-500">Dashboard</span>';
-                    }
-                    
-                    // Define page hierarchy
-                    $breadcrumbs = [];
-                    
-                    if ($current_page === 'kategori' || $current_page === 'produk' || $current_page === 'supplier') {
-                        $breadcrumbs[] = [
-                            'text' => 'Master Data',
-                            'url' => '#',
-                            'active' => false
-                        ];
-                    }
-                    
-                    // Add current page
-                    switch ($current_page) {
-                        case 'kategori':
-                            $breadcrumbs[] = [
-                                'text' => 'Kategori',
-                                'url' => 'kategori.php',
-                                'active' => true
+                <!-- Mobile Title - dengan padding dan styling yang lebih baik -->
+                <div class="flex sm:hidden items-center pl-12 flex-1 min-w-0">
+                    <div class="w-full py-1">
+                        <h1 class="text-base font-semibold text-gray-800 truncate mt-0.5">
+                            <?php
+                            $current_page = basename($_SERVER['PHP_SELF'], '.php');
+                            $page_titles = [
+                                'dashboard' => '',  // Kosongkan untuk mobile
+                                'kategori' => '',   // Kosongkan untuk mobile
+                                'produk' => '',     // Kosongkan untuk mobile
+                                'supplier' => '',   // Kosongkan untuk mobile
+                                'penjualan' => '',  // Kosongkan untuk mobile
+                                'informasi' => '',  // Kosongkan untuk mobile
+                                'laporan' => '',    // Kosongkan untuk mobile
+                                'pengiriman' => '', // Kosongkan untuk mobile
+                                'pengeluaran' => '',// Kosongkan untuk mobile
+                                'karyawan' => '',   // Kosongkan untuk mobile
+                                'scan_absensi' => ''// Kosongkan untuk mobile
                             ];
-                            break;
-                        case 'produk':
-                            $breadcrumbs[] = [
-                                'text' => 'Produk',
-                                'url' => 'produk.php',
-                                'active' => true
-                            ];
-                            break;
-                        case 'supplier':
-                            $breadcrumbs[] = [
-                                'text' => 'Supplier',
-                                'url' => 'supplier.php',
-                                'active' => true
-                            ];
-                            break;
-                        case 'penjualan':
-                            $breadcrumbs[] = [
-                                'text' => 'Penjualan',
-                                'url' => '#',
-                                'active' => false
-                            ];
-                            $breadcrumbs[] = [
-                                'text' => 'POS Kasir',
-                                'url' => 'penjualan.php',
-                                'active' => true
-                            ];
-                            break;
-                        case 'informasi':
-                            $breadcrumbs[] = [
-                                'text' => 'Penjualan',
-                                'url' => '#',
-                                'active' => false
-                            ];
-                            $breadcrumbs[] = [
-                                'text' => 'Informasi',
-                                'url' => 'informasi.php',
-                                'active' => true
-                            ];
-                            break;                
-                        case 'laporan':
-                            $breadcrumbs[] = [
-                                'text' => 'Penjualan',
-                                'url' => '#',
-                                'active' => false
-                            ];
-                            $breadcrumbs[] = [
-                                'text' => 'Laporan',
-                                'url' => 'laporan.php',
-                                'active' => true
-                            ];
-                            break;
-                        case 'users':
-                            $breadcrumbs[] = [
-                                'text' => 'Users',
-                                'url' => 'users.php',
-                                'active' => true
-                            ];
-                            break;
-                        case 'pengeluaran':
-                            $breadcrumbs[] = [
-                                'text' => 'Operasional',
-                                'url' => '#',
-                                'active' => false
-                            ];
-                            $breadcrumbs[] = [
-                                'text' => 'Pengeluaran',
-                                'url' => 'pengeluaran.php',
-                                'active' => true
-                            ];
-                            break;
-                        case 'pengiriman':
-                            $breadcrumbs[] = [
-                                'text' => 'Operasional',
-                                'url' => '#',
-                                'active' => false
-                            ];
-                            $breadcrumbs[] = [
-                                'text' => 'Pengiriman',
-                                'url' => 'pengiriman.php',
-                                'active' => true
-                            ];
-                    }
+                            echo $page_titles[$current_page] ?? '';
+                            ?>
+                        </h1>
+                    </div>
+                </div>
 
-                    // Output breadcrumbs
-                    foreach ($breadcrumbs as $index => $crumb) {
-                        if ($index > 0) {
-                            echo '<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                  </svg>';
+                <!-- Desktop Breadcrumbs -->
+                <div class="hidden sm:flex items-center">
+                    <div class="flex items-center gap-2 text-sm">
+                        <?php
+                        $current_page = basename($_SERVER['PHP_SELF'], '.php');
+                        
+                        // Only show Beranda for dashboard.php
+                        if ($current_page === 'dashboard') {
+                            echo '<span class="text-gray-500 hidden sm:inline">Dashboard</span>';
+                        } else if ($current_page === 'scan_absensi') {
+                            echo '<span class="text-gray-500 hidden sm:inline">Absensi</span>';
+                        } else if ($current_page === 'pengiriman') {
+                            echo '<span class="text-gray-500 hidden sm:inline">Pengiriman</span>';
                         }
                         
-                        if ($crumb['active']) {
-                            echo '<span class="text-gray-800 font-medium">' . $crumb['text'] . '</span>';
-                        } else {
-                            echo '<a href="' . $crumb['url'] . '" class="text-gray-500 hover:text-gray-700 transition-colors">' . $crumb['text'] . '</a>';
+                        // Define page hierarchy
+                        $breadcrumbs = [];
+                        
+                        if ($current_page === 'kategori' || $current_page === 'produk' || $current_page === 'supplier') {
+                            $breadcrumbs[] = [
+                                'text' => 'Master Data',
+                                'url' => '#',
+                                'active' => false
+                            ];
                         }
-                    }
-                    ?>
+                        
+                        // Add current page
+                        switch ($current_page) {
+                            case 'kategori':
+                                $breadcrumbs[] = [
+                                    'text' => 'Kategori',
+                                    'url' => 'kategori.php',
+                                    'active' => true
+                                ];
+                                break;
+                            case 'produk':
+                                $breadcrumbs[] = [
+                                    'text' => 'Produk',
+                                    'url' => 'produk.php',
+                                    'active' => true
+                                ];
+                                break;
+                            case 'supplier':
+                                $breadcrumbs[] = [
+                                    'text' => 'Supplier',
+                                    'url' => 'supplier.php',
+                                    'active' => true
+                                ];
+                                break;
+                            case 'penjualan':
+                                $breadcrumbs[] = [
+                                    'text' => 'Penjualan',
+                                    'url' => '#',
+                                    'active' => false
+                                ];
+                                $breadcrumbs[] = [
+                                    'text' => 'POS Kasir',
+                                    'url' => 'penjualan.php',
+                                    'active' => true
+                                ];
+                                break;
+                            case 'informasi':
+                                $breadcrumbs[] = [
+                                    'text' => 'Penjualan',
+                                    'url' => '#',
+                                    'active' => false
+                                ];
+                                $breadcrumbs[] = [
+                                    'text' => 'Informasi',
+                                    'url' => 'informasi.php',
+                                    'active' => true
+                                ];
+                                break;                
+                            case 'laporan':
+                                $breadcrumbs[] = [
+                                    'text' => 'Penjualan',
+                                    'url' => '#',
+                                    'active' => false
+                                ];
+                                $breadcrumbs[] = [
+                                    'text' => 'Laporan',
+                                    'url' => 'laporan.php',
+                                    'active' => true
+                                ];
+                                break;
+                            case 'users':
+                                $breadcrumbs[] = [
+                                    'text' => 'Users',
+                                    'url' => 'users.php',
+                                    'active' => true
+                                ];
+                                break;
+                            case 'pengeluaran':
+                                $breadcrumbs[] = [
+                                    'text' => 'Operasional',
+                                    'url' => '#',
+                                    'active' => false
+                                ];
+                                $breadcrumbs[] = [
+                                    'text' => 'Pengeluaran',
+                                    'url' => 'pengeluaran.php',
+                                    'active' => true
+                                ];
+                                break;
+                        }
+
+                        // Output breadcrumbs
+                        foreach ($breadcrumbs as $index => $crumb) {
+                            if ($index > 0) {
+                                echo '<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                      </svg>';
+                            }
+                            
+                            if ($crumb['active']) {
+                                echo '<span class="text-gray-800 font-medium truncate max-w-[150px]">' . $crumb['text'] . '</span>';
+                            } else {
+                                echo '<a href="' . $crumb['url'] . '" class="text-gray-500 hover:text-gray-700 transition-colors truncate max-w-[150px]">' . $crumb['text'] . '</a>';
+                            }
+                        }
+                        ?>
+                    </div>
                 </div>
             </div>
 
-            <!-- Right side -->
-            <div class="flex items-center gap-4">
-                <!-- Help Button -->
-                <button class="relative p-2 text-gray-600 hover:text-gray-800 rounded-xl group">
+            <!-- Right side - Adjust gap for mobile -->
+            <div class="flex items-center gap-1 sm:gap-4">
+                <!-- Help Button - Hide on mobile -->
+                <button class="relative p-2 text-gray-600 hover:text-gray-800 rounded-xl group hidden sm:flex">
                     <div class="absolute inset-0 bg-gray-50 scale-0 rounded-xl transition-transform duration-300 group-hover:scale-100"></div>
                     <svg class="relative w-5 h-5 transform group-hover:scale-110 transition-all duration-300" 
                          fill="none" 
@@ -309,10 +360,8 @@ function markAllAsRead() {
                     </svg>
                 </button>
 
-                <!-- Notifications -->
-                <div class="relative" x-data="{ 
-                    isOpen: false,
-                }">
+                <!-- Notifications - Adjusted for mobile -->
+                <div class="relative" x-data="{ isOpen: false }">
                     <button @click="isOpen = !isOpen" 
                             class="relative p-2 text-gray-600 hover:text-gray-800 rounded-xl group">
                         <div class="absolute inset-0 bg-gray-50 scale-0 rounded-xl transition-transform duration-300 group-hover:scale-100"></div>
@@ -332,7 +381,7 @@ function markAllAsRead() {
                         </div>
                     </button>
 
-                    <!-- Notifications Dropdown -->
+                    <!-- Notifications Dropdown - Adjusted for mobile -->
                     <div x-show="isOpen" 
                          @click.outside="isOpen = false"
                          x-transition:enter="transition ease-out duration-200"
@@ -341,10 +390,10 @@ function markAllAsRead() {
                          x-transition:leave="transition ease-in duration-150"
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-95"
-                         class="absolute right-0 mt-2 w-80 origin-top-right"
+                         class="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 origin-top-right"
                          style="display: none;">
                         
-                        <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
+                        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 max-h-[calc(100vh-6rem)] flex flex-col">
                             <!-- Header tetap -->
                             <div class="p-4 bg-gray-50 border-b border-gray-100 sticky top-0 z-10 flex justify-between items-center">
                                 <h3 class="text-sm font-semibold text-gray-800">Notifikasi</h3>
@@ -407,15 +456,15 @@ function markAllAsRead() {
                     </div>
                 </div>
 
-                <!-- Clean Divider -->
-                <div class="h-8 w-px bg-gray-200"></div>
+                <!-- Clean Divider - Hide on mobile -->
+                <div class="hidden sm:block h-8 w-px bg-gray-200"></div>
 
-                <!-- Profile Dropdown -->
+                <!-- Profile Dropdown - Adjusted for mobile -->
                 <div class="relative" x-data="{ isOpen: false }">
                     <button @click="isOpen = !isOpen" 
-                            class="flex items-center gap-3 p-1.5 rounded-xl hover:bg-gray-50 transition-all duration-300">
+                            class="flex items-center gap-2 sm:gap-3 p-1.5 rounded-xl hover:bg-gray-50 transition-all duration-300">
                         <div class="relative">
-                            <div class="w-9 h-9 rounded-xl overflow-hidden ring-2 ring-gray-100 transition-transform duration-300 hover:scale-105">
+                            <div class="w-8 sm:w-9 h-8 sm:h-9 rounded-xl overflow-hidden ring-2 ring-gray-100">
                                 <?php if (isset($_SESSION['user_id'])): 
                                     $stmt = $conn->prepare("SELECT avatar FROM users WHERE id = ?");
                                     $stmt->execute([$_SESSION['user_id']]);
@@ -434,15 +483,16 @@ function markAllAsRead() {
                             </div>
                             <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
                         </div>
-                        <div class="text-left">
+                        <!-- Hide name on mobile -->
+                        <div class="hidden sm:block text-left">
                             <div class="text-sm font-medium text-gray-700">
                                 <?= isset($_SESSION['nama']) ? htmlspecialchars($_SESSION['nama']) : 'Guest' ?>
                             </div>
-                            <div class="text-xs text-gray-500 flex items-center gap-1">
+                            <div class="text-xs text-gray-500">
                                 <?= isset($_SESSION['role']) ? htmlspecialchars($_SESSION['role']) : 'User' ?>
                             </div>
                         </div>
-                        <svg class="w-5 h-5 text-gray-400 transition-transform duration-300"
+                        <svg class="w-5 h-5 text-gray-400 transition-transform duration-300 hidden sm:block"
                              :class="{'rotate-180': isOpen}" 
                              fill="none" 
                              stroke="currentColor" 
@@ -451,7 +501,7 @@ function markAllAsRead() {
                         </svg>
                     </button>
 
-                    <!-- Enhanced Clean Dropdown Menu -->
+                    <!-- Profile Dropdown Menu - Adjusted for mobile -->
                     <div x-show="isOpen" 
                          @click.outside="isOpen = false"
                          x-transition:enter="transition ease-out duration-200"

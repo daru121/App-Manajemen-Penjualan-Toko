@@ -61,22 +61,17 @@ if (isset($_GET['action']) && $_GET['action'] === 'print_receipt') {
     $pdf->Cell(53, 5, 'PAksesories', 0, 1, 'L');
     $pdf->SetFont('helvetica', '', 8);
     $pdf->SetXY(22, 10);
-    $pdf->Cell(53, 4, 'Jl. Contoh No. 123', 0, 1, 'L');
+    $pdf->Cell(53, 4, 'Jl. Awang Long, Kab. Kutai Kartanegara', 0, 1, 'L');
     $pdf->SetXY(22, 14);
-    $pdf->Cell(53, 4, 'Telp: 081234567890', 0, 1, 'L');
+    $pdf->Cell(53, 4, 'Telp: 085247694758', 0, 1, 'L');
     
     // Reset position for next content
     $pdf->SetY(22);
     
     // Line separator
     $pdf->Cell(0, 0, str_repeat('=', 48), 0, 1, 'C');
-    $pdf->Ln(2);
+    $pdf->Ln(1);
     
-    // Transaction details dengan format yang lebih rapi
-    $pdf->SetFont('helvetica', '', 8);
-    $pdf->Cell(15, 4, 'No', 0, 0, 'L');
-    $pdf->Cell(2, 4, ':', 0, 0, 'L');
-    $pdf->Cell(0, 4, 'TRX-' . str_pad($transaksi_id, 4, '0', STR_PAD_LEFT), 0, 1, 'L');
     
     $pdf->Cell(15, 4, 'Tanggal', 0, 0, 'L');
     $pdf->Cell(2, 4, ':', 0, 0, 'L');
@@ -85,10 +80,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'print_receipt') {
     $pdf->Cell(15, 4, 'Kasir', 0, 0, 'L');
     $pdf->Cell(2, 4, ':', 0, 0, 'L');
     $pdf->Cell(0, 4, $transaksi['nama_kasir'], 0, 1, 'L');
+
+    $pdf->Ln(1);
     
-    $pdf->Cell(15, 4, 'Pembeli', 0, 0, 'L');
-    $pdf->Cell(2, 4, ':', 0, 0, 'L');
-    $pdf->Cell(0, 4, $transaksi['nama_pembeli'], 0, 1, 'L');
     
     if ($transaksi['marketplace'] != 'offline') {
         $pdf->Cell(15, 4, 'Market', 0, 0, 'L');
@@ -101,11 +95,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'print_receipt') {
             $pdf->Cell(0, 4, $transaksi['daerah'], 0, 1, 'L');
         }
     }
-    
-    $pdf->Ln(1);
-    // Line separator
-    $pdf->Cell(0, 0, str_repeat('-', 48), 0, 1, 'C');
-    $pdf->Ln(1);
+
+
     
     // Items header dengan garis bawah
     $pdf->SetFont('helvetica', 'B', 8);

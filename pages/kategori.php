@@ -9,15 +9,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nama_kategori = $_POST['nama_kategori'];
             $stmt = $conn->prepare("INSERT INTO kategori (nama_kategori) VALUES (?)");
             $stmt->execute([$nama_kategori]);
+            $_SESSION['alert'] = [
+                'type' => 'success',
+                'message' => 'Kategori berhasil ditambahkan!'
+            ];
         } elseif ($_POST['action'] === 'edit') {
             $id = $_POST['kategori_id'];
             $nama_kategori = $_POST['nama_kategori'];
             $stmt = $conn->prepare("UPDATE kategori SET nama_kategori = ? WHERE id = ?");
             $stmt->execute([$nama_kategori, $id]);
+            $_SESSION['alert'] = [
+                'type' => 'success',
+                'message' => 'Kategori berhasil diperbarui!'
+            ];
         } elseif ($_POST['action'] === 'delete') {
             $id = $_POST['kategori_id'];
             $stmt = $conn->prepare("DELETE FROM kategori WHERE id = ?");
             $stmt->execute([$id]);
+            $_SESSION['alert'] = [
+                'type' => 'success',
+                'message' => 'Kategori berhasil dihapus!'
+            ];
         }
         header("Location: kategori.php");
         exit;
@@ -47,26 +59,49 @@ $totalPages = ceil($totalItems / $itemsPerPage); // Total halaman
     <title>Kategori Barang - PAksesories</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Add responsive styles */
+        @media (max-width: 640px) {
+            .content-wrapper {
+                margin-left: 0 !important;
+                padding-top: 60px !important;
+            }
+            
+            .table-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .table-inner {
+                min-width: 640px;
+            }
+            
+            .action-buttons {
+                white-space: nowrap;
+            }
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
     <?php include '../components/sidebar.php'; ?>
     <?php include '../components/navbar.php'; ?>
 
-    <div class="ml-64 pt-16 min-h-screen bg-gray-50/50">
-        <div class="p-8">
-            <!-- Header Section dengan gradient modern -->
-            <div class="mb-8 bg-gradient-to-br from-indigo-600 via-blue-500 to-blue-400 rounded-3xl p-10 text-white shadow-2xl relative overflow-hidden">
+    <!-- Modify main container for responsiveness -->
+    <div class="p-0 sm:p-4 sm:ml-64 content-wrapper"> <!-- Add content-wrapper class -->
+        <div class="p-4 sm:p-8 pt-20 sm:pt-24">
+            <!-- Header Section -->
+            <div class="mb-6 sm:mb-8 bg-gradient-to-br from-indigo-600 via-blue-500 to-blue-400 rounded-xl sm:rounded-3xl p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden">
                 <!-- Decorative elements -->
                 <div class="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
                 <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full translate-y-32 -translate-x-32 blur-3xl"></div>
                 
-                <div class="relative flex justify-between items-center">
+                <div class="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h1 class="text-4xl font-bold mb-3">Kategori</h1>
-                        <p class="text-blue-100 text-lg">Kelola data kategori produk</p>
+                        <h1 class="text-2xl sm:text-4xl font-bold mb-2 sm:mb-3">Kategori</h1>
+                        <p class="text-blue-100 text-base sm:text-lg">Kelola data kategori produk</p>
                     </div>
                     <button onclick="showAddModal()" 
-                            class="px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center gap-3 transition-all duration-300 backdrop-blur-sm">
+                            class="w-full sm:w-auto px-4 sm:px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center justify-center sm:justify-start gap-3 transition-all duration-300 backdrop-blur-sm">
                         <div class="p-2 bg-white/10 rounded-lg">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
@@ -77,13 +112,39 @@ $totalPages = ceil($totalItems / $itemsPerPage); // Total halaman
                 </div>
             </div>
 
-            <!-- Table Card dengan glass effect -->
-            <div class="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl border border-gray-200/70">
+            <!-- Add this right after the header section and before the table card -->
+            <?php if (isset($_SESSION['alert'])): ?>
+                <div id="alert" class="mb-4 sm:mb-6 w-full transition-all duration-300">
+                    <div class="<?= $_SESSION['alert']['type'] === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600' ?> px-4 py-3 rounded-xl flex items-center gap-3">
+                        <div class="p-2 bg-white/50 rounded-lg">
+                            <?php if ($_SESSION['alert']['type'] === 'success'): ?>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            <?php else: ?>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            <?php endif; ?>
+                        </div>
+                        <p class="text-sm font-medium"><?= $_SESSION['alert']['message'] ?></p>
+                        <button onclick="closeAlert()" class="ml-auto p-2 hover:bg-white/50 rounded-lg transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <?php unset($_SESSION['alert']); ?>
+            <?php endif; ?>
+
+            <!-- Table Card -->
+            <div class="bg-white/70 backdrop-blur-xl rounded-xl sm:rounded-3xl shadow-xl border border-gray-200/70">
                 <!-- Table Header -->
-                <div class="p-6 border-b border-gray-100">
-                    <div class="flex items-center justify-between">
-                        <!-- Show entries dengan style modern -->
-                        <div class="flex items-center gap-3">
+                <div class="p-4 sm:p-6 border-b border-gray-100">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <!-- Show entries -->
+                        <div class="w-full sm:w-auto flex items-center gap-3">
                             <label class="text-sm font-medium text-gray-600">Tampilkan</label>
                             <select id="entriesSelect" 
                                     onchange="changeEntries(this.value)" 
@@ -93,13 +154,13 @@ $totalPages = ceil($totalItems / $itemsPerPage); // Total halaman
                             </select>
                         </div>
 
-                        <!-- Search box dengan style modern -->
-                        <div class="relative">
+                        <!-- Search box -->
+                        <div class="relative w-full sm:w-auto">
                             <input type="text" 
                                    id="searchInput"
                                    placeholder="Cari kategori..." 
                                    oninput="searchTable()"
-                                   class="w-72 pl-12 pr-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300">
+                                   class="w-full sm:w-72 pl-12 pr-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300">
                             <div class="absolute left-4 top-2.5 text-gray-400">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -110,56 +171,58 @@ $totalPages = ceil($totalItems / $itemsPerPage); // Total halaman
                 </div>
 
                 <!-- Table Content -->
-                <div class="overflow-x-auto p-1">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="bg-gray-50/50">
-                                <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">No</th>
-                                <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">Nama Kategori</th>
-                                <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">Jumlah Produk</th>
-                                <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100" id="categoryTableBody">
-                            <?php foreach ($categories as $index => $category): ?>
-                            <tr class="hover:bg-gray-50/50 transition-colors duration-200" data-page="<?= floor($index / $itemsPerPage) + 1 ?>">
-                                <td class="py-4 px-6 text-sm text-gray-600"><?= $index + 1 ?></td>
-                                <td class="py-4 px-6 text-sm text-gray-800 font-medium"><?= htmlspecialchars($category['nama_kategori']) ?></td>
-                                <td class="py-4 px-6">
-                                    <span class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-medium inline-flex items-center gap-1">
-                                        <span class="w-1 h-1 rounded-full bg-blue-600"></span>
-                                        <?= $category['total_items'] ?> Produk
-                                    </span>
-                                </td>
-                                <td class="py-4 px-6">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <button onclick="showEditModal(<?= $category['id'] ?>, '<?= htmlspecialchars($category['nama_kategori']) ?>')" 
-                                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                            </svg>
-                                        </button>
-                                        <button onclick="showDeleteModal(<?= $category['id'] ?>)" 
-                                                class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                <div class="table-wrapper"> <!-- Add wrapper for horizontal scroll -->
+                    <div class="table-inner"> <!-- Add inner container for minimum width -->
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-gray-50/50">
+                                    <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">No</th>
+                                    <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">Nama Kategori</th>
+                                    <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">Jumlah Produk</th>
+                                    <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100" id="categoryTableBody">
+                                <?php foreach ($categories as $index => $category): ?>
+                                <tr class="hover:bg-gray-50/50 transition-colors duration-200" data-page="<?= floor($index / $itemsPerPage) + 1 ?>">
+                                    <td class="py-4 px-6 text-sm text-gray-600"><?= $index + 1 ?></td>
+                                    <td class="py-4 px-6 text-sm text-gray-800 font-medium"><?= htmlspecialchars($category['nama_kategori']) ?></td>
+                                    <td class="py-4 px-6">
+                                        <span class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-medium inline-flex items-center gap-1">
+                                            <span class="w-1 h-1 rounded-full bg-blue-600"></span>
+                                            <?= $category['total_items'] ?> Produk
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-6">
+                                        <div class="flex items-center justify-end gap-2">
+                                            <button onclick="showEditModal(<?= $category['id'] ?>, '<?= htmlspecialchars($category['nama_kategori']) ?>')" 
+                                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                            </button>
+                                            <button onclick="showDeleteModal(<?= $category['id'] ?>)" 
+                                                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <!-- Pagination section dengan style modern -->
-                <div class="p-6 border-t border-gray-100">
-                    <div class="flex items-center justify-between">
-                        <p class="text-sm text-gray-600" id="showingInfo">
+                <!-- Pagination section -->
+                <div class="p-4 sm:p-6 border-t border-gray-100">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p class="text-sm text-gray-600 order-2 sm:order-1" id="showingInfo">
                             Showing 1 to <?= min($itemsPerPage, $totalItems) ?> of <?= $totalItems ?> entries
                         </p>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 order-1 sm:order-2">
                             <button onclick="changePage('prev')" 
                                     id="prevButton"
                                     class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
@@ -180,9 +243,9 @@ $totalPages = ceil($totalItems / $itemsPerPage); // Total halaman
         </div>
     </div>
 
-    <!-- Modal -->
-    <div id="categoryModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-xl p-6 w-full max-w-md">
+    <!-- Modals - Add responsive padding -->
+    <div id="categoryModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 sm:p-0">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 sm:mx-0">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="modalTitle" class="text-xl font-bold text-gray-800">Tambah Kategori</h3>
                 <button onclick="closeCategoryModal()" class="text-gray-400 hover:text-gray-600">
@@ -217,9 +280,8 @@ $totalPages = ceil($totalItems / $itemsPerPage); // Total halaman
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl w-[400px] overflow-hidden">
+    <div id="deleteModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 sm:p-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-[400px] mx-4 sm:mx-0 overflow-hidden">
             <div class="p-6">
                 <div class="flex items-center justify-center mb-6">
                     <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
@@ -505,6 +567,16 @@ $totalPages = ceil($totalItems / $itemsPerPage); // Total halaman
 
             updateTableDisplay(totalItems, totalPages);
         });
+
+        function closeAlert() {
+            const alert = document.getElementById('alert');
+            if (alert) {
+                alert.style.opacity = '0';
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 300);
+            }
+        }
     </script>
 </body>
 </html>

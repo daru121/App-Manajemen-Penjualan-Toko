@@ -2,6 +2,12 @@
 session_start();
 require_once '../backend/database.php';
 
+// Tambahkan ini untuk menangkap pesan dari redirect
+if (isset($_SESSION['alert'])) {
+    $alertMessage = $_SESSION['alert']['message'];
+    unset($_SESSION['alert']);
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
@@ -14,6 +20,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare("INSERT INTO supplier (nama_supplier, alamat, telepon, email) VALUES (?, ?, ?, ?)");
             $stmt->execute([$nama_supplier, $alamat, $telepon, $email]);
             
+            $_SESSION['alert'] = [
+                'message' => 'Supplier berhasil ditambahkan!'
+            ];
+            
         } elseif ($_POST['action'] === 'edit') {
             $id = $_POST['supplier_id'];
             $nama_supplier = $_POST['nama_supplier'];
@@ -24,10 +34,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare("UPDATE supplier SET nama_supplier = ?, alamat = ?, telepon = ?, email = ? WHERE id = ?");
             $stmt->execute([$nama_supplier, $alamat, $telepon, $email, $id]);
             
+            $_SESSION['alert'] = [
+                'message' => 'Supplier berhasil diperbarui!'
+            ];
+            
         } elseif ($_POST['action'] === 'delete') {
             $id = $_POST['supplier_id'];
             $stmt = $conn->prepare("DELETE FROM supplier WHERE id = ?");
             $stmt->execute([$id]);
+            
+            $_SESSION['alert'] = [
+                'message' => 'Supplier berhasil dihapus!'
+            ];
         }
         header("Location: supplier.php");
         exit;
@@ -141,10 +159,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
     <?php include '../components/sidebar.php'; ?>
     <?php include '../components/navbar.php'; ?>
 
-    <div class="ml-64 pt-16 min-h-screen bg-gray-50/50">
-        <div class="p-8">
-            <!-- Header Section dengan gradient modern -->
-            <div class="mb-8 bg-gradient-to-br from-indigo-600 via-blue-500 to-blue-400 rounded-3xl p-10 text-white shadow-2xl relative overflow-hidden">
+    <!-- Main Content Container - Responsif -->
+    <div class="ml-0 sm:ml-64 pt-24 sm:pt-16 min-h-screen bg-gray-50/50">
+        <div class="p-6 sm:p-8">
+            <!-- Header Section - Tetap Elegan -->
+            <div class="mb-6 sm:mb-8 bg-gradient-to-br from-indigo-600 via-blue-500 to-blue-400 rounded-3xl p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden">
                 <!-- Decorative elements -->
                 <div class="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
                 <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full translate-y-32 -translate-x-32 blur-3xl"></div>
@@ -166,25 +185,50 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
                 </div>
             </div>
 
-            <!-- Table Card dengan glass effect -->
-            <div class="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl border border-gray-200/70">
-                <!-- Table Header -->
-                <div class="p-6 border-b border-gray-100">
+            <!-- Alert Message - Sesuai dengan kategori.php -->
+            <?php if (isset($alertMessage)): ?>
+                <div id="alert" class="bg-[#F0FDF4] border-l-4 border-[#16A34A] p-4 mb-6">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-[#16A34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-[#15803D]">
+                                    <?= $alertMessage ?>
+                                </p>
+                            </div>
+                        </div>
+                        <button onclick="closeAlert()" class="ml-auto pl-3">
+                            <svg class="h-5 w-5 text-[#16A34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Table Card - Responsif tapi Tetap Elegan -->
+            <div class="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl border border-gray-200/70">
+                <!-- Table Header - Stack di Mobile -->
+                <div class="p-4 sm:p-6 border-b border-gray-100">
+                    <div class="flex flex-col sm:flex-row gap-4 sm:gap-0 sm:items-center sm:justify-between">
+                        <div class="w-full sm:w-auto flex items-center gap-3">
                             <label class="text-sm font-medium text-gray-600">Menampilkan</label>
-                            <div class="px-5 py-2.5 bg-gray-50/50 border border-gray-200/50 rounded-xl text-sm">
+                            <div class="w-full sm:w-auto px-5 py-2.5 bg-gray-50/50 border border-gray-200/50 rounded-xl text-sm">
                                 <span class="text-gray-600"><?= count($suppliers) ?> Supplier</span>
                             </div>
                         </div>
 
-                        <div class="relative">
+                        <div class="relative w-full sm:w-auto">
                             <input type="text" 
                                    id="searchInput"
                                    placeholder="Cari supplier..." 
                                    oninput="searchTable()"
-                                   class="w-72 pl-12 pr-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300">
-                            <div class="absolute left-4 top-2.5 text-gray-400">
+                                   class="w-full sm:w-72 pl-12 pr-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300">
+                            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                 </svg>
@@ -193,61 +237,60 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
                     </div>
                 </div>
 
-                <!-- Table Content -->
-                <div class="overflow-x-auto p-1">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="bg-gray-50/50">
-                                <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">No</th>
-                                <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">Nama Supplier</th>
-                                <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">Alamat</th>
-                                <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">Telepon</th>
-                                <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">Email</th>
-                                <th class="text-center text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100" id="supplierTableBody">
-                            <?php foreach ($suppliers as $index => $supplier): ?>
-                            <tr class="hover:bg-gray-50/50 transition-colors duration-200" data-supplier-id="<?= $supplier['id'] ?>">
-                                <td class="py-4 px-6 text-sm text-gray-600"><?= $index + 1 ?></td>
-                                <td class="py-4 px-6 text-sm text-gray-800 font-medium"><?= htmlspecialchars($supplier['nama_supplier']) ?></td>
-                                <td class="py-4 px-6 text-sm text-gray-600"><?= htmlspecialchars($supplier['alamat']) ?></td>
-                                <td class="py-4 px-6 text-sm text-gray-600"><?= htmlspecialchars($supplier['telepon']) ?></td>
-                                <td class="py-4 px-6 text-sm text-gray-600"><?= htmlspecialchars($supplier['email']) ?></td>
-                                <td class="py-4 px-6">
-                                    <div class="flex justify-end gap-2">
-                                        <button onclick="showPreviewModal(<?= $supplier['id'] ?>)" 
-                                                class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                            </svg>
-                                        </button>
-                                        <button onclick="showEditModal(<?= htmlspecialchars(json_encode($supplier)) ?>)" 
-                                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                            </svg>
-                                        </button>
-                                        <button onclick="showDeleteModal(<?= $supplier['id'] ?>)" 
-                                                class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination section -->
-                <div class="p-6 border-t border-gray-100">
-                    <!-- ... (sama seperti di kategori.php) ... -->
+                <!-- Table Content - Responsif dengan Scroll Elegan -->
+                <div class="relative overflow-x-auto">
+                    <div class="inline-block min-w-full align-middle">
+                        <div class="overflow-hidden">
+                            <table class="min-w-full">
+                                <thead>
+                                    <tr class="bg-gray-50">
+                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6 bg-gray-50">No</th>
+                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6 bg-gray-50">Nama Supplier</th>
+                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6 bg-gray-50">Alamat</th>
+                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6 bg-gray-50">Telepon</th>
+                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6 bg-gray-50">Email</th>
+                                        <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6 bg-gray-50">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100/60" id="supplierTableBody">
+                                    <?php foreach ($suppliers as $index => $supplier): ?>
+                                    <tr class="hover:bg-gray-50/50 transition-colors duration-200" data-supplier-id="<?= $supplier['id'] ?>">
+                                        <td class="py-4 px-6 text-sm text-gray-600"><?= $index + 1 ?></td>
+                                        <td class="py-4 px-6 text-sm text-gray-800 font-medium"><?= htmlspecialchars($supplier['nama_supplier']) ?></td>
+                                        <td class="py-4 px-6 text-sm text-gray-600"><?= htmlspecialchars($supplier['alamat']) ?></td>
+                                        <td class="py-4 px-6 text-sm text-gray-600"><?= htmlspecialchars($supplier['telepon']) ?></td>
+                                        <td class="py-4 px-6 text-sm text-gray-600"><?= htmlspecialchars($supplier['email']) ?></td>
+                                        <td class="py-4 px-6">
+                                            <div class="flex justify-end gap-2">
+                                                <button onclick="showPreviewModal(<?= $supplier['id'] ?>)" 
+                                                        class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                </button>
+                                                <button onclick="showEditModal(<?= htmlspecialchars(json_encode($supplier)) ?>)" 
+                                                        class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                    </svg>
+                                                </button>
+                                                <button onclick="showDeleteModal(<?= $supplier['id'] ?>)" 
+                                                        class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -304,9 +347,38 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
         </div>
     </div>
 
-    <!-- Delete Modal -->
-    <div id="deleteModal" class="fixed inset-0 bg-black/50 z-50 hidden">
-        <!-- ... (sama seperti di kategori.php) ... -->
+    <!-- Delete Confirmation Alert -->
+    <div id="deleteAlert" class="fixed inset-0 bg-black/50 z-[70] hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white w-full max-w-md rounded-2xl shadow-lg">
+                <div class="p-6 text-center space-y-6">
+                    <div class="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mx-auto">
+                        <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-medium text-gray-900">Hapus Supplier</h3>
+                        <p class="text-gray-500">Apakah Anda yakin ingin menghapus supplier ini?</p>
+                    </div>
+
+                    <form id="deleteForm" method="POST" class="flex gap-3 justify-center">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="supplier_id" id="deleteId">
+                        
+                        <button type="button" onclick="closeDeleteAlert()" 
+                                class="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors duration-200">
+                            Batal
+                        </button>
+                        <button type="submit" 
+                                class="px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors duration-200">
+                            Hapus
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Preview Modal -->
@@ -340,6 +412,63 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
             </div>
         </div>
     </div>
+
+    <style>
+    /* Responsive styles dengan tetap elegan */
+    @media (max-width: 640px) {
+        /* Smooth table scrolling */
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            position: relative;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Maintain elegant spacing */
+        td, th {
+            padding: 1rem 1.5rem;
+            white-space: nowrap;
+        }
+        
+        /* Improve touch targets while keeping elegance */
+        button {
+            min-height: 44px;
+            min-width: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Maintain glass effect on mobile */
+        .backdrop-blur-xl {
+            backdrop-filter: blur(20px);
+        }
+        
+        /* Elegant input styling on mobile */
+        input, select {
+            font-size: 16px !important;
+            height: 44px;
+        }
+        
+        /* Maintain shadow and border radius */
+        .shadow-xl {
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        
+        .rounded-3xl {
+            border-radius: 1.5rem;
+        }
+    }
+
+    /* Smooth scrolling */
+    * {
+        -webkit-overflow-scrolling: touch;
+    }
+    </style>
 
     <script>
         // ... (fungsi-fungsi JavaScript untuk pagination, search, dll sama seperti di kategori.php) ...
@@ -501,6 +630,47 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
         const searchInput = document.getElementById('searchInput');
         const debouncedSearch = debounce((e) => searchSupplier(e.target.value), 300);
         searchInput.addEventListener('input', debouncedSearch);
+
+        // Fungsi untuk menutup alert
+        function closeAlert() {
+            const alert = document.getElementById('alert');
+            if (alert) {
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateY(-10px)';
+                alert.style.transition = 'all 0.3s ease-in-out';
+                setTimeout(() => alert.remove(), 300);
+            }
+        }
+
+        // Fungsi untuk menampilkan alert hapus
+        function showDeleteAlert(id) {
+            document.getElementById('deleteId').value = id;
+            document.getElementById('deleteAlert').classList.remove('hidden');
+        }
+
+        // Fungsi untuk menutup alert hapus
+        function closeDeleteAlert() {
+            document.getElementById('deleteAlert').classList.add('hidden');
+        }
+
+        // Event listener untuk menutup alert saat klik di luar
+        document.getElementById('deleteAlert').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteAlert();
+            }
+        });
+
+        // Event listener untuk tombol escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !document.getElementById('deleteAlert').classList.contains('hidden')) {
+                closeDeleteAlert();
+            }
+        });
+
+        // Update fungsi showDeleteModal menjadi showDeleteAlert
+        function showDeleteModal(id) {
+            showDeleteAlert(id);
+        }
     </script>
 </body>
 </html> 

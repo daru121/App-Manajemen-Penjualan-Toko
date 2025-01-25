@@ -251,23 +251,23 @@ if (isset($_GET['token']) && isset($_GET['user_id'])) {
     <?php include '../components/sidebar.php'; ?>
     <?php include '../components/navbar.php'; ?>
     
-    <div class="p-4 sm:ml-64">
-        <div class="ml-4 p-8 pt-24">
-            <!-- Header -->
-            <div class="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 rounded-[2rem] p-8 mb-8 shadow-lg">
+    <div class="p-0 sm:p-4 sm:ml-64">
+        <div class="ml-0 sm:ml-4 p-4 sm:p-8 pt-20 sm:pt-24">
+            <!-- Header dengan padding yang disesuaikan -->
+            <div class="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-8 mb-6 sm:mb-8 shadow-lg">
                 <div class="max-w-3xl">
-                    <h1 class="text-3xl font-bold text-white mb-3">Absensi Karyawan</h1>
-                    <p class="text-blue-100 text-lg">QR Code untuk absensi hari ini</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">Absensi Karyawan</h1>
+                    <p class="text-blue-100 text-base sm:text-lg">QR Code untuk absensi hari ini</p>
                 </div>
             </div>
 
-            <!-- Karyawan Selection dengan desain yang lebih elegan -->
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
-                <div class="flex items-center gap-6">
+            <!-- Karyawan Selection dengan padding yang disesuaikan -->
+            <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 mb-6 sm:mb-8">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
                     <!-- Icon dan Label -->
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
                         <div class="p-3 bg-blue-50 rounded-xl">
-                            <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
@@ -276,7 +276,7 @@ if (isset($_GET['token']) && isset($_GET['user_id'])) {
                     </div>
 
                     <!-- Select dengan styling yang lebih modern -->
-                    <div class="flex-1 relative">
+                    <div class="flex-1 relative w-full">
                         <select id="karyawan" onchange="changeKaryawan(this.value)" 
                                 class="w-full appearance-none bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 
                                        focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 
@@ -289,7 +289,6 @@ if (isset($_GET['token']) && isset($_GET['user_id'])) {
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <!-- Custom arrow indicator -->
                         <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -299,44 +298,32 @@ if (isset($_GET['token']) && isset($_GET['user_id'])) {
                 </div>
             </div>
 
-            <!-- QR Code Card dengan desain yang lebih modern -->
-            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 relative overflow-hidden">
-                <!-- Background Pattern -->
-                <div class="absolute inset-0 opacity-5">
-                    <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500"></div>
-                    <svg class="absolute w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                        <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                            <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" stroke-width="0.5"/>
-                        </pattern>
-                        <rect width="100" height="100" fill="url(#grid)"/>
-                    </svg>
-                </div>
-
+            <!-- QR Code Card dengan padding yang disesuaikan -->
+            <div class="bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100 relative overflow-hidden">
                 <!-- Content -->
                 <div class="relative">
                     <!-- Header dengan icon -->
-                    <div class="text-center mb-8">
+                    <div class="text-center mb-6 sm:mb-8">
                         <div class="inline-block p-3 bg-blue-50 rounded-2xl mb-4">
-                            <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
-                        <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                        <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
                             <?= tanggalIndonesia(date('Y-m-d')) ?>
                         </h2>
                         <p class="text-gray-500 mb-2">
                             <?= htmlspecialchars($selected_user['nama']) ?>
                         </p>
-                        <p class="text-lg font-medium text-blue-600" id="current-time"></p>
+                        <p class="text-base sm:text-lg font-medium text-blue-600" id="current-time"></p>
                     </div>
 
-                    <!-- QR Code dengan frame modern -->
-                    <div class="flex justify-center mb-8">
-                        <div class="relative">
-                            <!-- Frame Decoration -->
+                    <!-- QR Code dengan ukuran yang disesuaikan -->
+                    <div class="flex justify-center mb-6 sm:mb-8">
+                        <div class="relative w-full max-w-[250px] sm:max-w-[300px]">
                             <div class="absolute -inset-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl opacity-10"></div>
-                            <div class="relative bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                            <div class="relative bg-white p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100">
                                 <div class="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg opacity-10"></div>
                                 <div id="qrcode" class="relative"></div>
                             </div>
@@ -360,9 +347,9 @@ if (isset($_GET['token']) && isset($_GET['user_id'])) {
                 </div>
             </div>
 
-            <!-- Tambahkan setelah div QR Code Card -->
-            <div id="toast-notification" class="fixed top-4 right-4 z-50 hidden">
-                <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4 max-w-md">
+            <!-- Toast Notification yang responsif -->
+            <div id="toast-notification" class="fixed top-4 right-4 left-4 sm:left-auto z-50 hidden">
+                <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4 max-w-md mx-auto sm:mx-0">
                     <div class="flex items-center gap-3">
                         <div class="flex-shrink-0">
                             <div id="toast-icon" class="w-10 h-10 rounded-full flex items-center justify-center">
