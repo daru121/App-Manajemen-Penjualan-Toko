@@ -258,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
                     <h1 class="text-4xl font-bold bg-gradient-to-r from-indigo-600 via-blue-500 to-blue-400 bg-clip-text text-transparent mb-3 tracking-tight">
-                        Selamat Datang!
+                        Selamat Datang daru!
                     </h1>
                     <p class="text-gray-500/90 tracking-wide font-medium">Silahkan Login untuk melanjutkan</p>
                 </div>
