@@ -4,7 +4,7 @@ require_once 'backend/database.php';
 
 // Redirect if already logged in
 if (isset($_SESSION['user_id'])) {
-    header("Location: pages/dashboard.php");
+    header("Location: pages/dashboard");
     exit;
 }
 
@@ -27,9 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Redirect berdasarkan role
                 if ($_SESSION['role'] === 'Kasir') {
-                    header("Location: pages/penjualan.php"); // Redirect ke POS Kasir
+                    header("Location: pages/penjualan");
                 } else {
-                    header("Location: pages/dashboard.php"); // Redirect ke Dashboard untuk role lain
+                    header("Location: pages/dashboard");
                 }
                 exit;
             } else {

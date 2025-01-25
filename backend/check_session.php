@@ -5,13 +5,13 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Pastikan user sudah login
 if (!isset($_SESSION['user_id'])) {
-    header("Location: ../index.php");
+    header("Location: ../index");
     exit;
 }
 
-// Redirect jika mencoba mengakses dashboard.php sebagai Kasir
+// Redirect jika mencoba mengakses dashboard sebagai Kasir
 if ($_SESSION['role'] === 'Kasir' && basename($_SERVER['PHP_SELF']) === 'dashboard.php') {
-    header("Location: penjualan.php");
+    header("Location: penjualan");
     exit;
 }
 ?> 
