@@ -989,12 +989,12 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
-                        </table>
+                            </table>
                     </div>
                 <?php endif; ?>
             </div>
-        </div>
-    </div>
+                        </div>
+                    </div>
 
     <!-- Detail Modal -->
     <div id="detailModal" class="modal">

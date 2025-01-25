@@ -794,12 +794,12 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
 
             <!-- Grid Container untuk Marketplace dan Daerah -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                <!-- Ringkasan Penjualan Section -->
+                <!-- Marketplace Section -->
                 <div class="w-full">
                     <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-sm border border-gray-100 h-full">
                         <div class="flex justify-between items-center mb-6">
                             <div>
-                                <h2 class="text-xl font-semibold text-gray-800">Ringkasan Penjualan</h2>
+                                <h2 class="text-xl font-semibold text-gray-800">Penjualan Marketplace</h2>
                                 <p class="text-sm text-gray-500 mt-1">Total penjualan dari semua marketplace</p>
                             </div>
                         </div>

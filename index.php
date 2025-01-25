@@ -25,7 +25,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['email'] = $user['email'];
                 $_SESSION['role'] = $user['role'];
                 
-                header("Location: pages/dashboard.php");
+                // Redirect berdasarkan role
+                if ($_SESSION['role'] === 'Kasir') {
+                    header("Location: pages/penjualan.php"); // Redirect ke POS Kasir
+                } else {
+                    header("Location: pages/dashboard.php"); // Redirect ke Dashboard untuk role lain
+                }
                 exit;
             } else {
                 $error = "Akun tidak aktif. Silahkan hubungi admin.";
