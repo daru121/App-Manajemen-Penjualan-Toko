@@ -302,8 +302,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
                 <!-- Pagination section - Outside of scroll area -->
                 <div class="p-4 sm:p-6 border-t border-gray-100">
                     <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
-                        <!-- Pagination buttons -->
-                        <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start order-2 sm:order-1">
+                        <!-- Showing info - Kiri di desktop -->
+                        <div class="text-sm text-gray-700 w-full sm:w-auto text-center sm:text-left order-1 sm:order-1" id="showingInfo">
+                            Showing 1 to 5 of <?= $totalItems ?> entries
+                        </div>
+
+                        <!-- Pagination buttons - Kanan di desktop -->
+                        <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end order-2 sm:order-2">
                             <button id="prevButton" 
                                     onclick="changePage('prev')" 
                                     class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -319,11 +324,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
                                     class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
                                 Next
                             </button>
-                        </div>
-
-                        <!-- Showing info -->
-                        <div class="text-sm text-gray-700 w-full sm:w-auto text-center sm:text-left order-1 sm:order-2" id="showingInfo">
-                            Showing 1 to 5 of <?= $totalItems ?> entries
                         </div>
                     </div>
                 </div>

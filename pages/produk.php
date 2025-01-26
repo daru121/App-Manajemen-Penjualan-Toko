@@ -3,10 +3,11 @@ session_start();
 require_once '../backend/database.php';
 
 // Query untuk mengambil semua produk dengan kategori dan stok
-$query = "SELECT b.*, k.nama_kategori, COALESCE(s.jumlah, 0) as stok 
+$query = "SELECT b.*, k.nama_kategori, s.nama_supplier, s.id as supplier_id, COALESCE(st.jumlah, 0) as stok 
           FROM barang b 
           LEFT JOIN kategori k ON b.kategori_id = k.id 
-          LEFT JOIN stok s ON b.id = s.barang_id 
+          LEFT JOIN supplier s ON b.supplier_id = s.id
+          LEFT JOIN stok st ON b.id = st.barang_id 
           ORDER BY b.nama_barang ASC";
 $stmt = $conn->query($query);
 $products = $stmt->fetchAll();
@@ -78,10 +79,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$barang_id, $stok]);
 
                 $conn->commit();
+                $_SESSION['success'] = "Produk berhasil ditambahkan!";
             } catch(Exception $e) {
                 $conn->rollback();
-                $_SESSION['error'] = $e->getMessage();
+                $_SESSION['error'] = "Gagal menambahkan produk: " . $e->getMessage();
             }
+            
+            header("Location: produk.php");
+            exit;
         } elseif ($_POST['action'] === 'edit') {
             try {
                 $conn->beginTransaction();
@@ -131,8 +136,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $conn->commit();
-                
-                // Set success message
                 $_SESSION['success'] = "Produk berhasil diperbarui!";
             } catch(Exception $e) {
                 $conn->rollback();
@@ -156,13 +159,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$id]);
 
                 $conn->commit();
+                $_SESSION['success'] = "Produk berhasil dihapus!";
             } catch(Exception $e) {
                 $conn->rollback();
-                throw $e;
+                $_SESSION['error'] = "Gagal menghapus produk: " . $e->getMessage();
             }
+            
+            header("Location: produk.php");
+            exit;
         }
-        header("Location: produk.php");
-        exit;
     }
 }
 ?>
@@ -180,20 +185,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include '../components/sidebar.php'; ?>
     <?php include '../components/navbar.php'; ?>
 
-    <div class="ml-64 pt-16 min-h-screen bg-gray-50/50">
-        <div class="p-8">
-            <!-- Header Section -->
-            <div class="mb-8 bg-gradient-to-br from-indigo-600 via-blue-500 to-blue-400 rounded-3xl p-10 text-white shadow-2xl relative overflow-hidden">
+    <div class="ml-0 sm:ml-64 pt-24 sm:pt-16 min-h-screen bg-gray-50/50">
+        <div class="p-4 sm:p-8">
+            <!-- Header Section - Responsif -->
+            <div class="mb-6 sm:mb-8 bg-gradient-to-br from-indigo-600 via-blue-500 to-blue-400 rounded-xl sm:rounded-3xl p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
                 <div class="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/20 rounded-full translate-y-32 -translate-x-32 blur-3xl"></div>
                 
-                <div class="relative flex justify-between items-center">
+                <div class="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h1 class="text-4xl font-bold mb-3">Data Barang</h1>
-                        <p class="text-blue-100 text-lg">Kelola data produk dan inventory toko Anda</p>
+                        <h1 class="text-2xl sm:text-4xl font-bold mb-2 sm:mb-3">Data Barang</h1>
+                        <p class="text-blue-100 text-base sm:text-lg">Kelola data produk dan inventory toko Anda</p>
                     </div>
                     <button onclick="showAddModal()" 
-                            class="px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center gap-3 transition-all duration-300 backdrop-blur-sm">
+                            class="w-full sm:w-auto px-4 sm:px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center justify-center sm:justify-start gap-3 transition-all duration-300 backdrop-blur-sm">
                         <div class="p-2 bg-white/10 rounded-lg">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
@@ -204,82 +209,102 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
+            <!-- Success Alert -->
             <?php if (isset($_SESSION['success'])): ?>
-                <div id="successAlert" class="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        <?= $_SESSION['success'] ?>
+                <div id="alert" class="bg-[#F0FDF4] border-l-4 border-[#16A34A] p-4 mb-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-[#16A34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-[#15803D]">
+                                    <?= $_SESSION['success'] ?>
+                                </p>
+                            </div>
+                        </div>
+                        <button onclick="closeAlert()" class="ml-auto pl-3">
+                            <svg class="h-5 w-5 text-[#16A34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
-                    <button onclick="this.parentElement.remove()" class="text-green-600 hover:text-green-700">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
                 </div>
                 <?php unset($_SESSION['success']); ?>
             <?php endif; ?>
 
+            <!-- Error Alert -->
             <?php if (isset($_SESSION['error'])): ?>
-                <div id="errorAlert" class="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <?= $_SESSION['error'] ?>
+                <div id="alert" class="bg-[#FEF2F2] border-l-4 border-[#DC2626] p-4 mb-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-[#DC2626]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-[#991B1B]">
+                                    <?= $_SESSION['error'] ?>
+                                </p>
+                            </div>
+                        </div>
+                        <button onclick="closeAlert()" class="ml-auto pl-3">
+                            <svg class="h-5 w-5 text-[#DC2626]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
-                    <button onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-700">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
                 </div>
                 <?php unset($_SESSION['error']); ?>
             <?php endif; ?>
 
-            <!-- Table Card -->
-            <div class="bg-white/60 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20">
-                <div class="p-8 border-b border-gray-100/80">
-                    <div class="flex items-center justify-between">
-                        <!-- Filter Stok -->
-                        <div class="flex gap-3">
+            <!-- Table Card - Responsif -->
+            <div class="bg-white/60 backdrop-blur-2xl rounded-xl sm:rounded-3xl shadow-2xl border border-white/20">
+                <!-- Filter Section - Responsif -->
+                <div class="p-4 sm:p-8 border-b border-gray-100/80">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <!-- Filter Stok - Scrollable pada mobile -->
+                        <div class="flex gap-2 overflow-x-auto pb-2 sm:pb-0 -mx-4 sm:mx-0 px-4 sm:px-0 hide-scrollbar">
                             <button onclick="filterStock('all')" 
-                                    class="px-4 py-2 rounded-xl bg-white/80 backdrop-blur-xl border border-gray-200 hover:border-gray-300 hover:bg-white transition-all duration-300 group flex items-center gap-2 stock-filter active">
+                                    class="flex-shrink-0 px-4 py-2 rounded-xl bg-white/80 backdrop-blur-xl border border-gray-200 hover:border-gray-300 hover:bg-white transition-all duration-300 group flex items-center gap-2 stock-filter active">
                                 <div class="w-2 h-2 rounded-full bg-gradient-to-br from-gray-400 to-gray-500"></div>
                                 <span class="text-sm font-medium text-gray-700">All</span>
                                 <span class="text-xs text-gray-400">(<?= count($products) ?>)</span>
                             </button>
                             
                             <button onclick="filterStock('banyak')" 
-                                    class="px-4 py-2 rounded-xl bg-white/80 backdrop-blur-xl border border-gray-200 hover:border-gray-300 hover:bg-white transition-all duration-300 group flex items-center gap-2 stock-filter">
+                                    class="flex-shrink-0 px-4 py-2 rounded-xl bg-white/80 backdrop-blur-xl border border-gray-200 hover:border-gray-300 hover:bg-white transition-all duration-300 group flex items-center gap-2 stock-filter">
                                 <div class="w-2 h-2 rounded-full bg-gradient-to-br from-emerald-400 to-green-500"></div>
                                 <span class="text-sm font-medium text-gray-700">Stock Banyak</span>
                                 <span class="text-xs text-gray-400">(<?= count(array_filter($products, fn($p) => $p['stok'] > 10)) ?>)</span>
                             </button>
                             
                             <button onclick="filterStock('sedikit')" 
-                                    class="px-4 py-2 rounded-xl bg-white/80 backdrop-blur-xl border border-gray-200 hover:border-gray-300 hover:bg-white transition-all duration-300 group flex items-center gap-2 stock-filter">
+                                    class="flex-shrink-0 px-4 py-2 rounded-xl bg-white/80 backdrop-blur-xl border border-gray-200 hover:border-gray-300 hover:bg-white transition-all duration-300 group flex items-center gap-2 stock-filter">
                                 <div class="w-2 h-2 rounded-full bg-gradient-to-br from-orange-400 to-orange-500"></div>
                                 <span class="text-sm font-medium text-gray-700">Stock Sedikit</span>
                                 <span class="text-xs text-gray-400">(<?= count(array_filter($products, fn($p) => $p['stok'] > 0 && $p['stok'] <= 10)) ?>)</span>
                             </button>
                             
                             <button onclick="filterStock('habis')" 
-                                    class="px-4 py-2 rounded-xl bg-white/80 backdrop-blur-xl border border-gray-200 hover:border-gray-300 hover:bg-white transition-all duration-300 group flex items-center gap-2 stock-filter">
+                                    class="flex-shrink-0 px-4 py-2 rounded-xl bg-white/80 backdrop-blur-xl border border-gray-200 hover:border-gray-300 hover:bg-white transition-all duration-300 group flex items-center gap-2 stock-filter">
                                 <div class="w-2 h-2 rounded-full bg-gradient-to-br from-red-400 to-red-500"></div>
                                 <span class="text-sm font-medium text-gray-700">Stock Habis</span>
                                 <span class="text-xs text-gray-400">(<?= count(array_filter($products, fn($p) => $p['stok'] == 0)) ?>)</span>
                             </button>
                         </div>
 
-                        <div class="relative ml-auto">
+                        <!-- Search Box - Full width pada mobile -->
+                        <div class="relative w-full sm:w-auto sm:ml-auto">
                             <input type="text" 
                                    id="searchInput"
                                    placeholder="Cari produk..." 
                                    oninput="searchTable()"
-                                   class="w-80 pl-12 pr-4 py-2.5 bg-gray-50/50 border border-gray-200/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all duration-300 hover:bg-gray-50/80">
-                            <div class="absolute left-4 top-2.5 text-gray-400">
+                                   class="w-full sm:w-72 pl-12 pr-4 py-2.5 bg-gray-50/50 border border-gray-200/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                 </svg>
@@ -288,96 +313,106 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
-                <div class="overflow-x-auto p-2">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="bg-gray-50/50">
-                                <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">No</th>
-                                <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Nama Barang</th>
-                                <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Kategori</th>
-                                <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Stok</th>
-                                <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Harga Modal</th>
-                                <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Harga Jual</th>
-                                <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Profit</th>
-                                <th class="text-center text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100/80" id="productTableBody">
-                            <?php foreach ($products as $index => $product): ?>
-                            <tr class="hover:bg-gray-50/50 transition-all duration-300">
-                                <td class="py-4 px-6 text-sm text-gray-600"><?= $index + 1 ?></td>
-                                <td class="py-4 px-6">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                                            <img src="<?= $product['gambar'] ? '../uploads/' . $product['gambar'] : '../img/no-image.jpg' ?>" 
-                                                 alt="<?= htmlspecialchars($product['nama_barang']) ?>"
-                                                 class="w-full h-full object-cover">
-                                        </div>
-                                        <span class="text-sm text-gray-800 font-medium">
-                                            <?= htmlspecialchars($product['nama_barang']) ?>
-                                        </span>
-                                    </div>
-                                </td>
-                                <td class="py-4 px-6">
-                                    <span class="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-xs font-medium">
-                                        <?= htmlspecialchars($product['nama_kategori']) ?>
-                                    </span>
-                                </td>
-                                <td class="py-4 px-6">
-                                    <span class="px-3 py-1.5 bg-<?= $product['stok'] > 0 ? 'green' : 'red' ?>-50 text-<?= $product['stok'] > 0 ? 'green' : 'red' ?>-600 rounded-full text-xs font-medium">
-                                        <?= $product['stok'] ?> unit
-                                    </span>
-                                </td>
-                                <td class="py-4 px-6 text-right text-sm text-gray-600">
-                                    Rp <?= number_format($product['harga_modal'], 0, ',', '.') ?>
-                                </td>
-                                <td class="py-4 px-6 text-right text-sm text-gray-600">
-                                    Rp <?= number_format($product['harga'], 0, ',', '.') ?>
-                                </td>
-                                <td class="py-4 px-6 text-right">
-                                    <span class="text-sm text-green-600 font-medium">
-                                        Rp <?= number_format($product['harga'] - $product['harga_modal'], 0, ',', '.') ?>
-                                    </span>
-                                </td>
-                                <td class="py-4 px-6">
-                                    <div class="flex items-center justify-center gap-3">
-                                        <button onclick='showEditModal(<?= json_encode([
-                                            "id" => $product["id"],
-                                            "nama_barang" => $product["nama_barang"],
-                                            "kategori_id" => $product["kategori_id"],
-                                            "harga_modal" => $product["harga_modal"],
-                                            "harga" => $product["harga"],
-                                            "stok" => $product["stok"]
-                                        ]) ?>)' 
-                                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-blue-100">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                            </svg>
-                                        </button>
-                                        <button onclick="showDeleteModal(<?= $product['id'] ?>)" 
-                                                class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-red-100">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                <!-- Table Wrapper - Horizontal scroll pada mobile -->
+                <div class="overflow-x-auto">
+                    <div class="inline-block min-w-full align-middle">
+                        <div class="overflow-hidden">
+                            <table class="min-w-full divide-y divide-gray-100">
+                                <thead>
+                                    <tr class="bg-gray-50/50">
+                                        <th class="whitespace-nowrap text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">No</th>
+                                        <th class="whitespace-nowrap text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Nama Barang</th>
+                                        <th class="whitespace-nowrap text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Kategori</th>
+                                        <th class="whitespace-nowrap text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Stok</th>
+                                        <th class="whitespace-nowrap text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Harga Modal</th>
+                                        <th class="whitespace-nowrap text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Harga Jual</th>
+                                        <th class="whitespace-nowrap text-center text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Profit</th>
+                                        <th class="whitespace-nowrap text-center text-xs font-semibold text-gray-500 uppercase tracking-wider py-5 px-6">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100/80" id="productTableBody">
+                                    <?php foreach ($products as $index => $product): ?>
+                                    <tr class="hover:bg-gray-50/50 transition-all duration-300">
+                                        <td class="whitespace-nowrap py-4 px-6 text-sm text-gray-600"><?= $index + 1 ?></td>
+                                        <td class="whitespace-nowrap py-4 px-6">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                                                    <img src="<?= $product['gambar'] ? '../uploads/' . $product['gambar'] : '../img/no-image.jpg' ?>" 
+                                                         alt="<?= htmlspecialchars($product['nama_barang']) ?>"
+                                                         class="w-full h-full object-cover">
+                                                </div>
+                                                <span class="text-sm text-gray-800 font-medium">
+                                                    <?= htmlspecialchars($product['nama_barang']) ?>
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="whitespace-nowrap py-4 px-6">
+                                            <span class="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-xs font-medium">
+                                                <?= htmlspecialchars($product['nama_kategori']) ?>
+                                            </span>
+                                        </td>
+                                        <td class="whitespace-nowrap py-4 px-6">
+                                            <span class="px-3 py-1.5 bg-<?= $product['stok'] > 0 ? 'green' : 'red' ?>-50 text-<?= $product['stok'] > 0 ? 'green' : 'red' ?>-600 rounded-full text-xs font-medium">
+                                                <?= $product['stok'] ?> unit
+                                            </span>
+                                        </td>
+                                        <td class="whitespace-nowrap py-4 px-6 text-right text-sm text-gray-600">
+                                            Rp <?= number_format($product['harga_modal'], 0, ',', '.') ?>
+                                        </td>
+                                        <td class="whitespace-nowrap py-4 px-6 text-right text-sm text-gray-600">
+                                            Rp <?= number_format($product['harga'], 0, ',', '.') ?>
+                                        </td>
+                                        <td class="whitespace-nowrap py-4 px-6 text-right">
+                                            <span class="text-sm text-green-600 font-medium">
+                                                Rp <?= number_format($product['harga'] - $product['harga_modal'], 0, ',', '.') ?>
+                                            </span>
+                                        </td>
+                                        <td class="whitespace-nowrap py-4 px-6">
+                                            <div class="flex items-center justify-center gap-3">
+                                                <button onclick='showEditModal(<?= json_encode([
+                                                    "id" => $product["id"],
+                                                    "nama_barang" => $product["nama_barang"],
+                                                    "kategori_id" => $product["kategori_id"],
+                                                    "supplier_id" => $product["supplier_id"],
+                                                    "harga_modal" => $product["harga_modal"],
+                                                    "harga" => $product["harga"],
+                                                    "stok" => $product["stok"],
+                                                    "gambar" => $product["gambar"]
+                                                ]) ?>)' 
+                                                        class="p-2.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                    </svg>
+                                                </button>
+                                                <button onclick="showDeleteModal(<?= $product['id'] ?>)" 
+                                                        class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-red-100">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Pagination -->
-                <div class="p-8 border-t border-gray-100/80">
-                    <div class="flex items-center justify-between">
-                        <p class="text-sm text-gray-600" id="showingInfo">
+                <!-- Pagination - Stack pada mobile -->
+                <div class="p-4 sm:p-8 border-t border-gray-100/80">
+                    <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
+                        <!-- Showing info -->
+                        <div class="text-sm text-gray-600 w-full sm:w-auto text-center sm:text-left order-1 sm:order-1" id="showingInfo">
                             Showing 1 to <?= min(5, count($products)) ?> of <?= count($products) ?> entries
-                        </p>
-                        <div class="flex items-center gap-2">
+                        </div>
+                        
+                        <!-- Pagination buttons -->
+                        <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end order-2 sm:order-2">
                             <button onclick="changePage('prev')" 
                                     id="prevButton"
-                                    class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
+                                    class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">
                                 Previous
                             </button>
                             <div id="pageNumbers" class="flex items-center gap-1">
@@ -385,7 +420,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <button onclick="changePage('next')" 
                                     id="nextButton"
-                                    class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
+                                    class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">
                                 Next
                             </button>
                         </div>
@@ -396,8 +431,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <!-- Add/Edit Modal -->
-    <div id="productModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-2xl p-8 w-full max-w-xl">
+    <div id="productModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-4 sm:p-8 w-full max-w-xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="modalTitle" class="text-2xl font-bold text-gray-800"></h3>
                 <button onclick="closeProductModal()" class="text-gray-400 hover:text-gray-600">
@@ -487,8 +522,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl w-[400px] overflow-hidden">
+    <div id="deleteModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4">
             <div class="p-6">
                 <div class="flex items-center justify-center mb-6">
                     <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
@@ -530,6 +565,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             document.getElementById('barangId').value = product.id;
             document.getElementById('namaBarang').value = product.nama_barang;
             document.getElementById('kategoriId').value = product.kategori_id;
+            document.getElementById('supplierId').value = product.supplier_id || '';
+            
+            // Kembalikan format bilangan seperti sebelumnya
             document.getElementById('hargaModal').value = product.harga_modal;
             document.getElementById('hargaJual').value = product.harga;
             document.getElementById('stok').value = product.stok;
@@ -704,6 +742,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             });
         }
+
+        // Tambahkan fungsi closeAlert
+        function closeAlert() {
+            const alert = document.getElementById('alert');
+            if (alert) {
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateY(-10px)';
+                alert.style.transition = 'all 0.3s ease-in-out';
+                setTimeout(() => alert.remove(), 300);
+            }
+        }
     </script>
 
     <style>
@@ -718,6 +767,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .stock-filter.active span:not(.rounded-lg) {
             @apply text-gray-900;
+        }
+
+        /* Tambahkan style untuk animasi alert */
+        #alert {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Sembunyikan scrollbar tapi tetap bisa scroll */
+        .hide-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
         }
     </style>
 </body>
