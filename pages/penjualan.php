@@ -746,6 +746,457 @@ $kasir = $stmt->fetch();
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
         }
+
+        /* CSS untuk responsif mobile */
+        @media (max-width: 768px) {
+            /* Layout utama */
+            .lg\:pl-72 {
+                padding-left: 0;
+                padding-top: 1rem;
+            }
+
+            /* Header section */
+            .bg-blue-600.rounded-3xl {
+                margin: 0.5rem;
+                border-radius: 1rem;
+            }
+
+            /* Grid layout */
+            .grid.grid-cols-12 {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                padding: 0.5rem;
+            }
+
+            /* Kasir section (keranjang) */
+            .col-span-5 {
+                display: none; /* Sembunyikan default */
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 60px; /* Tinggi tab navigation */
+                background: white;
+                z-index: 30;
+                overflow-y: auto;
+                padding: 1rem;
+            }
+
+            .col-span-5.active {
+                display: block;
+            }
+
+            /* Kasir header */
+            .flex.items-center.justify-between.mb-6 {
+                padding: 0.5rem;
+            }
+
+            /* Cart items */
+            .space-y-3.mb-6 {
+                max-height: 60vh;
+                overflow-y: auto;
+                padding: 0.5rem;
+            }
+
+            /* Product section */
+            .col-span-7 {
+                display: none; /* Sembunyikan default */
+                padding-bottom: 60px; /* Space untuk tab navigation */
+            }
+
+            .col-span-7.active {
+                display: block;
+            }
+
+            /* Search bar */
+            .relative.mb-6 {
+                position: sticky;
+                top: 0;
+                z-index: 20;
+                background: white;
+                padding: 1rem;
+                margin: -0.5rem -0.5rem 1rem -0.5rem;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            }
+
+            .relative.mb-6 input {
+                width: 100%;
+                height: 44px;
+                padding: 0.75rem 1rem 0.75rem 2.75rem;
+                font-size: 1rem;
+                border-radius: 1rem;
+                border: 1px solid rgba(0, 0, 0, 0.1);
+                background: #f8fafc;
+                transition: all 0.3s ease;
+            }
+
+            .relative.mb-6 input:focus {
+                background: white;
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            }
+
+            /* Search icon */
+            .relative.mb-6 svg {
+                left: 1rem;
+                width: 1.25rem;
+                height: 1.25rem;
+                color: #94a3b8;
+            }
+
+            /* Product grid */
+            #productContainer {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+                padding: 0 0.5rem;
+            }
+
+            /* Product card */
+            .group.bg-gray-50\/50 {
+                background: white;
+                border: 1px solid rgba(0, 0, 0, 0.05);
+                border-radius: 1rem;
+                overflow: hidden;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+
+            .group.bg-gray-50\/50:active {
+                transform: scale(0.98);
+            }
+
+            /* Product image */
+            .aspect-square {
+                height: 160px;
+                width: 100%;
+                background: #f8fafc;
+                position: relative;
+            }
+
+            .aspect-square img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.3s ease;
+            }
+
+            .group:active .aspect-square img {
+                transform: scale(1.05);
+            }
+
+            /* Product info */
+            .p-4 {
+                padding: 0.875rem;
+            }
+
+            /* Product title */
+            .font-medium.text-gray-800 {
+                font-size: 0.875rem;
+                line-height: 1.25rem;
+                font-weight: 500;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                margin-bottom: 0.25rem;
+            }
+
+            /* Product category */
+            .text-sm.text-gray-500 {
+                font-size: 0.75rem;
+                color: #64748b;
+                margin-bottom: 0.5rem;
+            }
+
+            /* Price and action */
+            .flex.items-center.justify-between {
+                align-items: center;
+                margin-top: 0.5rem;
+            }
+
+            /* Price */
+            .text-lg.font-semibold.text-blue-600 {
+                font-size: 0.875rem;
+                font-weight: 600;
+            }
+
+            /* Stock badge */
+            .px-2.py-1.text-xs {
+                font-size: 0.675rem;
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.5rem;
+                font-weight: 500;
+            }
+
+            /* Add to cart button */
+            button.p-2 {
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 0.75rem;
+                background: rgba(59, 130, 246, 0.1);
+                transition: all 0.2s ease;
+            }
+
+            button.p-2:active {
+                transform: scale(0.9);
+                background: rgba(59, 130, 246, 0.2);
+            }
+
+            button.p-2 svg {
+                width: 1.25rem;
+                height: 1.25rem;
+                color: #3b82f6;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            #productContainer {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .aspect-square {
+                height: 200px;
+            }
+
+            .p-4 {
+                padding: 1rem;
+            }
+
+            .font-medium.text-gray-800 {
+                font-size: 1rem;
+            }
+
+            .text-lg.font-semibold.text-blue-600 {
+                font-size: 1rem;
+            }
+        }
+
+        /* Tambahkan CSS untuk mengatur tampilan tab */
+        @media (max-width: 768px) {
+            /* Kasir section (keranjang) */
+            .col-span-5 {
+                display: none; /* Sembunyikan default */
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 60px; /* Tinggi tab navigation */
+                background: white;
+                z-index: 30;
+                overflow-y: auto;
+                padding: 1rem;
+            }
+
+            .col-span-5.active {
+                display: block;
+            }
+
+            /* Product section */
+            .col-span-7 {
+                display: none; /* Sembunyikan default */
+                padding-bottom: 60px; /* Space untuk tab navigation */
+            }
+
+            .col-span-7.active {
+                display: block;
+            }
+
+            /* Tab navigation active state */
+            .tab-button.active {
+                color: #2563eb;
+                border-bottom: 2px solid #2563eb;
+            }
+
+            .tab-button.active svg {
+                color: #2563eb;
+            }
+        }
+
+        /* Tambahkan CSS untuk badge */
+        @media (max-width: 768px) {
+            /* Badge styling */
+            .cart-count {
+                font-size: 0.75rem;
+                min-width: 20px;
+                height: 20px;
+                padding: 0 4px;
+                border: 2px solid white;
+                box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        /* Tambahkan CSS untuk efek hover yang lebih baik */
+        @media (max-width: 768px) {
+            /* Delete button styling */
+            button.text-red-500 {
+                color: rgb(239, 68, 68) !important; /* Memastikan warna merah */
+            }
+
+            button.text-red-500 svg {
+                color: rgb(239, 68, 68) !important; /* Memastikan icon juga merah */
+            }
+
+            button.text-red-500:active {
+                background-color: rgba(239, 68, 68, 0.1);
+                transform: scale(0.95);
+            }
+        }
+
+        /* Update CSS untuk tab styling */
+        @media (max-width: 768px) {
+            /* Tab button default state (abu-abu) */
+            .tab-button {
+                color: #6B7280; /* text-gray-500 */
+            }
+
+            .tab-button svg {
+                color: #6B7280;
+            }
+
+            /* Tab button active state (biru) */
+            .tab-button.active {
+                color: #2563EB !important; /* text-blue-600 */
+                border-bottom: 2px solid #2563EB;
+            }
+
+            .tab-button.active svg {
+                color: #2563EB !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            /* Container pagination */
+            .flex.items-center.justify-between.border-t.border-gray-100.pt-4 {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                margin-bottom: 0;
+                padding-bottom: 0;
+                border-bottom: none;
+            }
+
+            /* Info entries - Perbesar ukuran font */
+            .flex.items-center.justify-between.border-t.border-gray-100.pt-4 > .text-sm.text-gray-500 {
+                order: 2;
+                text-align: center;
+                width: 100%;
+                margin-top: 0.25rem;
+                font-size: 0.95rem; /* Ukuran font lebih besar */
+                line-height: 1.5; /* Line height yang sesuai */
+                color: #4B5563; /* Warna yang lebih gelap agar lebih mudah dibaca */
+            }
+
+            /* Product container */
+            #productContainer {
+                margin-bottom: 0;
+                padding-bottom: 0;
+            }
+
+            /* Produk section container */
+            .col-span-7.active {
+                padding-bottom: 60px;
+            }
+
+            /* Hapus margin/padding berlebih */
+            .col-span-7 > div:last-child {
+                margin-bottom: 0;
+                padding-bottom: 0;
+            }
+        }
+
+        /* Previous/Next buttons disabled state */
+        .pagination-nav.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            background-color: #F3F4F6;
+            border-color: #E5E7EB;
+            color: #9CA3AF;
+        }
+
+        /* Hover effect hanya untuk tombol yang tidak disabled */
+        .pagination-nav:not(.disabled):hover {
+            background-color: #F3F4F6;
+            border-color: #D1D5DB;
+        }
+
+        /* Styling untuk pagination di desktop */
+        @media (min-width: 769px) {
+            .pagination-nav {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.5rem 1rem;
+                border: 1px solid #E5E7EB;
+                border-radius: 0.5rem;
+                font-size: 0.875rem;
+                color: #374151;
+                background: white;
+                transition: all 0.2s;
+            }
+
+            .pagination-nav:hover:not(.disabled) {
+                background: #F3F4F6;
+                border-color: #D1D5DB;
+            }
+
+            .pagination-nav.disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                background: #F3F4F6;
+            }
+
+            .pagination-button {
+                padding: 0.5rem 1rem;
+                border: 1px solid #E5E7EB;
+                border-radius: 0.5rem;
+                font-size: 0.875rem;
+                color: #374151;
+                background: white;
+                min-width: 2.5rem;
+                text-align: center;
+                transition: all 0.2s;
+            }
+
+            .pagination-button:hover:not(.active) {
+                background: #F3F4F6;
+                border-color: #D1D5DB;
+            }
+
+            .pagination-button.active {
+                background: #2563EB;
+                color: white;
+                border-color: #2563EB;
+            }
+        }
+
+        /* Styling untuk tombol pagination */
+        .pagination-button {
+            padding: 0.5rem 1rem;
+            min-width: 2.5rem;
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        /* Style khusus untuk tombol aktif */
+        .pagination-button.active {
+            background-color: #2563EB;
+            color: white;
+            border-color: #2563EB;
+        }
+
+        /* Hover effect untuk tombol tidak aktif */
+        .pagination-button:not(.active):hover {
+            background-color: #F3F4F6;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -756,18 +1207,24 @@ $kasir = $stmt->fetch();
     <div class="lg:pl-72 pr-4 pt-20">
         <!-- Header Section -->
         <div class="max-w-7xl mx-auto mb-8">
-            <div class="bg-blue-600 rounded-3xl px-8 py-6 text-white relative overflow-hidden">
-                <!-- Decorative elements -->
+            <div class="bg-blue-600 rounded-3xl p-4 sm:p-6 md:p-8 text-white relative overflow-hidden">
+                <!-- Background decorative elements -->
+                <div class="absolute top-0 right-0 w-32 h-32 sm:w-64 sm:h-64 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-3xl"></div>
+                <div class="absolute bottom-0 left-0 w-32 h-32 sm:w-64 sm:h-64 bg-blue-500/20 rounded-full translate-y-16 -translate-x-16 blur-3xl"></div>
                 
-                <div class="relative flex justify-between items-center">
+                <div class="relative flex flex-col gap-4 sm:gap-6">
+                    <!-- Header Title -->
                     <div>
-                        <h1 class="text-2xl font-bold mb-1">Point of Sales</h1>
-                        <p class="text-blue-100">Kelola transaksi penjualan dengan mudah</p>
+                        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2">Point of Sales</h1>
+                        <p class="text-sm sm:text-base text-blue-100">Kelola transaksi penjualan dengan mudah</p>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <div class="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-lg">
-                            <div class="text-sm text-blue-100">Total Transaksi Hari Ini</div>
-                            <div class="text-xl font-bold">
+                    
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <!-- Total Transaksi -->
+                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4">
+                            <div class="text-xs sm:text-sm text-blue-100 mb-1">Total Transaksi Hari Ini</div>
+                            <div class="text-lg sm:text-xl font-bold">
                                 <?php
                                 $today = date('Y-m-d');
                                 $query = "SELECT COUNT(*) as total FROM transaksi WHERE DATE(tanggal) = ?";
@@ -778,9 +1235,11 @@ $kasir = $stmt->fetch();
                                 ?>
                             </div>
                         </div>
-                        <div class="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-lg">
-                            <div class="text-sm text-blue-100">Total Pendapatan Hari Ini</div>
-                            <div class="text-xl font-bold">
+                        
+                        <!-- Total Pendapatan -->
+                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4">
+                            <div class="text-xs sm:text-sm text-blue-100 mb-1">Total Pendapatan Hari Ini</div>
+                            <div class="text-lg sm:text-xl font-bold">
                                 <?php
                                 $query = "SELECT SUM(total_harga) as total FROM transaksi WHERE DATE(tanggal) = ?";
                                 $stmt = $conn->prepare($query);
@@ -854,10 +1313,10 @@ $kasir = $stmt->fetch();
                                                             </svg>
                                                         </button>
                                                     </div>
-                                                    <button onclick="removeFromCart(<?= $index ?>)"
-                                                            class="p-2 text-red-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors">
-                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                                                    <button onclick="removeFromCart(<?= $index ?>)" 
+                                                            class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                                        <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                                                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                         </svg>
                                                     </button>
@@ -1155,40 +1614,41 @@ $kasir = $stmt->fetch();
                                 <?php endif; ?>
                             </div>
 
-                            <!-- Pagination -->
-                            <?php if ($totalPages > 1): ?>
-                                <div class="flex items-center justify-between border-t border-gray-100 pt-4">
-                                    <div class="text-sm text-gray-500">
-                                        Showing <?= ($offset + 1) ?> to <?= min($offset + $itemsPerPage, $totalProducts) ?> of <?= $totalProducts ?> entries
-                                    </div>
-                                    
-                                    <div class="flex items-center gap-2">
-                                        <?php if ($currentPage > 1): ?>
-                                            <a href="?page=<?= ($currentPage - 1) ?>" 
-                                               class="px-3 py-1 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                                                Previous
-                                            </a>
-                                        <?php endif; ?>
-
-                                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                                            <a href="?page=<?= $i ?>" 
-                                               class="px-3 py-1 <?= $i === $currentPage ? 
-                                                        'bg-blue-600 text-white' : 
-                                                        'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50' ?> 
-                                                      rounded-lg text-sm transition-colors">
-                                                <?= $i ?>
-                                            </a>
-                                        <?php endfor; ?>
-
-                                        <?php if ($currentPage < $totalPages): ?>
-                                            <a href="?page=<?= ($currentPage + 1) ?>" 
-                                               class="px-3 py-1 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                                                Next
-                                            </a>
-                                        <?php endif; ?>
-                                    </div>
+                            <!-- Update tampilan pagination -->
+                            <div class="flex items-center justify-between border-t border-gray-100 pt-4">
+                                <!-- Info entries di pojok kiri -->
+                                <div class="text-sm text-gray-500">
+                                    Showing <?= ($offset + 1) ?> to <?= min($offset + $itemsPerPage, $totalProducts) ?> of <?= $totalProducts ?> entries
                                 </div>
-                            <?php endif; ?>
+                                
+                                <!-- Pagination buttons di pojok kanan -->
+                                <div class="flex items-center gap-2">
+                                    <!-- Previous button -->
+                                    <button class="pagination-nav <?= ($currentPage == 1) ? 'disabled' : '' ?>" 
+                                            onclick="changePage('prev')" 
+                                            <?= ($currentPage == 1) ? 'disabled' : '' ?>>
+                                        Previous
+                                    </button>
+                                    
+                                    <!-- Page numbers -->
+                                    <?php
+                                    $totalPages = ceil($totalProducts / $itemsPerPage);
+                                    for ($i = 1; $i <= $totalPages; $i++):
+                                    ?>
+                                        <button class="pagination-button <?= $currentPage == $i ? 'active bg-blue-600 text-white border border-blue-600' : 'border border-gray-200 hover:bg-gray-50' ?>" 
+                                                onclick="changePage(<?= $i ?>)">
+                                            <?= $i ?>
+                                        </button>
+                                    <?php endfor; ?>
+
+                                    <!-- Next button -->
+                                    <button class="pagination-nav <?= ($currentPage == $totalPages) ? 'disabled' : '' ?>" 
+                                            onclick="changePage('next')" 
+                                            <?= ($currentPage == $totalPages) ? 'disabled' : '' ?>>
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1357,7 +1817,112 @@ $kasir = $stmt->fetch();
          </div>
      </div>
 
+    <!-- Tambahkan floating action button untuk mobile -->
+    <div class="cart-fab lg:hidden">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+        <span class="text-sm font-medium cart-count">0</span>
+    </div>
+
+    <!-- Tambahkan tab navigation untuk mobile -->
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+        <div class="flex justify-around">
+            <!-- Tab Keranjang -->
+            <button onclick="showTab('cart')" id="cartTab" 
+                    class="tab-button flex-1 py-4 px-2 text-center text-sm font-medium">
+                <div class="flex flex-col items-center">
+                    <div class="relative">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        <span class="cart-count absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                    </div>
+                    <span class="mt-1">Keranjang</span>
+                </div>
+            </button>
+
+            <!-- Tab Produk dengan icon yang diupdate -->
+            <button onclick="showTab('products')" id="productsTab" 
+                    class="tab-button flex-1 py-4 px-2 text-center text-sm font-medium">
+                <div class="flex flex-col items-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    <span class="mt-1">Produk</span>
+                </div>
+            </button>
+        </div>
+    </div>
+
     <script>
+    // Tambahkan fungsi untuk update cart counter
+    function updateCartCounter() {
+        const cartCountElements = document.querySelectorAll('.cart-count');
+        const cartItems = document.querySelectorAll('.col-span-5 .space-y-3.mb-6 > div'); // Mengambil semua item di keranjang
+        const uniqueItemCount = cartItems.length; // Menghitung jumlah item unik
+        
+        // Update semua element yang menampilkan jumlah item keranjang
+        cartCountElements.forEach(element => {
+            element.textContent = uniqueItemCount;
+            
+            // Sembunyikan badge jika keranjang kosong
+            if (uniqueItemCount === 0) {
+                element.classList.add('hidden');
+            } else {
+                element.classList.remove('hidden');
+            }
+        });
+    }
+
+    // Update fungsi addToCart
+    function addToCart(productId) {
+        fetch('penjualan.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `action=add_to_cart&product_id=${productId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+                setTimeout(() => {
+                    updateCartCounter(); // Update counter setelah reload
+                }, 100);
+            }
+        });
+    }
+
+    // Update fungsi removeFromCart
+    function removeFromCart(index) {
+        fetch('penjualan.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `action=remove_from_cart&index=${index}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+                setTimeout(() => {
+                    updateCartCounter(); // Update counter setelah reload
+                }, 100);
+            }
+        });
+    }
+
+    // Panggil updateCartCounter saat halaman dimuat
+    window.addEventListener('load', () => {
+        updateCartCounter();
+        
+        if (window.innerWidth <= 768) {
+            const activeTab = sessionStorage.getItem('activeTab') || 'products';
+            showTab(activeTab);
+        }
+    });
+
     function addToCart(barangId) {
         fetch('penjualan.php', {
             method: 'POST',
@@ -1374,6 +1939,7 @@ $kasir = $stmt->fetch();
         });
     }
 
+    // Update fungsi updateQuantity
     function updateQuantity(index, quantity) {
         if (quantity < 1) return;
         
@@ -1385,21 +1951,19 @@ $kasir = $stmt->fetch();
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
+                // Dapatkan tab yang aktif sebelum reload
+                const isCartActive = document.querySelector('.col-span-5').classList.contains('active');
+                
+                // Reload halaman
                 location.reload();
-            }
-        });
-    }
-
-    function removeFromCart(index) {
-        fetch('penjualan.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `action=remove_from_cart&index=${index}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                location.reload();
+                
+                // Set timeout untuk memastikan reload selesai
+                setTimeout(() => {
+                    // Jika sebelumnya di tab keranjang, kembalikan ke tab keranjang
+                    if (isCartActive && window.innerWidth <= 768) {
+                        showTab('cart');
+                    }
+                }, 100);
             }
         });
     }
@@ -1919,6 +2483,59 @@ $kasir = $stmt->fetch();
             suggestionsDiv.classList.add('hidden');
         }
     });
+
+    // Update fungsi showTab untuk menyimpan state tab
+    function showTab(tabName) {
+        const cartSection = document.querySelector('.col-span-5');
+        const productsSection = document.querySelector('.col-span-7');
+        const cartTab = document.getElementById('cartTab');
+        const productsTab = document.getElementById('productsTab');
+
+        // Reset semua tab dan section
+        cartSection.classList.remove('active');
+        productsSection.classList.remove('active');
+        cartTab.classList.remove('active');
+        productsTab.classList.remove('active');
+
+        // Aktifkan tab dan section yang dipilih
+        if (tabName === 'cart') {
+            cartSection.classList.add('active');
+            cartTab.classList.add('active');
+            sessionStorage.setItem('activeTab', 'cart');
+        } else {
+            productsSection.classList.add('active');
+            productsTab.classList.add('active');
+            sessionStorage.setItem('activeTab', 'products');
+        }
+    }
+
+    // Update event listener untuk load
+    window.addEventListener('load', () => {
+        if (window.innerWidth <= 768) {
+            // Cek apakah ada state tab yang tersimpan
+            const activeTab = sessionStorage.getItem('activeTab') || 'products';
+            showTab(activeTab);
+        }
+    });
+
+    function changePage(page) {
+        // Cek jika tombol disabled, jangan lakukan apa-apa
+        if (page === 'prev' && <?= $currentPage ?> === 1) return;
+        if (page === 'next' && <?= $currentPage ?> === <?= $totalPages ?>) return;
+
+        if (page === 'prev') {
+            page = <?= max(1, $currentPage - 1) ?>;
+        } else if (page === 'next') {
+            page = <?= min($totalPages, $currentPage + 1) ?>;
+        }
+        
+        const activeTab = sessionStorage.getItem('activeTab') || 'products';
+        window.location.href = `penjualan.php?page=${page}`;
+        
+        setTimeout(() => {
+            showTab(activeTab);
+        }, 100);
+    }
     </script>
 </body>
 </html>
