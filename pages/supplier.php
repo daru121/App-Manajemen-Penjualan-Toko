@@ -23,7 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['alert'] = [
                 'message' => 'Supplier berhasil ditambahkan!'
             ];
-            
         } elseif ($_POST['action'] === 'edit') {
             $id = $_POST['supplier_id'];
             $nama_supplier = $_POST['nama_supplier'];
@@ -37,12 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['alert'] = [
                 'message' => 'Supplier berhasil diperbarui!'
             ];
-            
         } elseif ($_POST['action'] === 'delete') {
             $id = $_POST['supplier_id'];
             $stmt = $conn->prepare("DELETE FROM supplier WHERE id = ?");
             $stmt->execute([$id]);
-            
+
             $_SESSION['alert'] = [
                 'message' => 'Supplier berhasil dihapus!'
             ];
@@ -82,7 +80,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_products') {
             'status' => 'success',
             'products' => $products
         ]);
-    } catch(PDOException $e) {
+    } catch (PDOException $e) {
         echo json_encode([
             'status' => 'error',
             'message' => $e->getMessage()
@@ -106,7 +104,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_supplier_name') {
             'status' => 'success',
             'nama_supplier' => $supplier['nama_supplier']
         ]);
-    } catch(PDOException $e) {
+    } catch (PDOException $e) {
         echo json_encode([
             'status' => 'error',
             'message' => $e->getMessage()
@@ -136,7 +134,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
             'status' => 'success',
             'suppliers' => $suppliers
         ]);
-    } catch(PDOException $e) {
+    } catch (PDOException $e) {
         echo json_encode([
             'status' => 'error',
             'message' => $e->getMessage()
@@ -148,6 +146,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -155,6 +154,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body class="bg-gray-50">
     <?php include '../components/sidebar.php'; ?>
     <?php include '../components/navbar.php'; ?>
@@ -177,7 +177,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
                             class="px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center gap-3 transition-all duration-300 backdrop-blur-sm">
                         <div class="p-2 bg-white/10 rounded-lg">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
                         </div>
                         <span class="font-medium">Tambah Supplier</span>
@@ -192,7 +192,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
                                 <svg class="h-5 w-5 text-[#16A34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
                             </div>
                             <div class="ml-3">
@@ -203,7 +203,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
                         </div>
                         <button onclick="closeAlert()" class="ml-auto pl-3">
                             <svg class="h-5 w-5 text-[#16A34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
@@ -227,58 +227,65 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
                                    id="searchInput"
                                    placeholder="Cari supplier..." 
                                    oninput="searchTable()"
-                                   class="w-full sm:w-72 pl-12 pr-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300">
+                                class="w-full sm:w-72 pl-12 pr-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300">
                             <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Table Content - Responsif dengan Scroll Elegan -->
-                <div class="relative overflow-x-auto">
-                    <div class="inline-block min-w-full align-middle">
-                        <div class="overflow-hidden">
-                            <table class="min-w-full">
-                                <thead>
-                                    <tr class="bg-gray-50">
-                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6 bg-gray-50">No</th>
-                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6 bg-gray-50">Nama Supplier</th>
-                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6 bg-gray-50">Alamat</th>
-                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6 bg-gray-50">Telepon</th>
-                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6 bg-gray-50">Email</th>
-                                        <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-4 px-6 bg-gray-50">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100/60" id="supplierTableBody">
-                                    <?php foreach ($suppliers as $index => $supplier): ?>
-                                    <tr class="hover:bg-gray-50/50 transition-colors duration-200" data-supplier-id="<?= $supplier['id'] ?>">
-                                        <td class="py-4 px-6 text-sm text-gray-600"><?= $index + 1 ?></td>
-                                        <td class="py-4 px-6 text-sm text-gray-800 font-medium"><?= htmlspecialchars($supplier['nama_supplier']) ?></td>
-                                        <td class="py-4 px-6 text-sm text-gray-600"><?= htmlspecialchars($supplier['alamat']) ?></td>
-                                        <td class="py-4 px-6 text-sm text-gray-600"><?= htmlspecialchars($supplier['telepon']) ?></td>
-                                        <td class="py-4 px-6 text-sm text-gray-600"><?= htmlspecialchars($supplier['email']) ?></td>
-                                        <td class="py-4 px-6">
+                <!-- Table Content -->
+                <div class="relative">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-gray-50/50">
+                                    <th scope="col" class="w-[5%] px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">No</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Nama Supplier</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Alamat</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Telepon</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Email</th>
+                                    <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100" id="supplierTableBody">
+                                <?php foreach ($suppliers as $index => $supplier): ?>
+                                    <tr class="hover:bg-gray-50/50 transition-colors duration-200">
+                                        <td class="px-6 py-4 text-sm text-gray-600">
+                                            <?= $index + 1 ?>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm font-medium text-gray-800">
+                                            <?= htmlspecialchars($supplier['nama_supplier']) ?>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">
+                                            <?= htmlspecialchars($supplier['alamat']) ?>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">
+                                            <?= htmlspecialchars($supplier['telepon']) ?>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">
+                                            <?= htmlspecialchars($supplier['email']) ?>
+                                        </td>
+                                        <td class="px-6 py-4">
                                             <div class="flex justify-end gap-2">
                                                 <button onclick="showPreviewModal(<?= $supplier['id'] ?>)" 
-                                                        class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200">
+                                                        class="p-2.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                                     </svg>
                                                 </button>
-                                                <button onclick="showEditModal(<?= htmlspecialchars(json_encode($supplier)) ?>)" 
-                                                        class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                                                <button onclick='showEditModal(<?= json_encode($supplier) ?>)' 
+                                                        class="p-2.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                     </svg>
                                                 </button>
                                                 <button onclick="showDeleteModal(<?= $supplier['id'] ?>)" 
-                                                        class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
+                                                        class="p-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                     </svg>
@@ -286,9 +293,37 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
                                             </div>
                                         </td>
                                     </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pagination section - Outside of scroll area -->
+                <div class="p-4 sm:p-6 border-t border-gray-100">
+                    <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
+                        <!-- Pagination buttons -->
+                        <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start order-2 sm:order-1">
+                            <button id="prevButton" 
+                                    onclick="changePage('prev')" 
+                                    class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                Previous
+                            </button>
+
+                            <div class="flex items-center gap-1" id="pageNumbers">
+                                <!-- Page numbers will be inserted here by JavaScript -->
+                            </div>
+
+                            <button id="nextButton" 
+                                    onclick="changePage('next')" 
+                                    class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                Next
+                            </button>
+                        </div>
+
+                        <!-- Showing info -->
+                        <div class="text-sm text-gray-700 w-full sm:w-auto text-center sm:text-left order-1 sm:order-2" id="showingInfo">
+                            Showing 1 to 5 of <?= $totalItems ?> entries
                         </div>
                     </div>
                 </div>
@@ -354,10 +389,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
                 <div class="p-6 text-center space-y-6">
                     <div class="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mx-auto">
                         <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                     </div>
-                    
+
                     <div class="space-y-2">
                         <h3 class="text-xl font-medium text-gray-900">Hapus Supplier</h3>
                         <p class="text-gray-500">Apakah Anda yakin ingin menghapus supplier ini?</p>
@@ -366,13 +401,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
                     <form id="deleteForm" method="POST" class="flex gap-3 justify-center">
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="supplier_id" id="deleteId">
-                        
-                        <button type="button" onclick="closeDeleteAlert()" 
-                                class="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors duration-200">
+
+                        <button type="button" onclick="closeDeleteAlert()"
+                            class="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors duration-200">
                             Batal
                         </button>
-                        <button type="submit" 
-                                class="px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors duration-200">
+                        <button type="submit"
+                            class="px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors duration-200">
                             Hapus
                         </button>
                     </form>
@@ -389,7 +424,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
                     <h3 class="text-xl font-semibold text-gray-800">Produk dari <span id="supplierName" class="text-blue-600"></span></h3>
                     <button onclick="closePreviewModal()" class="text-gray-400 hover:text-gray-600">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
@@ -403,7 +438,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
                         <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                      d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                             </svg>
                         </div>
                         <p class="text-gray-500">Tidak ada produk dari supplier ini</p>
@@ -414,64 +449,198 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
     </div>
 
     <style>
-    /* Responsive styles dengan tetap elegan */
-    @media (max-width: 640px) {
-        /* Smooth table scrolling */
-        .overflow-x-auto {
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-            position: relative;
+        /* Responsive styles */
+        @media (max-width: 640px) {
+            /* Improve table readability on mobile */
+            .table-wrapper {
+                margin: 0 -1rem;
+            }
+            
+            td, th {
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+            }
+            
+            /* Better touch targets */
+            button {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Text truncation */
+            .line-clamp-1 {
+                display: -webkit-box;
+                -webkit-line-clamp: 1;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            
+            /* Improve spacing */
+            .flex-col > * + * {
+                margin-top: 0.25rem;
+            }
+            
+            /* Better modal padding */
+            .modal-content {
+                padding: 1.5rem;
+            }
+            
+            /* Improve form inputs */
+            input, textarea {
+                font-size: 16px !important;
+                padding: 0.75rem 1rem;
+            }
         }
-        
-        .overflow-x-auto::-webkit-scrollbar {
-            display: none;
-        }
-        
-        /* Maintain elegant spacing */
-        td, th {
-            padding: 1rem 1.5rem;
-            white-space: nowrap;
-        }
-        
-        /* Improve touch targets while keeping elegance */
-        button {
-            min-height: 44px;
-            min-width: 44px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        /* Maintain glass effect on mobile */
-        .backdrop-blur-xl {
-            backdrop-filter: blur(20px);
-        }
-        
-        /* Elegant input styling on mobile */
-        input, select {
-            font-size: 16px !important;
-            height: 44px;
-        }
-        
-        /* Maintain shadow and border radius */
-        .shadow-xl {
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-        }
-        
-        .rounded-3xl {
-            border-radius: 1.5rem;
-        }
-    }
-
-    /* Smooth scrolling */
-    * {
-        -webkit-overflow-scrolling: touch;
-    }
     </style>
 
     <script>
-        // ... (fungsi-fungsi JavaScript untuk pagination, search, dll sama seperti di kategori.php) ...
+        let currentPage = 1;
+        let itemsPerPage = 15;
+
+        function updateTable() {
+            const rows = document.querySelectorAll('#supplierTableBody tr:not(.hidden)');
+            const totalItems = rows.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            
+            // Hide all rows first
+            rows.forEach(row => row.style.display = 'none');
+            
+            // Show rows for current page
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            
+            for (let i = start; i < end && i < totalItems; i++) {
+                rows[i].style.display = '';
+            }
+            
+            // Update showing info
+            document.getElementById('showingInfo').textContent = 
+                `Showing ${totalItems === 0 ? 0 : start + 1} to ${Math.min(end, totalItems)} of ${totalItems} entries`;
+            
+            // Update pagination buttons
+            document.getElementById('prevButton').disabled = currentPage === 1;
+            document.getElementById('nextButton').disabled = currentPage === totalPages;
+            
+            // Update page numbers
+            const pageNumbers = document.getElementById('pageNumbers');
+            pageNumbers.innerHTML = '';
+            
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.className = `px-3 py-1 text-sm rounded-md ${currentPage === i ? 
+                    'bg-blue-600 text-white' : 
+                    'text-gray-500 hover:text-gray-700'}`;
+                button.textContent = i;
+                button.onclick = () => changePage(i);
+                pageNumbers.appendChild(button);
+            }
+            
+            // Update row numbers
+            let visibleIndex = 1;
+            rows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const numberCell = row.getElementsByTagName('td')[0];
+                    numberCell.textContent = visibleIndex++;
+                }
+            });
+        }
+
+        function changePage(action) {
+            const rows = document.querySelectorAll('#supplierTableBody tr:not(.hidden)');
+            const totalItems = rows.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            
+            if (action === 'prev' && currentPage > 1) {
+                currentPage--;
+            } else if (action === 'next' && currentPage < totalPages) {
+                currentPage++;
+            } else if (typeof action === 'number') {
+                currentPage = action;
+            }
+            
+            updateTable();
+        }
+
+        // Update fungsi searchSupplier
+        function searchSupplier(query) {
+            fetch(`supplier.php?action=search&search=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const tbody = document.getElementById('supplierTableBody');
+                        if (data.suppliers.length > 0) {
+                            tbody.innerHTML = data.suppliers.map((supplier, index) => `
+                                <tr class="hover:bg-gray-50/50 transition-colors duration-200">
+                                    <td class="py-4 px-6 text-sm text-gray-600">${index + 1}</td>
+                                    <td class="py-4 px-6 text-sm text-gray-800 font-medium">${supplier.nama_supplier}</td>
+                                    <td class="py-4 px-6 text-sm text-gray-600">${supplier.alamat}</td>
+                                    <td class="py-4 px-6 text-sm text-gray-600">${supplier.telepon}</td>
+                                    <td class="py-4 px-6 text-sm text-gray-600">${supplier.email}</td>
+                                    <td class="py-4 px-6">
+                                        <div class="flex justify-end gap-2">
+                                            <button onclick="showPreviewModal(${supplier.id})" 
+                                                    class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                            </button>
+                                            <button onclick='showEditModal(${JSON.stringify(supplier)})' 
+                                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                            </button>
+                                            <button onclick="showDeleteModal(${supplier.id})" 
+                                                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('');
+
+                            // Reset ke halaman pertama
+                            currentPage = 1;
+                            
+                            // Update tampilan tabel dan pagination
+                            updateTable();
+                        } else {
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="6" class="py-8 text-center text-gray-500">
+                                        Tidak ada supplier yang sesuai dengan pencarian
+                                    </td>
+                                </tr>
+                            `;
+                            
+                            // Reset info pagination jika tidak ada hasil
+                            document.getElementById('showingInfo').textContent = 'Showing 0 to 0 of 0 entries';
+                            document.getElementById('pageNumbers').innerHTML = '';
+                            document.getElementById('prevButton').disabled = true;
+                            document.getElementById('nextButton').disabled = true;
+                        }
+                    }
+                });
+        }
+
+        // Tambahkan debounce untuk search
+        const searchInput = document.getElementById('searchInput');
+        let searchTimeout;
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchSupplier(this.value);
+            }, 300);
+        });
+
+        // Initialize table when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTable();
+        });
         
         function showAddModal() {
             document.getElementById('modalTitle').textContent = 'Tambah Supplier';
@@ -560,77 +729,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
             }
         });
 
-        function searchSupplier(searchTerm) {
-            fetch(`supplier.php?action=search&search=${searchTerm}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const tbody = document.getElementById('supplierTableBody');
-                        
-                        if (data.suppliers.length > 0) {
-                            tbody.innerHTML = data.suppliers.map((supplier, index) => `
-                                <tr class="hover:bg-gray-50/50 transition-colors duration-200" data-supplier-id="${supplier.id}">
-                                    <td class="py-4 px-6 text-sm text-gray-600">${index + 1}</td>
-                                    <td class="py-4 px-6 text-sm text-gray-800 font-medium">${supplier.nama_supplier}</td>
-                                    <td class="py-4 px-6 text-sm text-gray-600">${supplier.alamat}</td>
-                                    <td class="py-4 px-6 text-sm text-gray-600">${supplier.telepon}</td>
-                                    <td class="py-4 px-6 text-sm text-gray-600">${supplier.email}</td>
-                                    <td class="py-4 px-6">
-                                        <div class="flex justify-end gap-2">
-                                            <button onclick="showPreviewModal(${supplier.id})" 
-                                                    class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                                </svg>
-                                            </button>
-                                            <button onclick='showEditModal(${JSON.stringify(supplier)})' 
-                                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                                </svg>
-                                            </button>
-                                            <button onclick="showDeleteModal(${supplier.id})" 
-                                                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            `).join('');
-                        } else {
-                            tbody.innerHTML = `
-                                <tr>
-                                    <td colspan="6" class="py-8 text-center text-gray-500">
-                                        Tidak ada supplier yang sesuai dengan pencarian
-                                    </td>
-                                </tr>
-                            `;
-                        }
-                    }
-                });
-        }
-
-        // Debounce function
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        // Attach search event with debounce
-        const searchInput = document.getElementById('searchInput');
-        const debouncedSearch = debounce((e) => searchSupplier(e.target.value), 300);
-        searchInput.addEventListener('input', debouncedSearch);
-
         // Fungsi untuk menutup alert
         function closeAlert() {
             const alert = document.getElementById('alert');
@@ -673,4 +771,5 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
         }
     </script>
 </body>
+
 </html> 

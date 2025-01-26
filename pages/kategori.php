@@ -114,23 +114,23 @@ $totalPages = ceil($totalItems / $itemsPerPage); // Total halaman
 
             <!-- Add this right after the header section and before the table card -->
             <?php if (isset($_SESSION['alert'])): ?>
-                <div id="alert" class="mb-4 sm:mb-6 w-full transition-all duration-300">
-                    <div class="<?= $_SESSION['alert']['type'] === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600' ?> px-4 py-3 rounded-xl flex items-center gap-3">
-                        <div class="p-2 bg-white/50 rounded-lg">
-                            <?php if ($_SESSION['alert']['type'] === 'success'): ?>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                <div id="alert" class="bg-[#F0FDF4] border-l-4 border-[#16A34A] p-4 mb-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-[#16A34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
-                            <?php else: ?>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                            <?php endif; ?>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-[#15803D]">
+                                    <?= $_SESSION['alert']['message'] ?>
+                                </p>
+                            </div>
                         </div>
-                        <p class="text-sm font-medium"><?= $_SESSION['alert']['message'] ?></p>
-                        <button onclick="closeAlert()" class="ml-auto p-2 hover:bg-white/50 rounded-lg transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <button onclick="closeAlert()" class="ml-auto pl-3">
+                            <svg class="h-5 w-5 text-[#16A34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
