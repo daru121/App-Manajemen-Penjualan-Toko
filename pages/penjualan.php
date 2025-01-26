@@ -814,13 +814,14 @@ $kasir = $stmt->fetch();
                 position: sticky;
                 top: 0;
                 z-index: 20;
-                background: white;
+                background: transparent;
                 padding: 1rem;
                 margin: -0.5rem -0.5rem 1rem -0.5rem;
-                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                border-bottom: none;
+                box-shadow: none;
             }
 
+            /* Search input */
             .relative.mb-6 input {
                 width: 100%;
                 height: 44px;
