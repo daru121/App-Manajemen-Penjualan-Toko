@@ -108,13 +108,175 @@ $dibatalkan = array_filter($pengiriman, fn($p) => $p['status_pengiriman'] === 'd
         object-fit: cover;
         border-radius: 8px;
     }
+
+    @media (max-width: 768px) {
+        /* Container utama */
+        .ml-64 {
+            margin-left: 0 !important;
+        }
+
+        /* Header section */
+        .mb-8.bg-gradient-to-br {
+            margin: 0.5rem !important;
+            padding: 1.25rem !important;
+            border-radius: 1rem !important;
+        }
+
+        /* Header text */
+        .text-3xl {
+            font-size: 1.5rem !important;
+        }
+
+        .text-blue-100 {
+            font-size: 0.875rem !important;
+        }
+
+        /* Padding top untuk menghindari navbar */
+        .pt-24 {
+            padding-top: 5rem !important;
+        }
+
+        /* Statistik cards */
+        .grid.grid-cols-5 {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 0.75rem !important;
+            padding: 0.75rem !important;
+        }
+
+        /* Card styling */
+        .relative.bg-gradient-to-br {
+            padding: 1rem !important;
+            border-radius: 1rem !important;
+            background: white !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
+        }
+
+        /* Card content */
+        .relative.flex.items-center.gap-4 {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 0.75rem !important;
+        }
+
+        /* Icon container */
+        .p-4.bg-indigo-500\/10,
+        .p-4.bg-orange-500\/10,
+        .p-4.bg-blue-500\/10,
+        .p-4.bg-green-500\/10,
+        .p-4.bg-red-500\/10 {
+            padding: 0.75rem !important;
+        }
+
+        /* Numbers */
+        .text-4xl {
+            font-size: 1.75rem !important;
+            margin-bottom: 0.25rem !important;
+        }
+
+        /* Text */
+        .text-sm.font-medium {
+            font-size: 0.813rem !important;
+        }
+
+        /* Last card (Dibatalkan) */
+        .grid.grid-cols-5 > div:last-child {
+            grid-column: span 2 !important;
+        }
+
+        /* Card padding */
+        .p-6 {
+            padding: 1rem !important;
+        }
+
+        /* Icon size */
+        .w-7.h-7 {
+            width: 1.5rem !important;
+            height: 1.5rem !important;
+        }
+    }
+
+    @media (max-width: 480px) {
+        /* Header adjustments for smaller screens */
+        .mb-8.bg-gradient-to-br {
+            margin: 0.25rem !important;
+            padding: 1rem !important;
+        }
+
+        .text-3xl {
+            font-size: 1.25rem !important;
+        }
+
+        /* Statistik cards untuk layar sangat kecil */
+        .grid.grid-cols-5 {
+            gap: 0.5rem !important;
+            padding: 0.5rem !important;
+        }
+
+        .relative.bg-gradient-to-br {
+            padding: 0.875rem !important;
+        }
+
+        .text-4xl {
+            font-size: 1.5rem !important;
+        }
+
+        .text-sm.font-medium {
+            font-size: 0.75rem !important;
+        }
+
+        /* Icon container */
+        .p-4.bg-indigo-500\/10,
+        .p-4.bg-orange-500\/10,
+        .p-4.bg-blue-500\/10,
+        .p-4.bg-green-500\/10,
+        .p-4.bg-red-500\/10 {
+            padding: 0.625rem !important;
+        }
+
+        /* Icon size */
+        .w-7.h-7 {
+            width: 1.25rem !important;
+            height: 1.25rem !important;
+        }
+
+        /* Card shadow */
+        .shadow-\[0_8px_30px_rgb\(0\,0\,0\,0\.04\)\] {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+        }
+
+        /* Further adjustments for smaller screens */
+        .mb-6.flex {
+            padding: 0 0.5rem !important;
+        }
+
+        select,
+        input[type="text"] {
+            font-size: 0.813rem !important;
+        }
+
+        /* Reduce padding */
+        .px-4 {
+            padding-left: 0.875rem !important;
+            padding-right: 0.875rem !important;
+        }
+    }
+
+    /* Hide scrollbar but keep functionality */
+    .overflow-x-auto {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar {
+        display: none !important;
+    }
     </style>
 </head>
 <body class="bg-gray-50">
     <?php include '../components/sidebar.php'; ?>
     <?php include '../components/navbar.php'; ?>
 
-    <div class="ml-64 p-8 pt-24">
+    <div class="ml-0 sm:ml-64 p-4 sm:p-8 pt-20 sm:pt-24 min-h-screen bg-gray-50/50">
         <!-- Header dengan gradient yang sama seperti informasi.php -->
         <div class="mb-8 bg-gradient-to-br from-blue-600 to-blue-400 rounded-3xl p-8 text-white">
             <h1 class="text-3xl font-bold mb-2">Pengiriman</h1>
@@ -215,10 +377,11 @@ $dibatalkan = array_filter($pengiriman, fn($p) => $p['status_pengiriman'] === 'd
         </div>
 
         <!-- Filter dan Search -->
-        <div class="mb-6 flex justify-between items-center">
-            <div class="flex gap-4">
+        <div class="mb-6 flex flex-col sm:flex-row gap-4">
+            <!-- Filter Controls -->
+            <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
                 <select id="statusFilter" onchange="filterTable()" 
-                        class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                        class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200">
                     <option value="">Semua Status</option>
                     <option value="pending">Pending</option>
                     <option value="dikirim">Dikirim</option>
@@ -227,7 +390,7 @@ $dibatalkan = array_filter($pengiriman, fn($p) => $p['status_pengiriman'] === 'd
                 </select>
                 
                 <select id="marketplaceFilter" onchange="filterTable()"
-                        class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                        class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200">
                     <option value="">Semua Marketplace</option>
                     <option value="shopee">Shopee</option>
                     <option value="tokopedia">Tokopedia</option>
@@ -235,15 +398,19 @@ $dibatalkan = array_filter($pengiriman, fn($p) => $p['status_pengiriman'] === 'd
                 </select>
             </div>
 
-            <div class="relative">
-                <input type="text" id="searchInput" onkeyup="filterTable()"
-                       class="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm w-64
-                              focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                       placeholder="Cari nomor resi atau pembeli...">
-                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
+            <!-- Search Box -->
+            <div class="relative w-full sm:w-72 sm:ml-auto">
+                <input type="text" 
+                       id="searchInput" 
+                       onkeyup="filterTable()"
+                       placeholder="Cari nomor resi atau pembeli..." 
+                       class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
             </div>
         </div>
 
