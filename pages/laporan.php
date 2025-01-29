@@ -259,10 +259,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                         <?php endif; ?>
                         
                         <button onclick="applyFilter()" 
-                                class="h-11 px-4 flex items-center gap-2 bg-white/20 text-white rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-200">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
+                                class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2">
                             <span class="text-sm font-medium">Cari</span>
                         </button>
                         
@@ -277,38 +274,58 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                 </div>
             </div>
 
-            <!-- Tab Navigation -->
-            <div class="p-1.5 bg-gray-100/80 backdrop-blur-xl rounded-2xl inline-flex gap-2 shadow-sm">
-                <button id="btnHarian" onclick="showTab('harian')" 
-                        class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
-                               <?= $view_type === 'daily' ? 
-                                   'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
-                                   'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    Laporan Harian
-                </button>
-                <button id="btnBulanan" onclick="showTab('bulanan')" 
-                        class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
-                               <?= $view_type === 'monthly' ? 
-                                   'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
-                                   'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                    </svg>
-                    Laporan Bulanan
-                </button>
-                <button id="btnTahunan" onclick="showTab('tahunan')" 
-                        class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
-                               <?= $view_type === 'yearly' ? 
-                                   'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
-                                   'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    Laporan Tahunan
-                </button>
+            <!-- Tab Navigation dan Search Input Container -->
+            <div class="flex flex-col gap-4">
+                <!-- Tab Navigation -->
+                <div class="inline-flex">
+                    <div class="p-1.5 bg-gray-100/80 backdrop-blur-xl rounded-2xl inline-flex gap-2 shadow-sm">
+                        <button id="btnHarian" onclick="showTab('harian')" 
+                                class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
+                                       <?= $view_type === 'daily' ? 
+                                           'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
+                                           'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            Laporan Harian
+                        </button>
+                        <button id="btnBulanan" onclick="showTab('bulanan')" 
+                                class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
+                                       <?= $view_type === 'monthly' ? 
+                                           'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
+                                           'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            Laporan Bulanan
+                        </button>
+                        <button id="btnTahunan" onclick="showTab('tahunan')" 
+                                class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
+                                       <?= $view_type === 'yearly' ? 
+                                           'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
+                                           'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Laporan Tahunan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search Input -->
+                <div class="flex justify-end">
+                    <div class="relative w-72">
+                        <input type="text" 
+                               id="searchInput" 
+                               class="w-full h-11 pl-10 pr-4 py-2 text-gray-700 bg-white border border-gray-200 rounded-xl focus:border-blue-400 focus:ring-blue-300 focus:ring-opacity-40 focus:outline-none focus:ring" 
+                               placeholder="Cari nama pembeli...">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Table Section -->
@@ -453,6 +470,82 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
             
             window.open(url, '_blank');
         }
+
+        // Tambahkan script untuk filter search
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchText = e.target.value.toLowerCase();
+            const tableRows = document.querySelectorAll('tbody tr');
+
+            tableRows.forEach(row => {
+                const namaPembeli = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                if (namaPembeli.includes(searchText)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Update total saat melakukan pencarian
+            updateTotal();
+        });
+
+        // Fungsi untuk mengupdate total
+        function updateTotal() {
+            let totalPenjualan = 0;
+            let totalProfit = 0;
+            const tableRows = document.querySelectorAll('tbody tr');
+
+            tableRows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const penjualan = parseInt(row.querySelector('td:nth-child(6)').textContent.replace(/[^\d]/g, ''));
+                    const profit = parseInt(row.querySelector('td:nth-child(7)').textContent.replace(/[^\d]/g, ''));
+                    
+                    totalPenjualan += penjualan;
+                    totalProfit += profit;
+                }
+            });
+
+            // Update tampilan total
+            document.querySelector('tfoot td:nth-child(6)').textContent = 'Rp ' + totalPenjualan.toLocaleString('id-ID');
+            document.querySelector('tfoot td:nth-child(7)').textContent = 'Rp ' + totalProfit.toLocaleString('id-ID');
+        }
     </script>
+
+    <style>
+        @media (max-width: 768px) {
+            /* Tab Navigation untuk mobile */
+            .p-1\.5.bg-gray-100\/80 {
+                width: auto !important;
+                display: flex !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                scrollbar-width: none !important;
+                -ms-overflow-style: none !important;
+            }
+
+            .p-1\.5.bg-gray-100\/80::-webkit-scrollbar {
+                display: none !important;
+            }
+
+            /* Search input styling for mobile */
+            .flex.justify-end {
+                padding: 0 0.75rem !important;
+            }
+
+            .relative.w-72 {
+                width: 100% !important;
+            }
+
+            #searchInput {
+                font-size: 0.875rem !important;
+                height: 2.75rem !important;
+            }
+
+            .absolute.inset-y-0.left-0.pl-3 svg {
+                width: 1.25rem !important;
+                height: 1.25rem !important;
+            }
+        }
+    </style>
 </body>
-</html>
+</html></html>
