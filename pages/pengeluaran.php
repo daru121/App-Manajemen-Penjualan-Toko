@@ -113,6 +113,124 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Tambahkan fungsi helper untuk filter
+function getFilteredPengeluaran($conn, $kategori = '', $periode = '', $tanggal = '', $bulan = '', $tahun = '') {
+    $params = [];
+    $where = [];
+    
+    $query = "SELECT * FROM pengeluaran WHERE 1=1";
+    
+    // Filter kategori
+    if (!empty($kategori)) {
+        $where[] = "kategori = ?";
+        $params[] = $kategori;
+    }
+    
+    // Filter berdasarkan periode
+    if (!empty($periode)) {
+        switch ($periode) {
+            case 'harian':
+                if (!empty($tanggal)) {
+                    $where[] = "DATE(tanggal) = ?";
+                    $params[] = $tanggal;
+                }
+                break;
+            case 'bulanan':
+                if (!empty($bulan)) {
+                    $where[] = "DATE_FORMAT(tanggal, '%Y-%m') = ?";
+                    $params[] = $bulan;
+                }
+                break;
+            case 'tahunan':
+                if (!empty($tahun)) {
+                    $where[] = "YEAR(tanggal) = ?";
+                    $params[] = $tahun;
+                }
+                break;
+        }
+    }
+    
+    if (!empty($where)) {
+        $query .= " AND " . implode(" AND ", $where);
+    }
+    
+    $query .= " ORDER BY tanggal DESC";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->execute($params);
+    return $stmt->fetchAll();
+}
+
+// Handle AJAX request untuk filter
+if (isset($_GET['ajax_filter'])) {
+    header('Content-Type: application/json');
+    try {
+        $kategori = $_GET['kategori'] ?? '';
+        $periode = $_GET['periode'] ?? '';
+        $tanggal = $_GET['tanggal'] ?? '';
+        $bulan = $_GET['bulan'] ?? '';
+        $tahun = $_GET['tahun'] ?? '';
+        
+        $params = [];
+        $where = [];
+        
+        $query = "SELECT * FROM pengeluaran WHERE 1=1";
+        
+        // Filter kategori
+        if (!empty($kategori)) {
+            $where[] = "kategori = ?";
+            $params[] = $kategori;
+        }
+        
+        // Filter berdasarkan periode
+        if (!empty($periode)) {
+            switch ($periode) {
+                case 'harian':
+                    if (!empty($tanggal)) {
+                        $where[] = "DATE(tanggal) = ?";
+                        $params[] = $tanggal;
+                    }
+                    break;
+                case 'bulanan':
+                    if (!empty($bulan)) {
+                        $where[] = "DATE_FORMAT(tanggal, '%Y-%m') = ?";
+                        $params[] = $bulan;
+                    }
+                    break;
+                case 'tahunan':
+                    if (!empty($tahun)) {
+                        $where[] = "YEAR(tanggal) = ?";
+                        $params[] = $tahun;
+                    }
+                    break;
+            }
+        }
+        
+        if (!empty($where)) {
+            $query .= " AND " . implode(" AND ", $where);
+        }
+        
+        $query .= " ORDER BY tanggal DESC";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->execute($params);
+        $filtered_data = $stmt->fetchAll();
+        
+        // Hitung total
+        $total = array_sum(array_column($filtered_data, 'jumlah'));
+        
+        echo json_encode([
+            'success' => true,
+            'data' => $filtered_data,
+            'total' => $total
+        ]);
+        exit;
+    } catch(PDOException $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
 // Get all pengeluaran with default filter for today's date
 $today = date('Y-m-d');
 $query = "SELECT * FROM pengeluaran WHERE tanggal = ? ORDER BY tanggal DESC";
@@ -323,16 +441,12 @@ function getCategoryBadgeClass($kategori) {
                     <!-- Input tahun (awalnya hidden) -->
                     <div id="yearInputs" class="hidden flex-1 min-w-[200px]">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tahun</label>
-                        <select id="filterTahun" onchange="applyFilters()"
-                                class="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                            <option value="">Pilih Tahun</option>
-                            <?php
-                            $currentYear = date('Y');
-                            for($year = $currentYear; $year >= $currentYear - 5; $year--) {
-                                echo "<option value='$year'>$year</option>";
-                            }
-                            ?>
-                        </select>
+                        <input type="number" 
+                               id="filterTahun" 
+                               min="2000" 
+                               max="2099" 
+                               value="<?= date('Y') ?>"
+                               class="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
                     </div>
 
                     <!-- Reset Filter -->
@@ -601,7 +715,7 @@ function getCategoryBadgeClass($kategori) {
         </div>
     </div>
 
-    <!-- Tambahkan Modal Detail setelah Add Modal -->
+    <!-- Modal Detail -->
     <div id="detailModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
         <div class="bg-white rounded-2xl w-full max-w-lg mx-4">
             <div class="p-6 border-b border-gray-100 flex justify-between items-center">
@@ -832,13 +946,13 @@ function getCategoryBadgeClass($kategori) {
             const dateInputs = document.getElementById('dateInputs');
             const monthInputs = document.getElementById('monthInputs');
             const yearInputs = document.getElementById('yearInputs');
-
+            
             // Sembunyikan semua input terlebih dahulu
             dateInputs.classList.add('hidden');
             monthInputs.classList.add('hidden');
             yearInputs.classList.add('hidden');
-
-            // Tampilkan input sesuai periode yang dipilih
+            
+            // Tampilkan input yang sesuai
             switch(periode) {
                 case 'harian':
                     dateInputs.classList.remove('hidden');
@@ -848,80 +962,113 @@ function getCategoryBadgeClass($kategori) {
                     break;
                 case 'tahunan':
                     yearInputs.classList.remove('hidden');
+                    // Set tahun sekarang sebagai default jika belum ada value
+                    if (!document.getElementById('filterTahun').value) {
+                        document.getElementById('filterTahun').value = new Date().getFullYear();
+                    }
                     break;
             }
         }
 
         function applyFilters() {
-            const rows = document.querySelectorAll('#pengeluaranTable tbody tr');
             const kategori = document.getElementById('filterKategori').value;
             const periode = document.getElementById('filterPeriode').value;
             const tanggal = document.getElementById('filterTanggal').value;
             const bulan = document.getElementById('filterBulan').value;
             const tahun = document.getElementById('filterTahun').value;
-
-            rows.forEach(row => {
-                let showRow = true;
-                const rowKategori = row.querySelector('td:nth-child(2)').textContent.trim();
-                const rowTanggal = row.querySelector('td:nth-child(1)').getAttribute('data-tanggal');
-
-                // Filter kategori
-                if (kategori && rowKategori !== kategori) {
-                    showRow = false;
-                }
-
-                // Filter berdasarkan periode
-                if (periode) {
-                    switch(periode) {
-                        case 'harian':
-                            if (tanggal && rowTanggal !== tanggal) {
-                                showRow = false;
-                            }
-                            break;
-                        case 'bulanan':
-                            if (bulan && !rowTanggal.startsWith(bulan)) {
-                                showRow = false;
-                            }
-                            break;
-                        case 'tahunan':
-                            if (tahun && !rowTanggal.startsWith(tahun)) {
-                                showRow = false;
-                            }
-                            break;
+            
+            // Build query string
+            const params = new URLSearchParams({
+                ajax_filter: 1,
+                kategori: kategori,
+                periode: periode,
+                tanggal: tanggal,
+                bulan: bulan,
+                tahun: tahun
+            });
+            
+            // Fetch filtered data
+            fetch(`pengeluaran.php?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateTable(data.data);
+                        updateTotal(data.total);
+                    } else {
+                        console.error('Error:', data.message);
                     }
-                }
-
-                row.classList.toggle('hidden', !showRow);
-            });
-
-            updateTotalPengeluaran();
+                })
+                .catch(error => console.error('Error:', error));
         }
 
-        function resetFilters() {
-            document.getElementById('filterKategori').value = '';
-            document.getElementById('filterPeriode').value = '';
-            document.getElementById('filterTanggal').value = '';
-            document.getElementById('filterBulan').value = '';
-            document.getElementById('filterTahun').value = '';
+        function updateTable(data) {
+            const tbody = document.querySelector('table tbody');
+            tbody.innerHTML = '';
             
-            const rows = document.querySelectorAll('#pengeluaranTable tbody tr');
-            rows.forEach(row => row.classList.remove('hidden'));
-            
-            toggleDateInputs();
-            updateTotalPengeluaran();
+            data.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-100 hover:bg-gray-50/50 transition-colors';
+                
+                const date = new Date(item.tanggal).toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                
+                row.innerHTML = `
+                    <td class="py-4 px-6 text-sm text-gray-600">${date}</td>
+                    <td class="py-4 px-6">
+                        <span class="px-3 py-1 rounded-lg text-sm font-medium ${getCategoryColorClass(item.kategori)}">
+                            ${item.kategori}
+                        </span>
+                    </td>
+                    <td class="py-4 px-6 text-sm text-gray-600">${item.deskripsi}</td>
+                    <td class="py-4 px-6 text-sm font-medium text-gray-900">
+                        Rp ${Number(item.jumlah).toLocaleString('id-ID')}
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex justify-end gap-2">
+                            <button onclick="showDetail(${JSON.stringify(item).replace(/"/g, '&quot;')})" 
+                                    class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                            </button>
+                            <button onclick="showDeleteModal(${item.id})"
+                                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
         }
 
-        function updateTotalPengeluaran() {
-            const visibleRows = document.querySelectorAll('#pengeluaranTable tbody tr:not(.hidden)');
-            let total = 0;
+        function updateTotal(total) {
+            const totalElement = document.getElementById('totalPengeluaran');
+            if (totalElement) {
+                totalElement.textContent = `Rp ${Number(total).toLocaleString('id-ID')}`;
+            }
+        }
 
-            visibleRows.forEach(row => {
-                const jumlah = parseInt(row.querySelector('td:nth-child(4)').getAttribute('data-jumlah'));
-                total += jumlah;
-            });
-
-            document.getElementById('totalPengeluaran').textContent = 
-                new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(total);
+        function getCategoryColorClass(kategori) {
+            const colors = {
+                'Gaji': 'bg-blue-100 text-blue-700',
+                'Internet': 'bg-green-100 text-green-700',
+                'Listrik': 'bg-yellow-100 text-yellow-700',
+                'Maintenance': 'bg-purple-100 text-purple-700',
+                'Peralatan': 'bg-pink-100 text-pink-700',
+                'Sewa': 'bg-indigo-100 text-indigo-700',
+                'Lainnya': 'bg-gray-100 text-gray-700'
+            };
+            return colors[kategori] || colors['Lainnya'];
         }
 
         function showDeleteModal(id) {
@@ -952,15 +1099,8 @@ function getCategoryBadgeClass($kategori) {
             }
         }
 
+        // Initialize filters on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Set default filter to today
-            document.getElementById('filterPeriode').value = 'harian';
-            toggleDateInputs();
-            
-            // Show date input by default
-            document.getElementById('dateInputs').classList.remove('hidden');
-            
-            // Initialize the table with today's data
             applyFilters();
         });
 
@@ -1389,6 +1529,53 @@ function getCategoryBadgeClass($kategori) {
             }
 
             updateWeekRange(this.value);
+        });
+
+        // Fungsi untuk menginisialisasi filter
+        function initializeFilters() {
+            // Set default filter ke hari ini
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('filterPeriode').value = 'harian';
+            document.getElementById('filterTanggal').value = today;
+            document.getElementById('filterKategori').value = '';
+            
+            // Tampilkan input tanggal dan sembunyikan yang lain
+            toggleDateInputs();
+            
+            // Terapkan filter
+            applyFilters();
+        }
+
+        // Fungsi untuk reset filter
+        function resetFilters() {
+            // Reset ke default (hari ini)
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('filterKategori').value = '';
+            document.getElementById('filterPeriode').value = 'harian';
+            document.getElementById('filterTanggal').value = today;
+            document.getElementById('filterBulan').value = '';
+            document.getElementById('filterTahun').value = '';
+            
+            // Update tampilan input
+            toggleDateInputs();
+            
+            // Terapkan filter
+            applyFilters();
+        }
+
+        // Initialize saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeFilters();
+            
+            // Tambahkan event listener untuk perubahan filter
+            document.getElementById('filterKategori').addEventListener('change', applyFilters);
+            document.getElementById('filterPeriode').addEventListener('change', function() {
+                toggleDateInputs();
+                applyFilters();
+            });
+            document.getElementById('filterTanggal').addEventListener('change', applyFilters);
+            document.getElementById('filterBulan').addEventListener('change', applyFilters);
+            document.getElementById('filterTahun').addEventListener('change', applyFilters);
         });
     </script>
 

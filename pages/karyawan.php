@@ -328,7 +328,8 @@ $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'karyawan';
 
 // Query untuk mengambil data karyawan (dari tabel users)
 $query = "SELECT id, nama, email, tempat_lahir, tanggal_lahir, jenis_kelamin, 
-          role, status, telepon, alamat, gaji, bank, nomor_rekening, tanggal_bergabung 
+          telepon, alamat, gaji, bank, nomor_rekening, tanggal_bergabung, 
+          role, status, avatar 
           FROM users 
           WHERE role IN ('Operator', 'Kasir')
           ORDER BY nama ASC";
@@ -502,159 +503,608 @@ function formatNumber($number, $isRupiah = false)
     <?php include '../components/navbar.php'; ?>
 
     <div class="ml-64 p-8 pt-24">
-        <!-- Header - Menggunakan gradient yang lebih mewah -->
-        <div class="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 rounded-[2rem] p-8 mb-8 shadow-lg">
-            <div class="max-w-3xl">
-                <h1 class="text-3xl font-bold text-white mb-3">Manajemen Karyawan</h1>
-                <p class="text-blue-100 text-lg">Kelola data dan performa karyawan Anda dengan lebih efisien</p>
+        <!-- Header Section - Menggunakan gradient yang sama dengan pengaturan.php -->
+        <div class="mb-6 gradient-animation rounded-xl sm:rounded-3xl p-6 sm:p-10 text-white shadow-lg sm:shadow-2xl relative overflow-hidden">
+            <!-- Decorative elements -->
+            <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
+            <div class="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/20 rounded-full translate-y-32 -translate-x-32 blur-3xl"></div>
+            
+            <div class="relative">
+                <h1 class="text-2xl sm:text-3xl font-bold mb-2">Manajemen Karyawan</h1>
+                <p class="text-sm sm:text-lg text-blue-100">Kelola data dan performa karyawan Anda</p>
             </div>
         </div>
 
-        <!-- Menu Cards - Styling yang lebih mewah -->
-        <div class="flex gap-4 mb-8">
-            <a href="?tab=karyawan"
-                class="flex items-center gap-4 px-6 py-4 bg-white rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md
-                      <?= $activeTab === 'karyawan' ? 'ring-2 ring-blue-500 bg-blue-50/50' : 'text-gray-600 hover:bg-gray-50' ?>">
-                <div class="<?= $activeTab === 'karyawan' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-500' ?> p-3 rounded-xl">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                </div>
-                <div>
-                    <span class="font-semibold text-lg block">Data Karyawan</span>
-                    <span class="text-sm text-gray-500">Kelola informasi karyawan</span>
-                </div>
-            </a>
+        <!-- Tab Navigation - Sama seperti pengaturan.php -->
+        <div class="p-1.5 bg-gray-100/80 rounded-2xl inline-flex items-center gap-2 mb-8">
+            <button onclick="switchTab('karyawan')" id="accountTab" 
+                    class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Data Karyawan
+        </button>
+        <button onclick="switchTab('target')" id="securityTab"
+                class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            Target & Komisi
+        </button>
+        <button onclick="switchTab('absensi')" id="absensiTab"
+                class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Absensi
+        </button>
+    </div>
 
-            <a href="?tab=target"
-                class="flex items-center gap-4 px-6 py-4 bg-white rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md
-                      <?= $activeTab === 'target' ? 'ring-2 ring-blue-500 bg-blue-50/50' : 'text-gray-600 hover:bg-gray-50' ?>">
-                <div class="<?= $activeTab === 'target' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-500' ?> p-3 rounded-xl">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                </div>
-                <div>
-                    <span class="font-semibold text-lg block">Target & Komisi</span>
-                    <span class="text-sm text-gray-500">Kelola target dan komisi</span>
-                </div>
-            </a>
+    <!-- Style untuk animasi dan efek -->
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+        }
 
-            <a href="?tab=absensi"
-                class="flex items-center gap-4 px-6 py-4 bg-white rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md
-                      <?= $activeTab === 'absensi' ? 'ring-2 ring-blue-500 bg-blue-50/50' : 'text-gray-600 hover:bg-gray-50' ?>">
-                <div class="<?= $activeTab === 'absensi' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-500' ?> p-3 rounded-xl">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <div>
-                    <span class="font-semibold text-lg block">Absensi</span>
-                    <span class="text-sm text-gray-500">Kelola absensi karyawan</span>
-                </div>
-            </a>
-        </div>
+        /* Gradient Background Animation */
+        .gradient-animation {
+            background: linear-gradient(120deg, #4F46E5, #2563EB, #3B82F6, #60A5FA);
+            background-size: 300% 300%;
+            animation: gradient 15s ease infinite;
+        }
 
-        <!-- Tambahkan div untuk toast notification di bagian atas konten -->
-        <div id="toast-notification" class="fixed top-4 right-4 z-50 transform transition-all duration-300 translate-x-full">
-            <div class="flex items-center p-4 mb-4 rounded-lg shadow-lg min-w-[300px]" role="alert">
-                <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg">
-                    <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
-                    </svg>
-                </div>
-                <div id="toast-message" class="ml-3 text-sm font-normal"></div>
-                <button type="button" onclick="hideToast()" class="ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 hover:text-gray-900 inline-flex items-center justify-center h-8 w-8">
-                    <span class="sr-only">Close</span>
-                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
-                    </svg>
-                </button>
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Glass Effect */
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Custom Shadows */
+        .custom-shadow {
+            box-shadow: 0 0 50px -12px rgba(0, 0, 0, 0.12);
+        }
+
+        /* Smooth Transitions */
+        .smooth-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+
+    <!-- Script untuk handling tab -->
+    <script>
+    function switchTab(tab) {
+        // Hide all content
+        document.getElementById('tab-karyawan').classList.add('hidden');
+        document.getElementById('tab-target').classList.add('hidden');
+        document.getElementById('tab-absensi').classList.add('hidden');
+        
+        // Remove active classes from all tabs
+        document.querySelectorAll('button[onclick^="switchTab"]').forEach(btn => {
+            btn.classList.remove('bg-white', 'text-blue-600', 'shadow-lg', 'shadow-blue-500/10', 'scale-[1.02]', 'ring-1', 'ring-black/5');
+            btn.classList.add('text-gray-500', 'hover:text-gray-600', 'hover:bg-white/50');
+        });
+        
+        // Show selected content and activate tab
+        document.getElementById('tab-' + tab).classList.remove('hidden');
+        const activeBtn = document.querySelector(`button[onclick="switchTab('${tab}')"]`);
+        activeBtn.classList.remove('text-gray-500', 'hover:text-gray-600', 'hover:bg-white/50');
+        activeBtn.classList.add('bg-white', 'text-blue-600', 'shadow-lg', 'shadow-blue-500/10', 'scale-[1.02]', 'ring-1', 'ring-black/5');
+    }
+
+    // Initialize with first tab active
+    document.addEventListener('DOMContentLoaded', function() {
+        const activeTab = '<?= $activeTab ?>';
+        switchTab(activeTab);
+    });
+    </script>
+
+    <!-- Tambahkan div untuk toast notification di bagian atas konten -->
+    <div id="toast-notification" class="fixed top-4 right-4 z-50 transform transition-all duration-300 translate-x-full">
+        <div class="flex items-center p-4 mb-4 rounded-lg shadow-lg min-w-[300px]" role="alert">
+            <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg">
+                <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
+                </svg>
             </div>
+            <div id="toast-message" class="ml-3 text-sm font-normal"></div>
+            <button type="button" onclick="hideToast()" class="ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 hover:text-gray-900 inline-flex items-center justify-center h-8 w-8">
+                <span class="sr-only">Close</span>
+                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                </svg>
+            </button>
         </div>
+    </div>
 
-        <!-- Content Section - Styling yang lebih mewah -->
-        <div id="tab-karyawan" class="tab-content <?= $activeTab === 'karyawan' ? '' : 'hidden' ?>">
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
-                <div class="p-8">
-                    <div class="flex justify-between items-center mb-8">
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-800 mb-1">Daftar Karyawan</h2>
-                            <p class="text-gray-500">Kelola data karyawan Anda</p>
-                        </div>
-                        <button onclick="showModal('modal-tambah-karyawan')"
-                            class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            Tambah Karyawan
-                        </button>
+    <!-- Content Section - Styling yang lebih mewah -->
+    <div id="tab-karyawan" class="tab-content <?= $activeTab === 'karyawan' ? '' : 'hidden' ?>">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-1">Daftar Karyawan</h2>
+                        <p class="text-gray-500">Kelola data karyawan Anda</p>
                     </div>
+                    <button onclick="showModal('modal-tambah-karyawan')"
+                        class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Tambah Karyawan
+                    </button>
+                </div>
 
-                    <!-- Tabel dengan styling yang lebih rapi -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="border-b border-gray-100">
-                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[150px]">Nama</th>
-                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[180px]">Email</th>
-                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[180px]">Tempat, Tgl Lahir</th>
-                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[120px]">Jenis Kelamin</th>
-                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[130px]">Telepon</th>
-                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[150px]">Alamat</th>
-                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[130px]">Gaji</th>
-                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[180px]">Bank & No. Rek</th>
-                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[130px]">Tgl Bergabung</th>
-                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[100px]">Role</th>
-                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[100px]">Status</th>
-                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[80px]">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-50">
-                                <?php foreach ($karyawan as $k): ?>
-                                    <tr class="text-sm text-gray-600 hover:bg-gray-50/50 transition-colors duration-200">
-                                        <td class="py-4 px-4 truncate"><?= htmlspecialchars($k['nama']) ?></td>
-                                        <td class="py-4 px-4 truncate"><?= htmlspecialchars($k['email']) ?></td>
-                                        <td class="py-4 px-4">
-                                            <?= $k['tempat_lahir'] ? htmlspecialchars($k['tempat_lahir']) : '-' ?>
-                                            <?= $k['tanggal_lahir'] ? ', ' . date('d/m/Y', strtotime($k['tanggal_lahir'])) : '' ?>
-                                        </td>
-                                        <td class="py-4 px-4"><?= htmlspecialchars($k['jenis_kelamin'] ?: '-') ?></td>
-                                        <td class="py-4 px-4"><?= htmlspecialchars($k['telepon'] ?: '-') ?></td>
-                                        <td class="py-4 px-4 truncate max-w-[150px]"><?= htmlspecialchars($k['alamat'] ?: '-') ?></td>
-                                        <td class="py-4 px-4">
-                                            <?= $k['gaji'] ? 'Rp ' . number_format($k['gaji'], 0, ',', '.') : 'Rp 0' ?>
-                                        </td>
-                                        <td class="py-4 px-4">
-                                            <?php if ($k['bank'] && $k['nomor_rekening']): ?>
-                                                <?= htmlspecialchars($k['bank']) ?> - <?= htmlspecialchars($k['nomor_rekening']) ?>
+                <!-- Tabel dengan styling yang lebih rapi -->
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-100">
+                                <!-- Tambah kolom untuk avatar -->
+                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[80px]">Foto</th>
+                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[150px]">Nama</th>
+                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[180px]">Email</th>
+                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[180px]">Tempat, Tgl Lahir</th>
+                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[120px]">Jenis Kelamin</th>
+                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[130px]">Telepon</th>
+                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[150px]">Alamat</th>
+                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[130px]">Gaji</th>
+                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[180px]">Bank & No. Rek</th>
+                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[130px]">Tgl Bergabung</th>
+                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[100px]">Role</th>
+                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[100px]">Status</th>
+                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[80px]">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            <?php foreach ($karyawan as $k): ?>
+                                <tr class="text-sm text-gray-600 hover:bg-gray-50/50 transition-colors duration-200">
+                                    <!-- Kolom avatar -->
+                                    <td class="py-4 px-4">
+                                        <div class="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-gray-100">
+                                            <?php if (isset($k['avatar']) && file_exists("../uploads/avatars/" . $k['avatar'])): ?>
+                                                <img src="../uploads/avatars/<?= htmlspecialchars($k['avatar']) ?>"
+                                                     alt="<?= htmlspecialchars($k['nama']) ?>"
+                                                     class="w-full h-full object-cover">
                                             <?php else: ?>
-                                                -
+                                                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=<?= urlencode($k['nama']) ?>&backgroundColor=6366F1&textureChance=50&mouthChance=100&sidesChance=100&spots=50&eyes=happy"
+                                                     alt="<?= htmlspecialchars($k['nama']) ?>"
+                                                     class="w-full h-full object-cover">
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4 truncate"><?= htmlspecialchars($k['nama']) ?></td>
+                                    <td class="py-4 px-4"><?= htmlspecialchars($k['email']) ?></td>
+                                    <td class="py-4 px-4">
+                                        <?= $k['tempat_lahir'] ? htmlspecialchars($k['tempat_lahir']) : '-' ?>
+                                        <?= $k['tanggal_lahir'] ? ', ' . date('d/m/Y', strtotime($k['tanggal_lahir'])) : '' ?>
+                                    </td>
+                                    <td class="py-4 px-4"><?= htmlspecialchars($k['jenis_kelamin'] ?: '-') ?></td>
+                                    <td class="py-4 px-4"><?= htmlspecialchars($k['telepon'] ?: '-') ?></td>
+                                    <td class="py-4 px-4 truncate max-w-[150px]"><?= htmlspecialchars($k['alamat'] ?: '-') ?></td>
+                                    <td class="py-4 px-4">
+                                        <?= $k['gaji'] ? 'Rp ' . number_format($k['gaji'], 0, ',', '.') : 'Rp 0' ?>
+                                    </td>
+                                    <td class="py-4 px-4">
+                                        <?php if ($k['bank'] && $k['nomor_rekening']): ?>
+                                            <?= htmlspecialchars($k['bank']) ?> - <?= htmlspecialchars($k['nomor_rekening']) ?>
+                                        <?php else: ?>
+                                            -
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="py-4 px-4"><?= $k['tanggal_bergabung'] ? date('d/m/Y', strtotime($k['tanggal_bergabung'])) : '-' ?></td>
+                                    <td class="py-4 px-4">
+                                        <span class="px-3 py-1 rounded-full text-xs font-medium inline-block min-w-[90px] text-center
+                                        <?= $k['role'] === 'Operator' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700' ?>">
+                                            <?= htmlspecialchars($k['role']) ?>
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-4">
+                                        <span class="px-3 py-1 rounded-full text-xs font-medium inline-block min-w-[80px] text-center
+                                        <?= $k['status'] === 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' ?>">
+                                            <?= htmlspecialchars($k['status']) ?>
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-4">
+                                        <div class="flex items-center gap-2">
+                                            <button onclick="editKaryawan(<?= $k['id'] ?>)"
+                                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
+                                            <button onclick="deleteKaryawan(<?= $k['id'] ?>)"
+                                                class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Karyawan -->
+    <div id="modal-tambah-karyawan" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
+
+            <div class="relative bg-white rounded-2xl max-w-md w-full">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold mb-4">Tambah Karyawan</h3>
+
+                    <form id="form-tambah-karyawan" method="POST">
+                        <input type="hidden" name="action" value="add">
+                        <div class="space-y-4">
+                            <!-- Data Pribadi -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama</label>
+                                <input type="text" name="nama" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tempat Lahir</label>
+                                    <input type="text" name="tempat_lahir" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Lahir</label>
+                                    <input type="date" name="tanggal_lahir" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
+                                <select name="jenis_kelamin" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option value="Laki-laki">Laki-laki</option>
+                                    <option value="Perempuan">Perempuan</option>
+                                </select>
+                            </div>
+
+                            <!-- Kontak -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" name="email" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                <input type="password" name="password" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Telepon</label>
+                                <input type="tel" name="telepon" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                                <textarea name="alamat" required rows="2" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+                            </div>
+
+                            <!-- Informasi Pekerjaan -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                                <select name="role" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option value="Operator">Operator</option>
+                                    <option value="Kasir">Kasir</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Gaji</label>
+                                <input type="text" name="gaji" id="edit-gaji" required
+                                    oninput="formatRupiah(this)"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Bank</label>
+                                    <select name="bank" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                        <option value="BCA">BCA</option>
+                                        <option value="Mandiri">Mandiri</option>
+                                        <option value="BNI">BNI</option>
+                                        <option value="BRI">BRI</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Rekening</label>
+                                    <input type="text" name="nomor_rekening" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Bergabung</label>
+                                <input type="date" name="tanggal_bergabung" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-end gap-3">
+                            <button type="button" onclick="hideModal('modal-tambah-karyawan')" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
+                                Batal
+                            </button>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none">
+                                Simpan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Edit Karyawan -->
+    <div id="modal-edit-karyawan" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
+
+            <div class="relative bg-white rounded-2xl max-w-md w-full">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold mb-4">Edit Karyawan</h3>
+
+                    <form id="form-edit-karyawan" method="POST">
+                        <input type="hidden" name="action" value="edit">
+                        <input type="hidden" name="id" id="edit-id">
+                        <div class="space-y-4">
+                            <!-- Data Pribadi -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama</label>
+                                <input type="text" name="nama" id="edit-nama" required
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tempat Lahir</label>
+                                    <input type="text" name="tempat_lahir" id="edit-tempat_lahir" required
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Lahir</label>
+                                    <input type="date" name="tanggal_lahir" id="edit-tanggal_lahir" required
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
+                                <select name="jenis_kelamin" id="edit-jenis_kelamin" required
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option value="Laki-laki">Laki-laki</option>
+                                    <option value="Perempuan">Perempuan</option>
+                                </select>
+                            </div>
+
+                            <!-- Kontak -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" name="email" id="edit-email" required
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Password (Kosongkan jika tidak diubah)</label>
+                                <input type="password" name="password" id="edit-password"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Telepon</label>
+                                <input type="tel" name="telepon" id="edit-telepon" required
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                                <textarea name="alamat" id="edit-alamat" rows="2" required
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+                            </div>
+
+                            <!-- Informasi Pekerjaan -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                                <select name="role" id="edit-role" required
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option value="Operator">Operator</option>
+                                    <option value="Kasir">Kasir</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select name="status" id="edit-status" required
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option value="Aktif">Aktif</option>
+                                    <option value="Tidak Aktif">Tidak Aktif</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Gaji</label>
+                                <input type="text" name="gaji" id="edit-gaji" required
+                                    oninput="formatRupiah(this)"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Bank</label>
+                                    <select name="bank" id="edit-bank" required
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                        <option value="BCA">BCA</option>
+                                        <option value="Mandiri">Mandiri</option>
+                                        <option value="BNI">BNI</option>
+                                        <option value="BRI">BRI</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Rekening</label>
+                                    <input type="text" name="nomor_rekening" id="edit-nomor_rekening" required
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Bergabung</label>
+                                <input type="date" name="tanggal_bergabung" id="edit-tanggal_bergabung" required
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-end gap-3">
+                            <button type="button" onclick="hideModal('modal-edit-karyawan')"
+                                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
+                                Batal
+                            </button>
+                            <button type="submit"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none">
+                                Simpan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Content: Target & Komisi -->
+    <div id="tab-target" class="tab-content <?= $activeTab === 'target' ? '' : 'hidden' ?>">
+        <div class="bg-white rounded-xl shadow-sm">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-semibold">Target Penjualan & Komisi</h2>
+                    <button type="button"
+                        onclick="showModal('modal-tambah-target')"
+                        class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Tambah Target
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Karyawan
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Periode
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Jenis Target
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Target
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Progress
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Insentif
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Aksi
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <?php if (empty($targets)): ?>
+                                <tr>
+                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                                        Belum ada data target penjualan
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($targets as $t): ?>
+                                    <?php
+                                    // Hitung persentase dan format pencapaian
+                                    if ($t['jenis_target'] === 'omset') {
+                                        $target = $t['target_nominal'];
+                                        $pencapaian = formatNumber($t['total_pencapaian'], true);
+                                    } else {
+                                        $target = $t['jumlah_target'];
+                                        $pencapaian = formatNumber($t['total_pencapaian']) . ' unit';
+                                    }
+                                    $persentase = $target > 0 ? min(($t['total_pencapaian'] / $target) * 100, 100) : 0;
+                                    ?>
+                                    <tr>
+                                        <td class="px-6 py-4"><?= htmlspecialchars($t['nama_karyawan']) ?></td>
+                                        <td class="px-6 py-4">
+                                            <?= date('d/m/Y', strtotime($t['periode_mulai'])) ?> -
+                                            <?= date('d/m/Y', strtotime($t['periode_selesai'])) ?>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 text-xs rounded-full 
+                                                <?= $t['jenis_target'] === 'omset' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' ?>">
+                                                <?= ucfirst($t['jenis_target']) ?>
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <?php if ($t['jenis_target'] === 'omset'): ?>
+                                                <?= formatNumber($t['target_nominal'], true) ?>
+                                            <?php else: ?>
+                                                <?= formatNumber($t['jumlah_target']) ?> <?= htmlspecialchars($t['nama_barang']) ?>
                                             <?php endif; ?>
                                         </td>
-                                        <td class="py-4 px-4"><?= $k['tanggal_bergabung'] ? date('d/m/Y', strtotime($k['tanggal_bergabung'])) : '-' ?></td>
-                                        <td class="py-4 px-4">
-                                            <span class="px-3 py-1 rounded-full text-xs font-medium inline-block min-w-[90px] text-center
-                                            <?= $k['role'] === 'Operator' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700' ?>">
-                                                <?= htmlspecialchars($k['role']) ?>
+                                        <td class="px-6 py-4">
+                                            <div class="flex flex-col gap-1">
+                                                <div class="flex justify-between text-sm">
+                                                    <span>Progress</span>
+                                                    <span><?= number_format($persentase, 1) ?>%</span>
+                                                </div>
+                                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                                    <div class="h-2.5 rounded-full transition-all duration-500 <?= getProgressColor($persentase) ?>"
+                                                        style="width: <?= $persentase ?>%">
+                                                    </div>
+                                                </div>
+                                                <div class="text-sm text-gray-500">
+                                                    <?= $pencapaian ?>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <?php if ($t['jenis_target'] === 'omset'): ?>
+                                                <?= $t['insentif_persen'] ?>%
+                                                <div class="text-sm text-gray-500 mt-1">
+                                                    (<?= formatNumber($t['total_insentif'], true) ?>)
+                                                </div>
+                                            <?php else: ?>
+                                                <?= formatNumber($t['insentif_per_unit'], true) ?>/unit
+                                                <div class="text-sm text-gray-500 mt-1">
+                                                    (<?= formatNumber($t['total_insentif'], true) ?>)
+                                                </div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 text-xs rounded-full 
+                                                <?= $t['status'] === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' ?>">
+                                                <?= htmlspecialchars($t['status']) ?>
                                             </span>
                                         </td>
-                                        <td class="py-4 px-4">
-                                            <span class="px-3 py-1 rounded-full text-xs font-medium inline-block min-w-[80px] text-center
-                                            <?= $k['status'] === 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' ?>">
-                                                <?= htmlspecialchars($k['status']) ?>
-                                            </span>
-                                        </td>
-                                        <td class="py-4 px-4">
+                                        <td class="px-6 py-4">
                                             <div class="flex items-center gap-2">
-                                                <button onclick="editKaryawan(<?= $k['id'] ?>)"
-                                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                    </svg>
-                                                </button>
-                                                <button onclick="deleteKaryawan(<?= $k['id'] ?>)"
+                                                <button onclick="deleteTarget(<?= $t['id'] ?>)"
                                                     class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -665,554 +1115,169 @@ function formatNumber($number, $isRupiah = false)
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Di bagian tab absensi -->
+    <div id="tab-absensi" class="tab-content <?= $activeTab === 'absensi' ? '' : 'hidden' ?>">
+        <!-- Header Section dengan Glass Effect -->
+
+        <!-- Statistik Cards - Ultra Premium Design -->
+        <div class="grid grid-cols-4 gap-8 mb-10">
+            <!-- Card Hadir -->
+            <div class="group relative">
+                <div class="absolute -inset-0.5 bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                <div class="relative bg-gradient-to-br from-green-50 via-green-100/50 to-emerald-50 rounded-3xl p-6 border border-green-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+                    <div class="flex items-center gap-6">
+                        <div class="bg-gradient-to-br from-green-600 to-emerald-600 p-4 rounded-2xl shadow-lg transform -rotate-6 group-hover:rotate-0 transition-transform duration-300">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-green-800/80 uppercase tracking-wider">Hadir</div>
+                            <div class="text-4xl font-bold bg-gradient-to-br from-green-600 to-emerald-600 bg-clip-text text-transparent"><?= $hadir ?></div>
+                            <div class="text-xs font-medium text-green-700/60 mt-1">Karyawan</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Izin/Sakit -->
+            <div class="group relative">
+                <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-600 to-yellow-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                <div class="relative bg-gradient-to-br from-amber-50 via-yellow-100/50 to-amber-50 rounded-3xl p-6 border border-amber-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+                    <div class="flex items-center gap-6">
+                        <div class="bg-gradient-to-br from-amber-600 to-yellow-600 p-4 rounded-2xl shadow-lg transform -rotate-6 group-hover:rotate-0 transition-transform duration-300">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-amber-800/80 uppercase tracking-wider">Izin/Sakit</div>
+                            <div class="text-4xl font-bold bg-gradient-to-br from-amber-600 to-yellow-600 bg-clip-text text-transparent"><?= $izinSakit ?></div>
+                            <div class="text-xs font-medium text-amber-700/60 mt-1">Karyawan</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Telat -->
+            <div class="group relative">
+                <div class="absolute -inset-0.5 bg-gradient-to-r from-rose-600 to-red-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                <div class="relative bg-gradient-to-br from-rose-50 via-red-100/50 to-rose-50 rounded-3xl p-6 border border-rose-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+                    <div class="flex items-center gap-6">
+                        <div class="bg-gradient-to-br from-rose-600 to-red-600 p-4 rounded-2xl shadow-lg transform -rotate-6 group-hover:rotate-0 transition-transform duration-300">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 4a8 8 0 018 8v4M4 12a8 8 0 018-8v4"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-rose-800/80 uppercase tracking-wider">Telat</div>
+                            <div class="text-4xl font-bold bg-gradient-to-br from-rose-600 to-red-600 bg-clip-text text-transparent"><?= $telat ?></div>
+                            <div class="text-xs font-medium text-rose-700/60 mt-1">Karyawan</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Rata-rata Durasi -->
+            <div class="group relative">
+                <div class="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                <div class="relative bg-gradient-to-br from-blue-50 via-indigo-100/50 to-blue-50 rounded-3xl p-6 border border-blue-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+                    <div class="flex items-center gap-6">
+                        <div class="bg-gradient-to-br from-blue-600 to-indigo-600 p-4 rounded-2xl shadow-lg transform -rotate-6 group-hover:rotate-0 transition-transform duration-300">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-blue-800/80 uppercase tracking-wider">Rata-rata Durasi</div>
+                            <div class="text-4xl font-bold bg-gradient-to-br from-blue-600 to-indigo-600 bg-clip-text text-transparent"><?= sprintf("%02d:%02d", $averageHours, $averageMinutes) ?></div>
+                            <div class="text-xs font-medium text-blue-700/60 mt-1">Jam</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Modal Tambah Karyawan -->
-        <div id="modal-tambah-karyawan" class="fixed inset-0 z-50 hidden overflow-y-auto">
-            <div class="flex items-center justify-center min-h-screen p-4">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
-
-                <div class="relative bg-white rounded-2xl max-w-md w-full">
-                    <div class="p-6">
-                        <h3 class="text-lg font-semibold mb-4">Tambah Karyawan</h3>
-
-                        <form id="form-tambah-karyawan" method="POST">
-                            <input type="hidden" name="action" value="add">
-                            <div class="space-y-4">
-                                <!-- Data Pribadi -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama</label>
-                                    <input type="text" name="nama" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tempat Lahir</label>
-                                        <input type="text" name="tempat_lahir" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Lahir</label>
-                                        <input type="date" name="tanggal_lahir" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
-                                    <select name="jenis_kelamin" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                        <option value="Laki-laki">Laki-laki</option>
-                                        <option value="Perempuan">Perempuan</option>
-                                    </select>
-                                </div>
-
-                                <!-- Kontak -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                    <input type="email" name="email" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                                    <input type="password" name="password" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Telepon</label>
-                                    <input type="tel" name="telepon" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
-                                    <textarea name="alamat" required rows="2" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
-                                </div>
-
-                                <!-- Informasi Pekerjaan -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                                    <select name="role" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                        <option value="Operator">Operator</option>
-                                        <option value="Kasir">Kasir</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Gaji</label>
-                                    <input type="text" name="gaji" id="edit-gaji" required
-                                        oninput="formatRupiah(this)"
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Bank</label>
-                                        <select name="bank" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                            <option value="BCA">BCA</option>
-                                            <option value="Mandiri">Mandiri</option>
-                                            <option value="BNI">BNI</option>
-                                            <option value="BRI">BRI</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Rekening</label>
-                                        <input type="text" name="nomor_rekening" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Bergabung</label>
-                                    <input type="date" name="tanggal_bergabung" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                </div>
-                            </div>
-
-                            <div class="mt-6 flex justify-end gap-3">
-                                <button type="button" onclick="hideModal('modal-tambah-karyawan')" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
-                                    Batal
-                                </button>
-                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none">
-                                    Simpan
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Form Edit Karyawan -->
-        <div id="modal-edit-karyawan" class="fixed inset-0 z-50 hidden overflow-y-auto">
-            <div class="flex items-center justify-center min-h-screen p-4">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
-
-                <div class="relative bg-white rounded-2xl max-w-md w-full">
-                    <div class="p-6">
-                        <h3 class="text-lg font-semibold mb-4">Edit Karyawan</h3>
-
-                        <form id="form-edit-karyawan" method="POST">
-                            <input type="hidden" name="action" value="edit">
-                            <input type="hidden" name="id" id="edit-id">
-                            <div class="space-y-4">
-                                <!-- Data Pribadi -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama</label>
-                                    <input type="text" name="nama" id="edit-nama" required
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tempat Lahir</label>
-                                        <input type="text" name="tempat_lahir" id="edit-tempat_lahir" required
-                                            class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Lahir</label>
-                                        <input type="date" name="tanggal_lahir" id="edit-tanggal_lahir" required
-                                            class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
-                                    <select name="jenis_kelamin" id="edit-jenis_kelamin" required
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                        <option value="Laki-laki">Laki-laki</option>
-                                        <option value="Perempuan">Perempuan</option>
-                                    </select>
-                                </div>
-
-                                <!-- Kontak -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                    <input type="email" name="email" id="edit-email" required
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Password (Kosongkan jika tidak diubah)</label>
-                                    <input type="password" name="password" id="edit-password"
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Telepon</label>
-                                    <input type="tel" name="telepon" id="edit-telepon" required
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
-                                    <textarea name="alamat" id="edit-alamat" rows="2" required
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
-                                </div>
-
-                                <!-- Informasi Pekerjaan -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                                    <select name="role" id="edit-role" required
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                        <option value="Operator">Operator</option>
-                                        <option value="Kasir">Kasir</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                                    <select name="status" id="edit-status" required
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                        <option value="Aktif">Aktif</option>
-                                        <option value="Tidak Aktif">Tidak Aktif</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Gaji</label>
-                                    <input type="text" name="gaji" id="edit-gaji" required
-                                        oninput="formatRupiah(this)"
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Bank</label>
-                                        <select name="bank" id="edit-bank" required
-                                            class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                            <option value="BCA">BCA</option>
-                                            <option value="Mandiri">Mandiri</option>
-                                            <option value="BNI">BNI</option>
-                                            <option value="BRI">BRI</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Rekening</label>
-                                        <input type="text" name="nomor_rekening" id="edit-nomor_rekening" required
-                                            class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Bergabung</label>
-                                    <input type="date" name="tanggal_bergabung" id="edit-tanggal_bergabung" required
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                </div>
-                            </div>
-
-                            <div class="mt-6 flex justify-end gap-3">
-                                <button type="button" onclick="hideModal('modal-edit-karyawan')"
-                                    class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
-                                    Batal
-                                </button>
-                                <button type="submit"
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none">
-                                    Simpan
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab Content: Target & Komisi -->
-        <div id="tab-target" class="tab-content <?= $activeTab === 'target' ? '' : 'hidden' ?>">
-            <div class="bg-white rounded-xl shadow-sm">
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-lg font-semibold">Target Penjualan & Komisi</h2>
-                        <button type="button"
-                            onclick="showModal('modal-tambah-target')"
+        <!-- Tabel Absensi -->
+        <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800">Data Absensi Karyawan</h2>
+                    <div class="flex gap-3">
+                            <input type="date" id="tanggal-absensi" value="<?= $today ?>"
+                                onchange="filterAbsensi(this.value)"
+                            class="px-4 py-2 rounded-xl border border-gray-200">
+                        <button onclick="showInputAbsensiModal()"
                             class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
-                            Tambah Target
+                            Input Absensi
                         </button>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Karyawan
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Periode
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Jenis Target
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Target
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Progress
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Insentif
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <?php if (empty($targets)): ?>
-                                    <tr>
-                                        <td colspan="8" class="px-6 py-4 text-center text-gray-500">
-                                            Belum ada data target penjualan
-                                        </td>
-                                    </tr>
-                                <?php else: ?>
-                                    <?php foreach ($targets as $t): ?>
-                                        <?php
-                                        // Hitung persentase dan format pencapaian
-                                        if ($t['jenis_target'] === 'omset') {
-                                            $target = $t['target_nominal'];
-                                            $pencapaian = formatNumber($t['total_pencapaian'], true);
-                                        } else {
-                                            $target = $t['jumlah_target'];
-                                            $pencapaian = formatNumber($t['total_pencapaian']) . ' unit';
-                                        }
-                                        $persentase = $target > 0 ? min(($t['total_pencapaian'] / $target) * 100, 100) : 0;
-                                        ?>
-                                        <tr>
-                                            <td class="px-6 py-4"><?= htmlspecialchars($t['nama_karyawan']) ?></td>
-                                            <td class="px-6 py-4">
-                                                <?= date('d/m/Y', strtotime($t['periode_mulai'])) ?> -
-                                                <?= date('d/m/Y', strtotime($t['periode_selesai'])) ?>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <span class="px-2 py-1 text-xs rounded-full 
-                                                    <?= $t['jenis_target'] === 'omset' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' ?>">
-                                                    <?= ucfirst($t['jenis_target']) ?>
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <?php if ($t['jenis_target'] === 'omset'): ?>
-                                                    <?= formatNumber($t['target_nominal'], true) ?>
-                                                <?php else: ?>
-                                                    <?= formatNumber($t['jumlah_target']) ?> <?= htmlspecialchars($t['nama_barang']) ?>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <div class="flex flex-col gap-1">
-                                                    <div class="flex justify-between text-sm">
-                                                        <span>Progress</span>
-                                                        <span><?= number_format($persentase, 1) ?>%</span>
-                                                    </div>
-                                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                                        <div class="h-2.5 rounded-full transition-all duration-500 <?= getProgressColor($persentase) ?>"
-                                                            style="width: <?= $persentase ?>%">
-                                                        </div>
-                                                    </div>
-                                                    <div class="text-sm text-gray-500">
-                                                        <?= $pencapaian ?>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <?php if ($t['jenis_target'] === 'omset'): ?>
-                                                    <?= $t['insentif_persen'] ?>%
-                                                    <div class="text-sm text-gray-500 mt-1">
-                                                        (<?= formatNumber($t['total_insentif'], true) ?>)
-                                                    </div>
-                                                <?php else: ?>
-                                                    <?= formatNumber($t['insentif_per_unit'], true) ?>/unit
-                                                    <div class="text-sm text-gray-500 mt-1">
-                                                        (<?= formatNumber($t['total_insentif'], true) ?>)
-                                                    </div>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <span class="px-2 py-1 text-xs rounded-full 
-                                                    <?= $t['status'] === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' ?>">
-                                                    <?= htmlspecialchars($t['status']) ?>
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <div class="flex items-center gap-2">
-                                                    <button onclick="deleteTarget(<?= $t['id'] ?>)"
-                                                        class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">
-                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Di bagian tab absensi -->
-        <div id="tab-absensi" class="tab-content <?= $activeTab === 'absensi' ? '' : 'hidden' ?>">
-            <!-- Header Section dengan Glass Effect -->
-
-            <!-- Statistik Cards - Ultra Premium Design -->
-            <div class="grid grid-cols-4 gap-8 mb-10">
-                <!-- Card Hadir -->
-                <div class="group relative">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
-                    <div class="relative bg-gradient-to-br from-green-50 via-green-100/50 to-emerald-50 rounded-3xl p-6 border border-green-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
-                        <div class="flex items-center gap-6">
-                            <div class="bg-gradient-to-br from-green-600 to-emerald-600 p-4 rounded-2xl shadow-lg transform -rotate-6 group-hover:rotate-0 transition-transform duration-300">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="text-sm font-medium text-green-800/80 uppercase tracking-wider">Hadir</div>
-                                <div class="text-4xl font-bold bg-gradient-to-br from-green-600 to-emerald-600 bg-clip-text text-transparent"><?= $hadir ?></div>
-                                <div class="text-xs font-medium text-green-700/60 mt-1">Karyawan</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Card Izin/Sakit -->
-                <div class="group relative">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-600 to-yellow-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
-                    <div class="relative bg-gradient-to-br from-amber-50 via-yellow-100/50 to-amber-50 rounded-3xl p-6 border border-amber-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
-                        <div class="flex items-center gap-6">
-                            <div class="bg-gradient-to-br from-amber-600 to-yellow-600 p-4 rounded-2xl shadow-lg transform -rotate-6 group-hover:rotate-0 transition-transform duration-300">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="text-sm font-medium text-amber-800/80 uppercase tracking-wider">Izin/Sakit</div>
-                                <div class="text-4xl font-bold bg-gradient-to-br from-amber-600 to-yellow-600 bg-clip-text text-transparent"><?= $izinSakit ?></div>
-                                <div class="text-xs font-medium text-amber-700/60 mt-1">Karyawan</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card Telat -->
-                <div class="group relative">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-rose-600 to-red-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
-                    <div class="relative bg-gradient-to-br from-rose-50 via-red-100/50 to-rose-50 rounded-3xl p-6 border border-rose-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
-                        <div class="flex items-center gap-6">
-                            <div class="bg-gradient-to-br from-rose-600 to-red-600 p-4 rounded-2xl shadow-lg transform -rotate-6 group-hover:rotate-0 transition-transform duration-300">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 4a8 8 0 018 8v4M4 12a8 8 0 018-8v4"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="text-sm font-medium text-rose-800/80 uppercase tracking-wider">Telat</div>
-                                <div class="text-4xl font-bold bg-gradient-to-br from-rose-600 to-red-600 bg-clip-text text-transparent"><?= $telat ?></div>
-                                <div class="text-xs font-medium text-rose-700/60 mt-1">Karyawan</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card Rata-rata Durasi -->
-                <div class="group relative">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
-                    <div class="relative bg-gradient-to-br from-blue-50 via-indigo-100/50 to-blue-50 rounded-3xl p-6 border border-blue-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
-                        <div class="flex items-center gap-6">
-                            <div class="bg-gradient-to-br from-blue-600 to-indigo-600 p-4 rounded-2xl shadow-lg transform -rotate-6 group-hover:rotate-0 transition-transform duration-300">
-                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="text-sm font-medium text-blue-800/80 uppercase tracking-wider">Rata-rata Durasi</div>
-                                <div class="text-4xl font-bold bg-gradient-to-br from-blue-600 to-indigo-600 bg-clip-text text-transparent"><?= sprintf("%02d:%02d", $averageHours, $averageMinutes) ?></div>
-                                <div class="text-xs font-medium text-blue-700/60 mt-1">Jam</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tabel Absensi -->
-            <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-gray-800">Data Absensi Karyawan</h2>
-                        <div class="flex gap-3">
-                                <input type="date" id="tanggal-absensi" value="<?= $today ?>"
-                                    onchange="filterAbsensi(this.value)"
-                                class="px-4 py-2 rounded-xl border border-gray-200">
-                            <button onclick="showInputAbsensiModal()"
-                                class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                                Input Absensi
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="bg-gray-50 border-b border-gray-100">
-                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">KARYAWAN</th>
-                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">ROLE</th>
-                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">JAM MASUK</th>
-                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">JAM KELUAR</th>
-                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">DURASI</th>
-                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">STATUS</th>
-                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">KETERANGAN</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($absensi as $data): ?>
-                                    <tr class="border-b border-gray-50 last:border-0">
-                                        <td class="py-4 px-6"><?= htmlspecialchars($data['nama_karyawan']) ?></td>
-                                        <td class="py-4 px-6">
-                                            <span class="px-2 py-1 rounded-lg text-sm <?= $data['role'] === 'Operator' ? 'bg-purple-50 text-purple-600' : 'bg-orange-50 text-orange-600' ?>">
-                                                <?= htmlspecialchars($data['role']) ?>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-100">
+                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">KARYAWAN</th>
+                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">ROLE</th>
+                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">JAM MASUK</th>
+                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">JAM KELUAR</th>
+                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">DURASI</th>
+                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">STATUS</th>
+                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">KETERANGAN</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($absensi as $data): ?>
+                                <tr class="border-b border-gray-50 last:border-0">
+                                    <td class="py-4 px-6"><?= htmlspecialchars($data['nama_karyawan']) ?></td>
+                                    <td class="py-4 px-6">
+                                        <span class="px-2 py-1 rounded-lg text-sm <?= $data['role'] === 'Operator' ? 'bg-purple-50 text-purple-600' : 'bg-orange-50 text-orange-600' ?>">
+                                            <?= htmlspecialchars($data['role']) ?>
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-6">
+                                        <?php if ($data['jam_masuk']): ?>
+                                            <span class="<?= strtotime($data['jam_masuk']) > strtotime('08:00:00') ? 'text-red-600' : 'text-gray-800' ?>">
+                                                <?= $data['jam_masuk'] ?>
                                             </span>
-                                        </td>
-                                        <td class="py-4 px-6">
-                                            <?php if ($data['jam_masuk']): ?>
-                                                <span class="<?= strtotime($data['jam_masuk']) > strtotime('08:00:00') ? 'text-red-600' : 'text-gray-800' ?>">
-                                                    <?= $data['jam_masuk'] ?>
-                                                </span>
-                                            <?php else: ?>
-                                                -
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="py-4 px-6"><?= $data['jam_keluar'] ?: '-' ?></td>
-                                        <td class="py-4 px-6"><?= $data['durasi'] ?: '00:00' ?></td>
-                                        <td class="py-4 px-6">
-                                            <?php if ($data['status'] === 'Hadir'): ?>
-                                                <span class="px-3 py-1 rounded-full text-sm bg-green-50 text-green-600">
-                                                    Hadir
-                                                </span>
-                                            <?php elseif ($data['status'] === 'Belum Absen'): ?>
-                                                <span class="px-3 py-1 rounded-full text-sm bg-gray-50 text-gray-600">
-                                                    Belum Absen
-                                                </span>
-                                            <?php else: ?>
-                                                <span class="px-3 py-1 rounded-full text-sm bg-yellow-50 text-yellow-600">
-                                                    <?= htmlspecialchars($data['status']) ?>
-                                                </span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="py-4 px-6"><?= htmlspecialchars($data['keterangan']) ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                                        <?php else: ?>
+                                            -
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="py-4 px-6"><?= $data['jam_keluar'] ?: '-' ?></td>
+                                    <td class="py-4 px-6"><?= $data['durasi'] ?: '00:00' ?></td>
+                                    <td class="py-4 px-6">
+                                        <?php if ($data['status'] === 'Hadir'): ?>
+                                            <span class="px-3 py-1 rounded-full text-sm bg-green-50 text-green-600">
+                                                Hadir
+                                            </span>
+                                        <?php elseif ($data['status'] === 'Belum Absen'): ?>
+                                            <span class="px-3 py-1 rounded-full text-sm bg-gray-50 text-gray-600">
+                                                Belum Absen
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="px-3 py-1 rounded-full text-sm bg-yellow-50 text-yellow-600">
+                                                <?= htmlspecialchars($data['status']) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="py-4 px-6"><?= htmlspecialchars($data['keterangan']) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
