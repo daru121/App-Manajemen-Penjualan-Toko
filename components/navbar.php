@@ -334,6 +334,18 @@ $notificationCount = count($unreadNotifications);
                                     'active' => true
                                 ];
                                 break;
+                            case 'karyawan':
+                                $breadcrumbs[] = [
+                                    'text' => 'Operasional',
+                                    'url' => '#',
+                                    'active' => false
+                                ];
+                                $breadcrumbs[] = [
+                                        'text' => 'Karyawan',
+                                        'url' => 'karyawan.php',
+                                    'active' => true
+                                ];
+                                break;
                         }
 
                         // Output breadcrumbs

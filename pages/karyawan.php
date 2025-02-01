@@ -1,6 +1,7 @@
 <?php
 require_once '../backend/check_session.php';
 require_once '../backend/database.php';
+require_once('../vendor/tecnickcom/tcpdf/tcpdf.php'); // Ubah path ke vendor
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -484,6 +485,214 @@ function formatNumber($number, $isRupiah = false)
         return 'Rp ' . number_format($number, 0, ',', '.');
     }
     return number_format($number, 0, ',', '.');
+}
+
+// Ubah query absensi ketika export PDF
+if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
+    $bulan = $_GET['bulan'];
+    $queryAbsensi = "WITH RECURSIVE dates AS (
+        SELECT DATE('$bulan-01') as date
+        UNION ALL
+        SELECT date + INTERVAL 1 DAY
+        FROM dates
+        WHERE date < LAST_DAY('$bulan-01')
+    ),
+    users_list AS (
+        SELECT id, nama, role 
+        FROM users 
+        WHERE role IN ('Operator', 'Kasir') 
+        AND status = 'Aktif'
+    )
+    SELECT 
+        u.id as user_id,
+        u.nama as nama_karyawan,
+        u.role as role,
+        d.date as tanggal,
+        ak.jam_masuk,
+        ak.jam_keluar,
+        CASE 
+            WHEN ak.jam_keluar IS NOT NULL AND ak.jam_masuk IS NOT NULL THEN 
+                TIMEDIFF(ak.jam_keluar, ak.jam_masuk)
+            ELSE NULL
+        END as durasi,
+        COALESCE(ak.status, 'Tidak Hadir') as status,
+        COALESCE(ak.keterangan, '-') as keterangan
+    FROM dates d
+    CROSS JOIN users_list u
+    LEFT JOIN absensi_karyawan ak ON u.id = ak.user_id 
+        AND DATE(ak.tanggal) = d.date
+    ORDER BY u.nama ASC, d.date ASC";
+
+    $stmt = $conn->prepare($queryAbsensi);
+    $stmt->execute();
+    $absensi = $stmt->fetchAll();
+
+    // Hitung statistik
+    $totalKaryawan = count($absensi) / date('t', strtotime($bulan));  // Jumlah hari dalam bulan
+    $hadir = 0;
+    $izinSakit = 0;
+    $telat = 0;
+    $totalDurasi = 0;
+    $countDurasi = 0;
+
+    foreach ($absensi as $data) {
+        if ($data['status'] === 'Hadir') {
+            $hadir++;
+            if ($data['jam_masuk'] && strtotime($data['jam_masuk']) > strtotime('08:00:00')) {
+                $telat++;
+            }
+        } else if (in_array($data['status'], ['Izin', 'Sakit'])) {
+            $izinSakit++;
+        }
+
+        if ($data['durasi']) {
+            list($hours, $minutes, $seconds) = explode(':', $data['durasi']);
+            $totalDurasi += ($hours * 3600) + ($minutes * 60) + $seconds;
+            $countDurasi++;
+        }
+    }
+
+    $averageDurasi = $countDurasi > 0 ? $totalDurasi / $countDurasi : 0;
+    $averageHours = floor($averageDurasi / 3600);
+    $averageMinutes = floor(($averageDurasi % 3600) / 60);
+
+    // Prevent any output
+    ob_clean();
+    
+    // Create new PDF document
+    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+    
+    // Set document information
+    $pdf->SetCreator('PAksesories');
+    $pdf->SetAuthor('PAksesories');
+    $pdf->SetTitle('Laporan Absensi Karyawan - ' . date('F Y', strtotime($bulan)));
+    
+    // Remove default header/footer
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(false);
+    
+    // Set margins yang lebih lebar
+    $pdf->SetMargins(15, 15, 15);
+    
+    // Add a page (Landscape)
+    $pdf->AddPage('L');
+    
+    // Set font
+    $pdf->SetFont('helvetica', '', 12);
+    
+    // Add header dengan style yang lebih menarik
+    $pdf->SetFillColor(51, 122, 183);
+    $pdf->SetTextColor(255);
+    $pdf->Cell(0, 20, '', 0, 1, 'C', true);
+    $pdf->SetY($pdf->GetY() - 20);
+    
+    // Add logo
+    if(file_exists('../img/gambar.jpg')) {
+        $pdf->Image('../img/gambar.jpg', 20, 16, 25);
+    }
+    
+    // Add title
+    $pdf->SetFont('helvetica', 'B', 24);
+    $pdf->Cell(0, 10, 'Laporan Absensi Karyawan', 0, 1, 'C');
+    $pdf->SetFont('helvetica', '', 12);
+    $pdf->Cell(0, 10, 'Periode: ' . date('F Y', strtotime($bulan)), 0, 1, 'C');
+    
+    // Reset colors
+    $pdf->SetTextColor(0);
+    $pdf->Ln(10);
+    
+    // Langsung ke table header (hapus bagian statistik)
+    $pdf->SetFillColor(52, 144, 220);
+    $pdf->SetTextColor(255);
+    $pdf->SetFont('helvetica', 'B', 10);
+    
+    // Column widths (disesuaikan untuk teks yang lebih panjang)
+    $w = array(12, 28, 45, 25, 25, 25, 25, 30, 45); // Memperlebar kolom keterangan
+    
+    // Header
+    $header = array('No', 'Tanggal', 'Nama Karyawan', 'Role', 'Jam Masuk', 'Jam Keluar', 'Durasi', 'Status', 'Keterangan');
+    foreach($header as $i => $h) {
+        $pdf->Cell($w[$i], 10, $h, 1, 0, 'C', true);
+    }
+    $pdf->Ln();
+    
+    // Reset colors for data
+    $pdf->SetFillColor(255, 255, 255);
+    $pdf->SetTextColor(0);
+    $pdf->SetFont('helvetica', '', 9);
+    
+    // Data
+    $no = 1;
+    $currentKaryawan = '';
+    $fill = false;
+    
+    // Tambahkan fungsi untuk memotong teks
+    function truncateText($text, $length = 30) {
+        if (strlen($text) > $length) {
+            return substr($text, 0, $length) . '...';
+        }
+        return $text;
+    }
+
+    foreach($absensi as $row) {
+        // Add separator between employees
+        if ($currentKaryawan !== $row['nama_karyawan'] && $currentKaryawan !== '') {
+            $pdf->SetFillColor(240, 240, 240);
+            $pdf->Cell(array_sum($w), 2, '', 'LR', 1, 'C', true);
+            $pdf->SetFillColor(255, 255, 255);
+        }
+        $currentKaryawan = $row['nama_karyawan'];
+
+        // Alternate row colors
+        $fill = !$fill;
+        $fillColor = $fill ? 252 : 255;
+        $pdf->SetFillColor($fillColor, $fillColor, $fillColor);
+        
+        // Set text color based on status
+        $statusColor = array(
+            'Hadir' => array(0, 128, 0),    // Green
+            'Izin' => array(255, 128, 0),    // Orange
+            'Sakit' => array(255, 128, 0),   // Orange
+            'Tidak Hadir' => array(200, 0, 0) // Red
+        );
+        
+        $pdf->Cell($w[0], 8, $no++, 1, 0, 'C', true);
+        $pdf->Cell($w[1], 8, date('d/m/Y', strtotime($row['tanggal'])), 1, 0, 'C', true);
+        $pdf->Cell($w[2], 8, $row['nama_karyawan'], 1, 0, 'L', true);
+        $pdf->Cell($w[3], 8, $row['role'], 1, 0, 'C', true);
+        $pdf->Cell($w[4], 8, $row['jam_masuk'] ?: '-', 1, 0, 'C', true);
+        $pdf->Cell($w[5], 8, $row['jam_keluar'] ?: '-', 1, 0, 'C', true);
+        $pdf->Cell($w[6], 8, $row['durasi'] ?: '-', 1, 0, 'C', true);
+        
+        // Set status color
+        if (isset($statusColor[$row['status']])) {
+            $color = $statusColor[$row['status']];
+            $pdf->SetTextColor($color[0], $color[1], $color[2]);
+        }
+        $pdf->Cell($w[7], 8, $row['status'], 1, 0, 'C', true);
+        $pdf->SetTextColor(0); // Reset text color
+        
+        // Handle keterangan dengan MultiCell
+        $x = $pdf->GetX();
+        $y = $pdf->GetY();
+        $keterangan = $row['keterangan'] ?: '-';
+        
+        // Hitung tinggi yang dibutuhkan untuk teks keterangan
+        $pdf->MultiCell($w[8], 8, $keterangan, 1, 'L', true);
+        
+        // Kembali ke posisi berikutnya
+        $pdf->SetXY($x + $w[8], $y);
+        $pdf->Ln();
+    }
+    
+    // Footer
+    $pdf->SetY(-35);
+    $pdf->SetFont('helvetica', 'I', 8);
+    $pdf->Cell(0, 10, 'Dicetak pada: ' . date('d/m/Y H:i:s'), 0, 1, 'R');
+    
+    // Output PDF
+    $pdf->Output('Laporan_Absensi_' . date('F_Y', strtotime($bulan)) . '.pdf', 'I');
+    exit;
 }
 ?>
 
@@ -1212,9 +1421,19 @@ function formatNumber($number, $isRupiah = false)
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-gray-800">Data Absensi Karyawan</h2>
                     <div class="flex gap-3">
-                            <input type="date" id="tanggal-absensi" value="<?= $today ?>"
-                                onchange="filterAbsensi(this.value)"
+                        <input type="date" id="tanggal-absensi" value="<?= $today ?>"
+                            onchange="filterAbsensi(this.value)"
                             class="px-4 py-2 rounded-xl border border-gray-200">
+                        
+                        <button onclick="exportAbsensiPDF()" 
+                            class="inline-flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Export PDF
+                        </button>
+                        
                         <button onclick="showInputAbsensiModal()"
                             class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2015,6 +2234,12 @@ function formatNumber($number, $isRupiah = false)
         // Fungsi untuk menyembunyikan modal input absensi
         function hideInputAbsensiModal() {
             document.getElementById('modal-input-absensi').classList.add('hidden');
+        }
+
+        function exportAbsensiPDF() {
+            const tanggal = document.getElementById('tanggal-absensi').value;
+            const bulan = tanggal.substring(0, 7); // Ambil tahun-bulan saja
+            window.location.href = `karyawan.php?tab=absensi&export=pdf&bulan=${bulan}`;
         }
     </script>
 </body>

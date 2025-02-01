@@ -239,9 +239,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
                     <h1 class="text-4xl font-bold bg-gradient-to-r from-indigo-600 via-blue-500 to-blue-400 bg-clip-text text-transparent mb-3 tracking-tight">
-                        Create Account
+                        Daftar Akun
                     </h1>
-                    <p class="text-gray-500/90 tracking-wide font-medium">Register to get started</p>
+                    <p class="text-gray-500/90 tracking-wide font-medium">Daftar untuk memulai</p>
                 </div>
 
                 <?php if (isset($error)): ?>
@@ -259,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                class="input-field"
                                placeholder=" "
                                required>
-                        <label for="nama" class="input-label">Full Name</label>
+                        <label for="nama" class="input-label">Nama Lengkap</label>
                     </div>
 
                     <!-- Email Field -->
@@ -300,7 +300,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                class="input-field"
                                placeholder=" "
                                required>
-                        <label for="confirm_password" class="input-label">Confirm Password</label>
+                        <label for="confirm_password" class="input-label">Konfirmasi Password</label>
                         <button type="button" 
                                 onclick="togglePassword('confirm_password', 'eyeIconConfirm')"
                                 class="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-full">
@@ -314,7 +314,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <!-- Register Button -->
                     <button type="submit" 
                             class="w-full py-4 px-5 bg-gradient-to-r from-indigo-600 via-blue-600 to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transform transition-all duration-300 hover:from-indigo-500 hover:via-blue-500 hover:to-blue-600 btn-shine">
-                        <span class="relative z-10 font-semibold tracking-wide">Create Account</span>
+                        <span class="relative z-10 font-semibold tracking-wide">Daftar Akun</span>
                     </button>
                 </form>
             </div>
@@ -322,9 +322,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Enhanced Footer -->
         <p class="text-center text-sm text-gray-600/90 mt-10 backdrop-blur-sm py-3 tracking-wide">
-            Already have an account? 
+            Sudah memiliki akun? 
             <a href="index.php" class="text-indigo-600 hover:text-indigo-700 font-semibold transition-all hover:underline decoration-2 underline-offset-4 hover:decoration-indigo-400">
-                Sign In
+                Masuk
             </a>
         </p>
     </div>

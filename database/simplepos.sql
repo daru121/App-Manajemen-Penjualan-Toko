@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS target_penjualan (
     periode_selesai DATE NOT NULL,
     target_nominal DECIMAL(10,2) DEFAULT 0,
     insentif_persen DECIMAL(5,2) DEFAULT 0,
-    jenis_target ENUM('omset', 'produk') NOT NULL,
+    jenis_target ENUM('produk', 'omset') NOT NULL DEFAULT 'produk',
     status ENUM('Aktif', 'Selesai') DEFAULT 'Aktif',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
@@ -178,3 +178,16 @@ CREATE TABLE absensi_karyawan (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Tabel slip_gaji
+CREATE TABLE IF NOT EXISTS slip_gaji (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    tanggal DATE NOT NULL,
+    gaji_pokok DECIMAL(10,2) NOT NULL,
+    bonus DECIMAL(10,2) DEFAULT 0,
+    potongan DECIMAL(10,2) DEFAULT 0,
+    total_gaji DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    keterangan_potongan TEXT
+);

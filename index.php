@@ -321,13 +321,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                    class="w-4 h-4 rounded border-gray-300 text-indigo-500 focus:ring-indigo-500/20 transition-colors">
                             <span class="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">Remember me</span>
                         </label>
-                        <a href="#" class="text-sm text-indigo-600 hover:text-indigo-700 transition-colors">Forgot Password?</a>
+                        <a href="#" class="text-sm text-indigo-600 hover:text-indigo-700 transition-colors">Lupa Password?</a>
                     </div>
 
                     <!-- Sign In Button -->
                     <button type="submit" 
                             class="w-full py-4 px-5 bg-gradient-to-r from-indigo-600 via-blue-600 to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transform transition-all duration-300 hover:from-indigo-500 hover:via-blue-500 hover:to-blue-600 btn-shine">
-                        <span class="relative z-10 font-semibold tracking-wide">Sign In</span>
+                        <span class="relative z-10 font-semibold tracking-wide">Masuk</span>
                     </button>
                 </form>
             </div>
@@ -335,9 +335,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Enhanced Footer -->
         <p class="text-center text-sm text-gray-600/90 mt-10 backdrop-blur-sm py-3 tracking-wide">
-            Don't have an account? 
+            Belum memiliki akun? 
             <a href="register" class="text-indigo-600 hover:text-indigo-700 font-semibold transition-all hover:underline decoration-2 underline-offset-4 hover:decoration-indigo-400">
-                Register
+                Daftar
             </a>
         </p>
     </div>
