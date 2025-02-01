@@ -74,42 +74,33 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateRegion') {
     header('Content-Type: application/json');
 
     try {
-        if (isset($_POST['startDate']) && isset($_POST['endDate'])) {
-            // Query untuk custom period
-            $query = "SELECT 
-                t.daerah,
-                COUNT(*) as total_transaksi,
-                SUM(t.total_harga) as total_pendapatan,
-                AVG(t.total_harga) as rata_rata
-            FROM transaksi t
-            WHERE t.daerah IS NOT NULL 
-                AND DATE(t.tanggal) >= ?
-                AND DATE(t.tanggal) <= ?
-            GROUP BY t.daerah 
-            ORDER BY total_pendapatan DESC 
-            LIMIT 3";
+        $query = "SELECT 
+            t.daerah,
+            COUNT(*) as total_transaksi,
+            SUM(t.total_harga) as total_pendapatan,
+            AVG(t.total_harga) as rata_rata
+        FROM transaksi t
+        WHERE t.daerah IS NOT NULL 
+            AND DATE(t.tanggal) >= :start_date
+            AND DATE(t.tanggal) <= :end_date
+        GROUP BY t.daerah 
+        ORDER BY total_pendapatan DESC 
+        LIMIT 3";
 
-            $stmt = $conn->prepare($query);
-            $stmt->execute([$_POST['startDate'], $_POST['endDate']]);
+        $stmt = $conn->prepare($query);
+        
+        if (isset($_POST['days'])) {
+            $startDate = date('Y-m-d', strtotime("-" . ($_POST['days'] - 1) . " days"));
+            $endDate = date('Y-m-d');
         } else {
-            // Query untuk periode default (7 atau 30 hari)
-            $days = isset($_POST['days']) ? (int)$_POST['days'] : 7;
-            $query = "SELECT 
-                t.daerah,
-                COUNT(*) as total_transaksi,
-                SUM(t.total_harga) as total_pendapatan,
-                AVG(t.total_harga) as rata_rata
-            FROM transaksi t
-            WHERE t.daerah IS NOT NULL 
-                AND t.tanggal >= DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY)
-                AND t.tanggal <= CURRENT_DATE()
-            GROUP BY t.daerah 
-            ORDER BY total_pendapatan DESC 
-            LIMIT 3";
-
-            $stmt = $conn->prepare($query);
-            $stmt->execute([$days]);
+            $startDate = $_POST['startDate'];
+            $endDate = $_POST['endDate'];
         }
+
+        $stmt->execute([
+            ':start_date' => $startDate,
+            ':end_date' => $endDate
+        ]);
 
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -784,8 +775,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
                         <div class="relative w-full" style="height: 400px;">
                             <canvas id="productsChart"></canvas>
                             <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
-                                <span class="text-3xl font-bold text-gray-800 text-right mr-48" id="totalProductsSold">0</span>
-                                <span class="text-sm text-gray-500 text-right mr-48">Total Terjual</span>
+                                <span class="text-3xl font-bold text-gray-800 -ml-64" id="totalProductsSold">0</span>
+                                <span class="text-sm text-gray-500 -ml-64">Total Terjual</span>
                             </div>
                         </div>
                     </div>
@@ -889,7 +880,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
                     <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-sm border border-gray-100 h-full">
                         <div class="flex justify-between items-center mb-6">
                             <div>
-                                <h2 class="text-xl font-semibold text-gray-800">Top 3 Performing Regions</h2>
+                                <h2 class="text-xl font-semibold text-gray-800">Top 3 Daerah Terlaris</h2>
                                 <p class="text-sm text-gray-500 mt-1">Daerah dengan performa penjualan tertinggi</p>
                             </div>
                             <div class="flex items-center gap-3">
@@ -1835,6 +1826,122 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
         // Tambahkan class untuk cards agar bisa diselect
         document.querySelectorAll('.bg-gray-50\\/80.backdrop-blur-sm.rounded-xl').forEach(card => {
             card.classList.add('region-card');
+        });
+
+        // Tambahkan fungsi untuk memperbarui tampilan region
+        function updateRegionDisplay(data) {
+            // Update cards
+            const container = document.querySelector('.mt-4.space-y-3');
+            container.innerHTML = data.map((region, index) => `
+                <div class="bg-gray-50/80 rounded-xl p-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">
+                                ${index === 0 ? '🥇' : (index === 1 ? '🥈' : '🥉')}
+                            </span>
+                            <h3 class="text-sm font-medium text-blue-600">
+                                ${region.daerah}
+                            </h3>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-base font-semibold text-gray-800">
+                                Rp ${Number(region.total_pendapatan).toLocaleString('id-ID')}
+                            </p>
+                            <div class="flex items-center gap-2 text-xs text-gray-500">
+                                <span>${region.total_transaksi} Transaksi</span>
+                                <span>·</span>
+                                <span>Rata-rata: Rp ${Number(region.rata_rata).toLocaleString('id-ID')}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Update chart
+            if (window.regionChart) {
+                window.regionChart.data.labels = data.map(item => item.daerah);
+                window.regionChart.data.datasets[0].data = data.map(item => item.total_pendapatan);
+                window.regionChart.update('none'); // Gunakan 'none' untuk update instan
+            }
+        }
+
+        // Fungsi untuk mengambil data region
+        function fetchRegionData(params) {
+            // Show loading state
+            const cards = document.querySelectorAll('.bg-gray-50\\/80.rounded-xl');
+            const chart = document.getElementById('regionBarChart');
+            cards.forEach(card => card.style.opacity = '0.5');
+            if (chart) chart.style.opacity = '0.5';
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('action', 'updateRegion');
+
+            // Add parameters based on type
+            if (params.days) {
+                const today = new Date();
+                const startDate = new Date();
+                startDate.setDate(today.getDate() - (params.days - 1)); // -1 karena hari ini dihitung
+                
+                formData.append('days', params.days);
+                formData.append('startDate', startDate.toISOString().split('T')[0]);
+                formData.append('endDate', today.toISOString().split('T')[0]);
+            } else {
+                formData.append('startDate', params.startDate);
+                formData.append('endDate', params.endDate);
+            }
+
+            // Fetch updated data
+            return fetch('dashboard.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    updateRegionDisplay(result.data);
+                }
+                return result;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                // Remove loading state
+                cards.forEach(card => card.style.opacity = '1');
+                if (chart) chart.style.opacity = '1';
+            });
+        }
+
+        // Event listener untuk period select
+        document.getElementById('regionPeriodSelect').addEventListener('change', function(e) {
+            const selectedValue = e.target.value;
+            const datePickerContainer = document.getElementById('datePickerContainer');
+
+            if (selectedValue === 'custom') {
+                datePickerContainer.classList.remove('hidden');
+                return;
+            }
+
+            datePickerContainer.classList.add('hidden');
+            fetchRegionData({ days: parseInt(selectedValue) });
+        });
+
+        // Event listener untuk date picker
+        ['startDate', 'endDate'].forEach(id => {
+            document.getElementById(id).addEventListener('change', function() {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+
+                if (startDate && endDate) {
+                    fetchRegionData({ startDate, endDate });
+                }
+            });
+        });
+
+        // Inisialisasi awal dengan 7 hari
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchRegionData({ days: 7 });
         });
     </script>
     <!-- Tambahkan style untuk animasi smooth -->
