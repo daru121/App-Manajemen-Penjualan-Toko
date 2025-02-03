@@ -478,7 +478,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dashboard - Jamu Air Mancur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -505,22 +505,22 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
     <?php include '../components/sidebar.php'; ?>
     <?php include '../components/navbar.php'; ?>
 
-    <div class="ml-64 pt-16 min-h-screen bg-gray-100">
-        <div class="p-8">
+    <div class="ml-0 md:ml-64 pt-16 min-h-screen bg-gray-100">
+        <div class="p-4 md:p-8">
             <!-- Header Section -->
-            <div class="mb-8 bg-gradient-to-br from-indigo-600 via-blue-500 to-blue-400 rounded-3xl p-10 text-white shadow-2xl relative overflow-hidden">
+            <div class="mb-6 md:mb-8 bg-gradient-to-br from-indigo-600 via-blue-500 to-blue-400 rounded-2xl md:rounded-3xl p-6 md:p-10 text-white shadow-2xl relative overflow-hidden">
                 <!-- Add decorative elements -->
                 <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
                 <div class="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/20 rounded-full translate-y-32 -translate-x-32 blur-3xl"></div>
 
                 <div class="relative">
-                    <h1 class="text-4xl font-bold mb-3">Dashboard</h1>
-                    <p class="text-blue-100 text-lg">Overview penjualan dan kinerja toko hari ini</p>
+                    <h1 class="text-3xl md:text-4xl font-bold mb-2 md:mb-3">Dashboard</h1>
+                    <p class="text-blue-100 text-base md:text-lg">Overview penjualan dan kinerja toko hari ini</p>
                 </div>
             </div>
 
             <!-- Statistik Cards dengan desain yang lebih modern -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
                 <!-- Card Penjualan -->
                 <div class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
                     <div class="flex flex-col h-full">
@@ -675,33 +675,33 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
             </div>
 
             <!-- Charts Section dengan desain yang lebih modern -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
                 <!-- Line Chart Container -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
-                    <div class="flex flex-col gap-4 mb-8">
-                        <div class="flex justify-between items-center">
+                <div class="bg-white rounded-2xl p-4 md:p-6 shadow-sm">
+                    <div class="flex flex-col gap-4 mb-6 md:mb-8">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
                             <div>
-                                <h2 class="text-xl font-semibold text-gray-800">Trend Penjualan & Profit</h2>
+                                <h2 class="text-lg md:text-xl font-semibold text-gray-800">Trend Penjualan & Profit</h2>
                                 <p class="text-sm text-gray-500 mt-1">Analisis performa bisnis</p>
                             </div>
-                            <div class="flex items-center gap-6">
-                                <!-- Select Period dipindah ke sini -->
-                                <div class="flex items-center gap-4">
-                                    <select id="periodSelect" class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 w-full md:w-auto">
+                                <!-- Select Period -->
+                                <div class="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4 w-full md:w-auto">
+                                    <select id="periodSelect" class="w-full md:w-auto text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                         <option value="7">7 Hari Terakhir</option>
                                         <option value="30">30 Hari Terakhir</option>
                                         <option value="custom">Pilih Periode</option>
                                     </select>
                                     
-                                    <div id="salesDatePickerContainer" class="hidden flex items-center gap-2">
-                                        <input type="date" id="salesStartDate" class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <div id="salesDatePickerContainer" class="hidden flex flex-col md:flex-row items-start md:items-center gap-2 w-full md:w-auto">
+                                        <input type="date" id="salesStartDate" class="w-full md:w-auto text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                         <span class="text-gray-500">s/d</span>
-                                        <input type="date" id="salesEndDate" class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <input type="date" id="salesEndDate" class="w-full md:w-auto text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     </div>
                                 </div>
 
-                                <!-- Legend Indicators -->
-                                <div class="flex items-center gap-4">
+                                <!-- Legend Indicators - scroll horizontally on mobile -->
+                                <div class="flex items-center gap-4 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto">
                                     <div class="flex items-center gap-2 cursor-pointer hover:opacity-75 transition-opacity" onclick="toggleDataset(0)">
                                         <div class="w-3 h-3 rounded-full bg-blue-500"></div>
                                         <span class="text-sm text-gray-600" id="legend-penjualan">Penjualan</span>
@@ -729,54 +729,67 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
                 </div>
 
                 <!-- Products Container -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
+                <div class="bg-white rounded-2xl p-4 md:p-6 shadow-sm">
                     <!-- Header Section with Select Option -->
-                    <div class="flex justify-between items-center mb-6">
-                        <div>
-                            <h2 class="text-xl font-semibold text-gray-800">5 Produk Terlaris</h2>
-                            <p class="text-sm text-gray-500 mt-1">Berdasarkan jumlah penjualan</p>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 mb-6">
+                        <div class="flex justify-between items-center w-full">
+                            <div>
+                                <h2 class="text-lg md:text-xl font-semibold text-gray-800">5 Produk Terlaris</h2>
+                                <p class="text-sm text-gray-500 mt-1">Berdasarkan jumlah penjualan</p>
+                            </div>
+                            <!-- Three Dots Menu Mobile -->
+                            <a href="informasi.php?tab=produk-terlaris" class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 flex-shrink-0 block md:hidden">
+                                <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24">
+                                    <circle cx="5" cy="12" r="2" fill="currentColor" />
+                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                    <circle cx="19" cy="12" r="2" fill="currentColor" />
+                                </svg>
+                            </a>
                         </div>
-                        <div class="flex items-center gap-4">
+                        <div class="flex flex-row items-center gap-4 w-full md:w-auto">
                             <!-- Select Period -->
-                            <select id="productPeriodSelect" class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="7">7 Hari Terakhir</option>
-                                <option value="30">30 Hari Terakhir</option>
-                                <option value="custom">Pilih Periode</option>
-                            </select>
+                            <div class="flex flex-col md:flex-row items-start md:items-center gap-2 w-full">
+                                <select id="productPeriodSelect" class="w-full md:w-auto text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="7">7 Hari Terakhir</option>
+                                    <option value="30">30 Hari Terakhir</option>
+                                    <option value="custom">Pilih Periode</option>
+                                </select>
 
-                            <!-- Date picker container -->
-                            <div id="productDatePickerContainer" class="hidden flex items-center gap-2">
-                                <input type="date" id="productStartDate" 
-                                    class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <span class="text-gray-500">s/d</span>
-                                <input type="date" id="productEndDate"
-                                    class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <!-- Date picker container -->
+                                <div id="productDatePickerContainer" class="hidden flex flex-col md:flex-row items-start md:items-center gap-2 w-full md:w-auto">
+                                    <input type="date" id="productStartDate" class="w-full md:w-auto text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <span class="text-gray-500">s/d</span>
+                                    <input type="date" id="productEndDate" class="w-full md:w-auto text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
                             </div>
 
-                            <!-- Three Dots Menu -->
-                            <a href="informasi.php?tab=produk-terlaris" class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200">
-                                <div class="w-8 h-8 bg-gradient-to-br from-gray-50 to-white rounded-full flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24">
-                                        <circle cx="5" cy="12" r="2" fill="currentColor" />
-                                        <circle cx="12" cy="12" r="2" fill="currentColor" />
-                                        <circle cx="19" cy="12" r="2" fill="currentColor" />
-                                    </svg>
-                                </div>
+                            <!-- Three Dots Menu Desktop -->
+                            <a href="informasi.php?tab=produk-terlaris" class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 flex-shrink-0 hidden md:block">
+                                <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24">
+                                    <circle cx="5" cy="12" r="2" fill="currentColor" />
+                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                    <circle cx="19" cy="12" r="2" fill="currentColor" />
+                                </svg>
                             </a>
                         </div>
                     </div>
 
-                    <!-- Remove the old select container -->
-                    <!-- <div class="flex items-center gap-4">...</div> -->
-
-                    <!-- Chart Container -->
+                    <!-- Chart Container with Fixed Height -->
                     <div class="grid grid-cols-1 gap-6">
-                        <!-- Donut Chart -->
-                        <div class="relative w-full" style="height: 400px;">
-                            <canvas id="productsChart"></canvas>
-                            <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
-                                <span class="text-3xl font-bold text-gray-800 -ml-64" id="totalProductsSold">0</span>
-                                <span class="text-sm text-gray-500 -ml-64">Total Terjual</span>
+                        <div class="relative flex flex-col md:flex-row" style="min-height: 300px;">
+                            <!-- Chart Container -->
+                            <div class="flex-1 relative mb-4 md:mb-0" style="min-height: 250px;">
+                                <!-- Total Products Display -->
+                                <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center z-10 pointer-events-none">
+                                    <span class="text-2xl md:text-3xl font-bold text-gray-800" id="totalProductsSold">0</span>
+                                    <p class="text-xs md:text-sm text-gray-500">Total Terjual</p>
+                                </div>
+                                <!-- Donut Chart -->
+                                <canvas id="productsChart"></canvas>
+                            </div>
+                            <!-- Legend Container -->
+                            <div class="w-full md:w-64 md:flex-shrink-0">
+                                <div id="customLegend" class="grid grid-cols-2 md:grid-cols-1 gap-2 md:space-y-2 md:pt-4"></div>
                             </div>
                         </div>
                     </div>
@@ -787,16 +800,34 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                 <!-- Marketplace Section -->
                 <div class="w-full">
-                    <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-sm border border-gray-100 h-full">
-                        <div class="flex justify-between items-center mb-6">
-                            <div>
-                                <h2 class="text-xl font-semibold text-gray-800">Penjualan Marketplace</h2>
-                                <p class="text-sm text-gray-500 mt-1">Total penjualan dari semua marketplace</p>
+                    <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 h-full">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 mb-6">
+                            <div class="flex justify-between items-center w-full">
+                                <div>
+                                    <h2 class="text-lg md:text-xl font-semibold text-gray-800">Penjualan Marketplace</h2>
+                                    <p class="text-sm text-gray-500 mt-1">Total penjualan dari semua marketplace</p>
+                                </div>
+                                <!-- Three Dots Menu Mobile -->
+                                <a href="informasi.php?tab=marketplace" class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 flex-shrink-0 block md:hidden">
+                                    <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24">
+                                        <circle cx="5" cy="12" r="2" fill="currentColor" />
+                                        <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                        <circle cx="19" cy="12" r="2" fill="currentColor" />
+                                    </svg>
+                                </a>
                             </div>
+                            <!-- Three Dots Menu Desktop -->
+                            <a href="informasi.php?tab=marketplace" class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 flex-shrink-0 hidden md:block">
+                                <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24">
+                                    <circle cx="5" cy="12" r="2" fill="currentColor" />
+                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                    <circle cx="19" cy="12" r="2" fill="currentColor" />
+                                </svg>
+                            </a>
                         </div>
 
-                        <!-- Marketplace Stats Summary -->
-                        <div class="grid grid-cols-2 gap-4 mb-6">
+                        <!-- Marketplace Stats Summary - stack vertically on mobile -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                             <div class="bg-gradient-to-br from-blue-50 to-blue-100/50 p-4 rounded-xl">
                                 <p class="text-sm text-gray-600">Total Pendapatan</p>
                                 <h3 class="text-xl font-bold text-gray-800 mt-1">
@@ -877,39 +908,43 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
 
                 <!-- Top 3 Performing Regions Section -->
                 <div class="w-full">
-                    <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-sm border border-gray-100 h-full">
-                        <div class="flex justify-between items-center mb-6">
-                            <div>
-                                <h2 class="text-xl font-semibold text-gray-800">Top 3 Daerah Terlaris</h2>
-                                <p class="text-sm text-gray-500 mt-1">Daerah dengan performa penjualan tertinggi</p>
+                    <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 h-full">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 mb-6">
+                            <div class="flex justify-between items-center w-full">
+                                <div>
+                                    <h2 class="text-lg md:text-xl font-semibold text-gray-800">Top 3 Daerah Terlaris</h2>
+                                    <p class="text-sm text-gray-500 mt-1">Daerah dengan performa penjualan tertinggi</p>
+                                </div>
+                                <!-- Three Dots Menu Mobile -->
+                                <a href="informasi.php?tab=daerah" class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 flex-shrink-0 block md:hidden">
+                                    <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24">
+                                        <circle cx="5" cy="12" r="2" fill="currentColor" />
+                                        <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                        <circle cx="19" cy="12" r="2" fill="currentColor" />
+                                    </svg>
+                                </a>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <select id="regionPeriodSelect"
-                                    class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto">
+                                <select id="regionPeriodSelect" class="w-full md:w-auto text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <option value="7">7 Hari Terakhir</option>
                                     <option value="30">30 Hari Terakhir</option>
                                     <option value="custom">Pilih Periode</option>
                                 </select>
 
-                                <!-- Tambahkan date picker container yang awalnya hidden -->
-                                <div id="datePickerContainer" class="hidden flex items-center gap-2">
-                                    <input type="date" id="startDate"
-                                        class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <!-- Date picker container -->
+                                <div id="datePickerContainer" class="hidden flex flex-col md:flex-row items-start md:items-center gap-2 w-full md:w-auto">
+                                    <input type="date" id="startDate" class="w-full md:w-auto text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <span class="text-gray-500">s/d</span>
-                                    <input type="date" id="endDate"
-                                        class="text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <input type="date" id="endDate" class="w-full md:w-auto text-sm border rounded-xl px-4 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
 
-                                <!-- Tambahkan ikon titik tiga -->
-                                <a href="informasi.php?tab=daerah"
-                                    class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200">
-                                    <div class="w-8 h-8 bg-gradient-to-br from-gray-50 to-white rounded-full flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24">
-                                            <circle cx="5" cy="12" r="2" fill="currentColor" />
-                                            <circle cx="12" cy="12" r="2" fill="currentColor" />
-                                            <circle cx="19" cy="12" r="2" fill="currentColor" />
-                                        </svg>
-                                    </div>
+                                <!-- Three Dots Menu Desktop -->
+                                <a href="informasi.php?tab=daerah" class="p-2 hover:bg-gray-50/80 rounded-full transition-all duration-300 flex-shrink-0 hidden md:block">
+                                    <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24">
+                                        <circle cx="5" cy="12" r="2" fill="currentColor" />
+                                        <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                        <circle cx="19" cy="12" r="2" fill="currentColor" />
+                                    </svg>
                                 </a>
                             </div>
                         </div>
@@ -1469,81 +1504,36 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
                     datasets: [{
                         data: data.map(item => item.total_sold),
                         backgroundColor: [
-                            'rgb(99, 102, 241)',
-                            'rgb(16, 185, 129)',
-                            'rgb(6, 182, 212)',
-                            'rgb(249, 115, 22)',
-                            'rgb(139, 92, 246)'
+                            'rgb(99, 102, 241)',  // Indigo
+                            'rgb(16, 185, 129)',  // Emerald
+                            'rgb(6, 182, 212)',   // Cyan
+                            'rgb(249, 115, 22)',  // Orange
+                            'rgb(139, 92, 246)'   // Purple
                         ],
                         borderColor: 'white',
                         borderWidth: 2,
                         hoverOffset: 4,
-                        cutout: '60%',
-                        radius: '90%'
+                        cutout: '75%',
+                        radius: '85%'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 20,
+                            bottom: 20,
+                            left: 20,
+                            right: 20
+                        }
+                    },
                     plugins: {
                         legend: {
-                            display: true,
-                            position: 'right',
-                            onClick: (evt, item, legend) => {
-                                // Toggle dataset visibility
-                                const index = item.datasetIndex;
-                                const ci = legend.chart;
-                                const meta = ci.getDatasetMeta(0);
-                                const value = ci.data.datasets[0].data[item.index];
-                                
-                                // Toggle visibility
-                                const alreadyHidden = meta.data[item.index].hidden;
-                                meta.data[item.index].hidden = !alreadyHidden;
-
-                                // Update total
-                                if (alreadyHidden) {
-                                    currentTotal += parseInt(value);
-                                    hiddenLabels = hiddenLabels.filter(label => label !== item.text);
-                                } else {
-                                    currentTotal -= parseInt(value);
-                                    hiddenLabels.push(item.text);
-                                }
-
-                                // Update total display
-                                document.getElementById('totalProductsSold').textContent = currentTotal;
-
-                                // Update legend style
-                                item.hidden = !alreadyHidden;
-                                
-                                ci.update();
-                            },
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true,
-                                pointStyle: 'circle',
-                                font: {
-                                    size: 12
-                                    
-                                },
-                                generateLabels: (chart) => {
-                                    const data = chart.data;
-                                    if (data.labels.length && data.datasets.length) {
-                                        return data.labels.map((label, i) => {
-                                            const meta = chart.getDatasetMeta(0);
-                                            const value = data.datasets[0].data[i];
-                                            return {
-                                                text: `${label} (${value} pcs)`,
-                                                fillStyle: data.datasets[0].backgroundColor[i],
-                                                hidden: meta.data[i].hidden ?? false,
-                                                index: i
-                                            };
-                                        });
-                                    }
-                                    return [];
-                                }
-                            }
+                            display: false // Hide default legend
                         },
                         tooltip: {
+                            enabled: true,
                             backgroundColor: 'white',
                             titleColor: '#1F2937',
                             bodyColor: '#1F2937',
@@ -1551,23 +1541,14 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
                                 family: "'Inter', sans-serif",
                                 size: 12
                             },
-                            titleFont: {
-                                family: "'Inter', sans-serif",
-                                size: 13,
-                                weight: '600'
-                            },
                             padding: 12,
                             borderColor: 'rgba(0,0,0,0.1)',
                             borderWidth: 1,
                             displayColors: true,
-                            boxWidth: 8,
-                            boxHeight: 8,
-                            usePointStyle: true,
                             callbacks: {
                                 label: function(context) {
                                     const value = context.raw;
-                                    const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
-                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    const percentage = ((value / totalSold) * 100).toFixed(1);
                                     return `${context.label}: ${value} unit (${percentage}%)`;
                                 }
                             }
@@ -1576,7 +1557,61 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
                     animation: {
                         animateScale: true,
                         animateRotate: true,
-                        duration: 800
+                        duration: 800,
+                        onComplete: function() {
+                            // Create custom legend after chart is rendered
+                            const legendContainer = document.getElementById('customLegend');
+                            legendContainer.innerHTML = '';
+                            
+                            data.forEach((item, index) => {
+                                const percentage = ((item.total_sold / totalSold) * 100).toFixed(1);
+                                const legendItem = document.createElement('div');
+                                legendItem.className = 'flex items-start gap-3 p-2.5 rounded-lg hover:bg-gray-50/80 cursor-pointer transition-all duration-200';
+                                legendItem.innerHTML = `
+                                    <div class="legend-indicator-container relative">
+                                        <div class="indicator-dot w-3.5 h-3.5 rounded-full mt-1 flex items-center justify-center" 
+                                             style="background-color: ${this.config.data.datasets[0].backgroundColor[index]}">
+                                        </div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="legend-text-container">
+                                            <span class="text-sm font-medium text-gray-700">${item.product_name}</span>
+                                        </div>
+                                        <div class="legend-value-container">
+                                            <span class="text-xs text-gray-500">${item.total_sold} unit (${percentage}%)</span>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                // Add click handler for toggling visibility
+                                legendItem.onclick = () => {
+                                    const meta = productsChart.getDatasetMeta(0);
+                                    const isCurrentlyHidden = meta.data[index].hidden;
+                                    meta.data[index].hidden = !isCurrentlyHidden;
+                                    
+                                    // Update total
+                                    if (!isCurrentlyHidden) {
+                                        currentTotal -= parseInt(item.total_sold);
+                                        legendItem.classList.add('inactive');
+                                    } else {
+                                        currentTotal += parseInt(item.total_sold);
+                                        legendItem.classList.remove('inactive');
+                                    }
+                                    
+                                    // Check if all items are hidden
+                                    const allHidden = productsChart.data.datasets[0].data.every((_, i) => 
+                                        productsChart.getDatasetMeta(0).data[i].hidden
+                                    );
+                                    
+                                    // Update total display - show 0 if all items are hidden
+                                    document.getElementById('totalProductsSold').textContent = allHidden ? '0' : currentTotal;
+                                    
+                                    productsChart.update();
+                                };
+                                
+                                legendContainer.appendChild(legendItem);
+                            });
+                        }
                     }
                 }
             });
@@ -2234,6 +2269,67 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
         .group:hover::after {
             animation: shine 1s ease-in-out;
         }
+
+        /* Add these styles to your existing CSS */
+        .custom-legend-item {
+            transition: all 0.2s ease;
+        }
+
+        .custom-legend-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .custom-legend-item.hidden {
+            opacity: 0.5;
+        }
+
+        /* Tambahkan style berikut di bagian style yang sudah ada */
+
+        /* Styling untuk legend items saat inactive */
+        .inactive .legend-text,
+        .inactive .legend-value {
+            text-decoration: line-through;
+            opacity: 0.6;
+            position: relative;
+        }
+
+        /* Efek garis untuk status inactive */
+        .inactive .legend-text::after,
+        .inactive .legend-value::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background-color: currentColor;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .inactive .legend-text::after,
+        .inactive .legend-value::after {
+            transform: scaleX(1);
+        }
+
+        /* Opacity untuk dot indicator */
+        .inactive .w-3 {
+            opacity: 0.4;
+        }
+
+        /* Transisi halus */
+        .legend-text,
+        .legend-value,
+        .w-3 {
+            transition: all 0.3s ease;
+        }
+
+        /* Background untuk item inactive */
+        .inactive {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
     </style>
 </body>
 
