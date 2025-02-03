@@ -170,15 +170,27 @@ $menuItems = $_SESSION['role'] === 'Kasir' ? $kasirMenuItems : $operatorMenuItem
             <!-- Content Container -->
             <div class="relative h-full flex flex-col">
                 <!-- Logo Section -->
-                <div class="p-6 border-b border-white/10">
+                <div class="p-4 border-b border-white/10">
                     <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-lg relative group">
-                            <div class="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                            <img src="../img/gambar.jpg" alt="PAksesories Logo" class="w-full h-full object-cover">
+                        <!-- Logo Container with Elegant Effects -->
+                        <div class="relative group">
+                            <!-- Outer Glow & Ring -->
+                            <div class="w-12 h-12 rounded-xl overflow-hidden ring-1 ring-white/20 shadow-lg 
+                                        relative backdrop-blur-xl bg-gradient-to-br from-white/10 to-white/5">
+                                <!-- Logo Image -->
+                                <img src="../img/Jamu.png" alt="Jamu Air Mancur Logo" 
+                                     class="w-full h-full object-cover transform group-hover:scale-102 transition-transform duration-300">
+                            </div>
                         </div>
-                        <div>
-                            <h1 class="text-lg font-bold text-white/90">PAksesories</h1>
-                            <p class="text-xs text-blue-300/70">Accessories Store</p>
+
+                        <!-- Text Container with Refined Typography -->
+                        <div class="flex flex-col">
+                            <h1 class="text-lg font-semibold text-white/95 leading-tight">
+                                Jamu Air Mancur
+                            </h1>
+                            <p class="text-xs text-blue-300/70">
+                                Jamu tradisional
+                            </p>
                         </div>
                     </div>
                 </div>

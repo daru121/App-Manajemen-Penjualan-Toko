@@ -150,7 +150,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supplier - PAksesories</title>
+    <title>Supplier - Jamu Air Mancur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -162,22 +162,22 @@ if (isset($_GET['action']) && $_GET['action'] === 'search') {
     <!-- Main Content Container - Responsif -->
     <div class="ml-0 sm:ml-64 pt-24 sm:pt-16 min-h-screen bg-gray-50/50">
         <div class="p-6 sm:p-8">
-            <!-- Header Section - Tetap Elegan -->
-            <div class="mb-6 sm:mb-8 bg-gradient-to-br from-indigo-600 via-blue-500 to-blue-400 rounded-3xl p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden">
+            <!-- Header Section -->
+            <div class="mb-6 sm:mb-8 bg-gradient-to-br from-indigo-600 via-blue-500 to-blue-400 rounded-xl sm:rounded-3xl p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden">
                 <!-- Decorative elements -->
                 <div class="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
                 <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full translate-y-32 -translate-x-32 blur-3xl"></div>
                 
-                <div class="relative flex justify-between items-center">
+                <div class="relative flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                     <div>
-                        <h1 class="text-4xl font-bold mb-3">Supplier</h1>
-                        <p class="text-blue-100 text-lg">Kelola data supplier produk</p>
+                        <h1 class="text-2xl sm:text-4xl font-bold mb-2 sm:mb-3">Supplier</h1>
+                        <p class="text-blue-100 text-base sm:text-lg">Kelola data supplier produk</p>
                     </div>
                     <button onclick="showAddModal()" 
-                            class="px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center gap-3 transition-all duration-300 backdrop-blur-sm">
+                            class="w-full sm:w-auto px-4 sm:px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center justify-center sm:justify-start gap-3 transition-all duration-300 backdrop-blur-sm">
                         <div class="p-2 bg-white/10 rounded-lg">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                             </svg>
                         </div>
                         <span class="font-medium">Tambah Supplier</span>

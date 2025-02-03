@@ -97,7 +97,7 @@ $dibatalkan = array_filter($pengiriman, fn($p) => $p['status_pengiriman'] === 'd
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pengiriman - PAksesories</title>
+    <title>Pengiriman - Jamu Air Mancur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">

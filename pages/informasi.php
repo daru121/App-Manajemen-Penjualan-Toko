@@ -458,6 +458,253 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
         .modal-body::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
+
+        /* Add/update responsive styles */
+        .tab-navigation {
+            display: inline-flex;
+            background: #F3F4F6;
+            padding: 0.375rem;
+            border-radius: 1rem;
+            gap: 0.25rem;
+            margin-left: 0; /* Tambahkan ini */
+        }
+
+        .tab-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.75rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab-button svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .tab-button.active {
+            background: white;
+            color: #2563EB;
+            box-shadow: 0 4px 6px -1px rgb(37 99 235 / 0.1);
+            transform: scale(1.02);
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .tab-navigation {
+                display: flex;
+                overflow-x: auto;
+                width: 100%;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+                padding: 0.5rem;
+            }
+
+            .tab-navigation::-webkit-scrollbar {
+                display: none;
+            }
+
+            .tab-button {
+                flex: 0 0 auto;
+            }
+        }
+
+        /* Filter section responsive */
+        @media (max-width: 768px) {
+            .filter-section {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .date-range {
+                width: 100%;
+            }
+
+            .search-section {
+                width: 100%;
+            }
+        }
+
+        /* Table responsive */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        @media (max-width: 768px) {
+            .table-container table {
+                min-width: 800px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 1rem;
+                max-height: 90vh;
+            }
+
+            .modal {
+                padding: 0.5rem;
+            }
+
+            .delete-modal .bg-white {
+                width: 90%;
+                max-width: 400px;
+                margin: 1rem auto;
+            }
+
+            .modal-body {
+                padding-right: 0;
+            }
+        }
+
+        /* Modal responsive styles */
+        @media (max-width: 640px) {
+            .modal-content {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                border-radius: 0;
+            }
+
+            .modal-body {
+                padding: 1rem;
+            }
+
+            /* Make table header sticky */
+            .modal-body thead {
+                position: sticky;
+                top: 0;
+                background: white;
+                z-index: 10;
+            }
+
+            /* Adjust cell spacing */
+            .modal-body td,
+            .modal-body th {
+                padding: 12px;
+                white-space: nowrap;
+            }
+
+            /* Add horizontal scroll indicator */
+            .modal-body::after {
+                content: '';
+                position: absolute;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                width: 24px;
+                background: linear-gradient(to right, transparent, rgba(255,255,255,0.9));
+                pointer-events: none;
+            }
+        }
+
+        /* Style untuk modal yang bisa di-scroll horizontal */
+        .modal-body .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Pastikan tabel memiliki minimal width */
+        #productHistoryTable,
+        #daerahDetailContent,
+        #marketplaceDetailTable {
+            min-width: 800px;
+        }
+
+        /* Tambahkan gradient indicator untuk scroll horizontal */
+        .table-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 30px;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.9));
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .table-wrapper.can-scroll::after {
+            opacity: 1;
+        }
+
+        /* Perbaiki padding untuk konsistensi */
+        .modal-body .table-wrapper table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .modal-body .table-wrapper th,
+        .modal-body .table-wrapper td {
+            white-space: nowrap;
+            padding: 12px 16px;
+        }
+
+        /* Tambahkan style untuk modal daerah */
+        #daerahDetailModal .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #daerahDetailModal table {
+            min-width: 800px;
+        }
+
+        /* Tambahkan gradient indicator untuk scroll horizontal */
+        #daerahDetailModal .table-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 30px;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.9));
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        #daerahDetailModal .table-wrapper.can-scroll::after {
+            opacity: 1;
+        }
+
+        /* Tambahkan style untuk filter tanggal responsif */
+        @media (max-width: 640px) {
+            .date-range {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                width: 100%;
+            }
+
+            .date-range input[type="date"] {
+                width: 100%;
+            }
+
+            .date-range span {
+                display: none; /* Sembunyikan text "to" pada mobile */
+            }
+
+            .search-section {
+                margin-top: 0.5rem;
+            }
+
+            .filter-section {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .filter-section > div {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 
@@ -465,281 +712,311 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
     <?php include '../components/sidebar.php'; ?>
     <?php include '../components/navbar.php'; ?>
 
-    <?php if (isset($_GET['success'])): ?>
-        <div id="successAlert" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
-            Transaksi berhasil dihapus
-        </div>
-        <script>
-            setTimeout(() => {
-                document.getElementById('successAlert').style.display = 'none';
-            }, 3000);
-        </script>
-    <?php endif; ?>
-
-    <div class="ml-64 pt-16 min-h-screen bg-gray-50/50">
-        <div class="p-8 space-y-6">
+    <div class="ml-0 md:ml-64 pt-16 min-h-screen bg-gray-50/50">
+        <div class="p-4 md:p-8 space-y-6">
             <!-- Header Section -->
-            <div class="bg-gradient-to-r from-blue-600 to-blue-400 rounded-3xl p-12">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-400 rounded-3xl p-6 md:p-12">
                 <div>
-                    <h1 class="text-3xl font-semibold text-white mb-2">Informasi Penjualan</h1>
+                    <h1 class="text-2xl md:text-3xl font-semibold text-white mb-2">Informasi Penjualan</h1>
                     <p class="text-blue-100/80">Kelola dan pantau data transaksi penjualan Anda</p>
                 </div>
             </div>
 
+            <!-- Success Alert -->
+            <?php if (isset($_GET['success'])): ?>
+            <div id="alert" class="mb-4">
+                <div class="bg-[#F0FDF4] border-l-4 border-[#16A34A] p-4 shadow-lg rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-[#16A34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-[#15803D]">
+                                    <?= $_GET['message'] ?? 'Transaksi berhasil dihapus' ?>
+                                </p>
+                            </div>
+                        </div>
+                        <button onclick="closeAlert()" class="ml-auto pl-3">
+                            <svg class="h-5 w-5 text-[#16A34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <!-- Tab Navigation -->
-            <div class="p-1.5 bg-gray-100/80 backdrop-blur-xl rounded-2xl inline-flex gap-2 shadow-sm">
-                <button id="btnTransaksi" onclick="showTab('transaksi')"
-                    class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
-                               <?= !isset($_GET['tab']) || $_GET['tab'] === 'transaksi' ?
-                                    'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' :
-                                    'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                    Transaksi
-                </button>
-                <button id="btnProdukTerlaris" onclick="showTab('produk-terlaris')"
-                    class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
-                               <?= isset($_GET['tab']) && $_GET['tab'] === 'produk-terlaris' ?
-                                    'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' :
-                                    'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                    Produk Terjual
-                </button>
-                <button id="btnDaerah" onclick="showTab('daerah')"
-                    class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
-                               <?= isset($_GET['tab']) && $_GET['tab'] === 'daerah' ?
-                                    'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' :
-                                    'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Daerah
-                </button>
-                <button onclick="showTab('marketplace')"
-                    class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
-                               <?= isset($_GET['tab']) && $_GET['tab'] === 'marketplace' ?
-                                    'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' :
-                                    'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                    Marketplace
-                </button>
-                <button onclick="showTab('pembeli')"
-                    class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
-                               <?= isset($_GET['tab']) && $_GET['tab'] === 'pembeli' ?
-                                    'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' :
-                                    'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    Pembeli
-                </button>
+            <div class="w-full mb-6">
+                <div class="tab-navigation">
+                    <button id="btnTransaksi" onclick="showTab('transaksi')"
+                        class="tab-button px-6 py-3 rounded-xl font-medium transition-all duration-300
+                        <?= !isset($_GET['tab']) || $_GET['tab'] === 'transaksi' ?
+                            'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' :
+                            'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        <span>Transaksi</span>
+                    </button>
+                    <button id="btnProdukTerlaris" onclick="showTab('produk-terlaris')"
+                        class="tab-button px-6 py-3 rounded-xl font-medium transition-all duration-300
+                        <?= isset($_GET['tab']) && $_GET['tab'] === 'produk-terlaris' ?
+                            'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' :
+                            'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        Produk Terjual
+                    </button>
+                    <button id="btnDaerah" onclick="showTab('daerah')"
+                        class="tab-button px-6 py-3 rounded-xl font-medium transition-all duration-300
+                        <?= isset($_GET['tab']) && $_GET['tab'] === 'daerah' ?
+                            'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' :
+                            'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Daerah
+                    </button>
+                    <button onclick="showTab('marketplace')"
+                        class="tab-button px-6 py-3 rounded-xl font-medium transition-all duration-300
+                        <?= isset($_GET['tab']) && $_GET['tab'] === 'marketplace' ?
+                            'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' :
+                            'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        Marketplace
+                    </button>
+                    <button onclick="showTab('pembeli')"
+                        class="tab-button px-6 py-3 rounded-xl font-medium transition-all duration-300
+                        <?= isset($_GET['tab']) && $_GET['tab'] === 'pembeli' ?
+                            'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' :
+                            'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Pembeli
+                    </button>
+                </div>
             </div>
 
             <!-- Table Section -->
             <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
                 <?php if (!isset($_GET['tab']) || $_GET['tab'] === 'transaksi'): ?>
                     <!-- Filter & Search Section untuk Tab Transaksi -->
-                    <div class="p-6 bg-white border-b border-gray-100 flex items-center justify-between gap-4">
-                        <div class="flex items-center gap-4">
-                            <input type="date" id="start_date" value="<?= $_GET['start_date'] ?? date('Y-m-d') ?>"
-                                class="px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-600">
-                            <span class="text-gray-500 font-medium">to</span>
-                            <input type="date" id="end_date" value="<?= $_GET['end_date'] ?? date('Y-m-d') ?>"
-                                class="px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-600">
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <input type="text" id="searchInput" placeholder="Cari nama pembeli..." value="<?= $_GET['search'] ?? '' ?>"
-                                class="px-4 py-2.5 w-80 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-600">
-                            <button onclick="applyFilter()"
-                                class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl 
-                                       hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium
-                                       shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40">
-                                Cari
-                            </button>
+                    <div class="p-4 md:p-6 bg-white border-b border-gray-100">
+                        <div class="filter-section flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                            <div class="date-range flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full md:w-auto">
+                                <div class="w-full sm:w-auto">
+                                    <label class="block sm:hidden text-sm text-gray-600 mb-1">Dari tanggal</label>
+                                    <input type="date" id="start_date" value="<?= $_GET['start_date'] ?? date('Y-m-d') ?>"
+                                        class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-600">
+                                </div>
+                                <span class="hidden sm:inline text-gray-500 font-medium">to</span>
+                                <div class="w-full sm:w-auto">
+                                    <label class="block sm:hidden text-sm text-gray-600 mb-1">Sampai tanggal</label>
+                                    <input type="date" id="end_date" value="<?= $_GET['end_date'] ?? date('Y-m-d') ?>"
+                                        class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-600">
+                                </div>
+                            </div>
+                            <div class="search-section flex items-center gap-2 w-full md:w-auto">
+                                <input type="text" id="searchInput" placeholder="Cari nama pembeli..." value="<?= $_GET['search'] ?? '' ?>"
+                                    class="w-full md:w-80 px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-600">
+                                <button onclick="applyFilter()"
+                                        class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl 
+                                               hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium
+                                               shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40">
+                                    Cari
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Tabel Transaksi -->
-                    <table class="w-full">
-                        <thead class="bg-gray-50/50 border-b border-gray-100">
-                            <tr>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NO</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NAMA PEMBELI</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">KASIR</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TANGGAL TRANSAKSI</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">MARKETPLACE</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL PEMBELIAN</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">PROFIT</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">AKSI</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <?php foreach ($transactions as $index => $transaction): ?>
-                                <tr class="hover:bg-gray-50/50">
-                                    <td class="px-6 py-4 text-sm text-gray-600"><?= $index + 1 ?></td>
-                                    <td class="px-6 py-4 text-sm text-gray-600"><?= htmlspecialchars($transaction['nama_pembeli']) ?></td>
-                                    <td class="px-6 py-4 text-sm text-gray-600"><?= htmlspecialchars($transaction['nama_kasir'] ?? '-') ?></td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        <?= date('d/m/Y H:i', strtotime($transaction['tanggal'])) ?>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="px-3 py-1 rounded-lg text-sm font-medium
-                                    <?php
-                                    switch (strtolower($transaction['marketplace'])) {
-                                        case 'shopee':
-                                            echo 'bg-orange-100 text-orange-700';
-                                            break;
-                                        case 'tokopedia':
-                                            echo 'bg-green-100 text-green-700';
-                                            break;
-                                        case 'tiktok':
-                                            echo 'bg-gray-100 text-gray-700';
-                                            break;
-                                        default:
-                                            echo 'bg-blue-100 text-blue-700';
-                                    }
-                                    ?>">
-                                            <?= ucfirst(htmlspecialchars($transaction['marketplace'])) ?>
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        Rp <?= number_format($transaction['total_harga'], 0, ',', '.') ?>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="<?= $transaction['profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
-                                            Rp <?= number_format($transaction['profit'], 0, ',', '.') ?>
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-2">
-                                            <button onclick="showDetail(<?= $transaction['id'] ?>)"
+                    <div class="table-container">
+                        <table class="w-full">
+                            <thead class="bg-gray-50/50 border-b border-gray-100">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NO</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NAMA PEMBELI</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">KASIR</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TANGGAL TRANSAKSI</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">MARKETPLACE</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL PEMBELIAN</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">PROFIT</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">AKSI</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <?php foreach ($transactions as $index => $transaction): ?>
+                                    <tr class="hover:bg-gray-50/50">
+                                        <td class="px-6 py-4 text-sm text-gray-600"><?= $index + 1 ?></td>
+                                        <td class="px-6 py-4 text-sm text-gray-600"><?= htmlspecialchars($transaction['nama_pembeli']) ?></td>
+                                        <td class="px-6 py-4 text-sm text-gray-600"><?= htmlspecialchars($transaction['nama_kasir'] ?? '-') ?></td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">
+                                            <?= date('d/m/Y H:i', strtotime($transaction['tanggal'])) ?>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-3 py-1 rounded-lg text-sm font-medium
+                                        <?php
+                                        switch (strtolower($transaction['marketplace'])) {
+                                            case 'shopee':
+                                                echo 'bg-orange-100 text-orange-700';
+                                                break;
+                                            case 'tokopedia':
+                                                echo 'bg-green-100 text-green-700';
+                                                break;
+                                            case 'tiktok':
+                                                echo 'bg-gray-100 text-gray-700';
+                                                break;
+                                            default:
+                                                echo 'bg-blue-100 text-blue-700';
+                                        }
+                                        ?>">
+                                                <?= ucfirst(htmlspecialchars($transaction['marketplace'])) ?>
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">
+                                            Rp <?= number_format($transaction['total_harga'], 0, ',', '.') ?>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="<?= $transaction['profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
+                                                Rp <?= number_format($transaction['profit'], 0, ',', '.') ?>
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <button onclick="showDetail(<?= $transaction['id'] ?>)"
+                                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
+                                                </button>
+                                                <button onclick="showDeleteModal(<?= $transaction['id'] ?>)"
+                                                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                                <button onclick="editTransaction(<?= $transaction['id'] ?>)"
+                                                    class="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php elseif (isset($_GET['tab']) && $_GET['tab'] === 'produk-terlaris'): ?>
+                    <!-- Tabel Produk Terlaris -->
+                    <div class="table-container">
+                        <table class="w-full">
+                            <thead class="bg-gray-50/50 border-b border-gray-100">
+                                <tr>
+                                    <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NO</th>
+                                    <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NAMA PRODUK</th>
+                                    <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL TERJUAL</th>
+                                    <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL PENJUALAN</th>
+                                    <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL PROFIT</th>
+                                    <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">AKSI</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <?php
+                                // Query untuk produk terlaris dengan menambahkan kolom gambar
+                                $query = "SELECT 
+                                    b.id,
+                                    b.nama_barang,
+                                    b.gambar,
+                                    COALESCE(SUM(dt.jumlah), 0) as total_terjual,
+                                    COALESCE(SUM(dt.jumlah * dt.harga), 0) as total_penjualan,
+                                    COALESCE(SUM((dt.harga - b.harga_modal) * dt.jumlah), 0) as total_profit,
+                                    COUNT(DISTINCT t.id) as total_transaksi
+                                FROM barang b
+                                LEFT JOIN detail_transaksi dt ON b.id = dt.barang_id
+                                LEFT JOIN transaksi t ON dt.transaksi_id = t.id
+                                GROUP BY b.id, b.nama_barang, b.gambar
+                                ORDER BY total_terjual DESC";
+
+                                $stmt = $conn->prepare($query);
+                                $stmt->execute();
+                                $products = $stmt->fetchAll();
+
+                                foreach ($products as $index => $product):
+                                ?>
+                                    <tr class="hover:bg-gray-50/50">
+                                        <td class="px-6 py-4 text-sm text-gray-600"><?= $index + 1 ?></td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-4">
+                                                <!-- Image Container -->
+                                                <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                                                    <?php if ($product['gambar']): ?>
+                                                        <img src="../uploads/<?= htmlspecialchars($product['gambar']) ?>"
+                                                            alt="<?= htmlspecialchars($product['nama_barang']) ?>"
+                                                            class="w-full h-full object-cover">
+                                                    <?php else: ?>
+                                                        <div class="w-full h-full flex items-center justify-center bg-gray-50">
+                                                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                            </svg>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <!-- Product Name and Transaction Count -->
+                                                <div>
+                                                    <p class="text-sm font-medium text-gray-800">
+                                                        <?= htmlspecialchars($product['nama_barang']) ?>
+                                                    </p>
+                                                    <div class="text-xs text-gray-400 mt-0.5">
+                                                        <?= $product['total_transaksi'] ?: 'Belum ada' ?> transaksi
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-3 py-1 rounded-lg text-sm font-medium <?= $product['total_terjual'] > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600' ?>">
+                                                <?= number_format($product['total_terjual']) ?> Unit
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">
+                                            <?= $product['total_penjualan'] > 0 ? 'Rp ' . number_format($product['total_penjualan'], 0, ',', '.') : '-' ?>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="<?= $product['total_profit'] > 0 ? 'text-green-600' : ($product['total_profit'] < 0 ? 'text-red-600' : 'text-gray-400') ?> font-medium">
+                                                <?= $product['total_profit'] != 0 ? 'Rp ' . number_format($product['total_profit'], 0, ',', '.') : '-' ?>
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <button onclick="showProductHistory('<?= htmlspecialchars($product['nama_barang']) ?>')"
                                                 class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                 </svg>
                                             </button>
-                                            <button onclick="showDeleteModal(<?= $transaction['id'] ?>)"
-                                                class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                            <button onclick="editTransaction(<?= $transaction['id'] ?>)"
-                                                class="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php elseif (isset($_GET['tab']) && $_GET['tab'] === 'produk-terlaris'): ?>
-                    <!-- Tabel Produk Terlaris -->
-                    <table class="w-full">
-                        <thead class="bg-gray-50/50 border-b border-gray-100">
-                            <tr>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NO</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NAMA PRODUK</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL TERJUAL</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL PENJUALAN</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">TOTAL PROFIT</th>
-                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">AKSI</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <?php
-                            // Query untuk produk terlaris dengan menambahkan kolom gambar
-                            $query = "SELECT 
-                                b.id,
-                                b.nama_barang,
-                                b.gambar,
-                                COALESCE(SUM(dt.jumlah), 0) as total_terjual,
-                                COALESCE(SUM(dt.jumlah * dt.harga), 0) as total_penjualan,
-                                COALESCE(SUM((dt.harga - b.harga_modal) * dt.jumlah), 0) as total_profit,
-                                COUNT(DISTINCT t.id) as total_transaksi
-                            FROM barang b
-                            LEFT JOIN detail_transaksi dt ON b.id = dt.barang_id
-                            LEFT JOIN transaksi t ON dt.transaksi_id = t.id
-                            GROUP BY b.id, b.nama_barang, b.gambar
-                            ORDER BY total_terjual DESC";
-
-                            $stmt = $conn->prepare($query);
-                            $stmt->execute();
-                            $products = $stmt->fetchAll();
-
-                            foreach ($products as $index => $product):
-                            ?>
-                                <tr class="hover:bg-gray-50/50">
-                                    <td class="px-6 py-4 text-sm text-gray-600"><?= $index + 1 ?></td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-4">
-                                            <!-- Image Container -->
-                                            <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
-                                                <?php if ($product['gambar']): ?>
-                                                    <img src="../uploads/<?= htmlspecialchars($product['gambar']) ?>"
-                                                        alt="<?= htmlspecialchars($product['nama_barang']) ?>"
-                                                        class="w-full h-full object-cover">
-                                                <?php else: ?>
-                                                    <div class="w-full h-full flex items-center justify-center bg-gray-50">
-                                                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                        </svg>
-                                                    </div>
-                                                <?php endif; ?>
-                                            </div>
-                                            <!-- Product Name and Transaction Count -->
-                                            <div>
-                                                <p class="text-sm font-medium text-gray-800">
-                                                    <?= htmlspecialchars($product['nama_barang']) ?>
-                                                </p>
-                                                <div class="text-xs text-gray-400 mt-0.5">
-                                                    <?= $product['total_transaksi'] ?: 'Belum ada' ?> transaksi
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="px-3 py-1 rounded-lg text-sm font-medium <?= $product['total_terjual'] > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600' ?>">
-                                            <?= number_format($product['total_terjual']) ?> Unit
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        <?= $product['total_penjualan'] > 0 ? 'Rp ' . number_format($product['total_penjualan'], 0, ',', '.') : '-' ?>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="<?= $product['total_profit'] > 0 ? 'text-green-600' : ($product['total_profit'] < 0 ? 'text-red-600' : 'text-gray-400') ?> font-medium">
-                                            <?= $product['total_profit'] != 0 ? 'Rp ' . number_format($product['total_profit'], 0, ',', '.') : '-' ?>
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <button onclick="showProductHistory('<?= htmlspecialchars($product['nama_barang']) ?>')"
-                                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 <?php elseif (isset($_GET['tab']) && $_GET['tab'] === 'daerah'): ?>
                     <!-- Tabel Daerah -->
-                    <div class="overflow-x-auto">
+                    <div class="table-container">
                         <table class="w-full">
                             <thead class="bg-gray-50/50">
                                 <tr>
@@ -808,82 +1085,83 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
                     <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
                         <div class="overflow-x-auto">
                             <table class="w-full">
-                                <thead>
-                                    <tr class="border-b border-gray-100 bg-gray-50/50">
-                                        <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">NO</th>
-                                        <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">MARKETPLACE</th>
-                                        <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">TOTAL TRANSAKSI</th>
-                                        <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">TOTAL PENDAPATAN</th>
-                                        <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">PROFIT</th>
-                                        <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">AKSI</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($marketplaces as $index => $marketplace): ?>
-                                        <tr class="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
-                                            <td class="py-4 px-6 text-sm text-gray-600"><?= $index + 1 ?></td>
-                                            <td class="py-4 px-6">
-                                                <span class="px-3 py-1 rounded-lg text-sm font-medium 
-                                                    <?php
-                                                    switch (strtolower($marketplace['nama'])) {
-                                                        case 'shopee':
-                                                            echo 'bg-orange-50 text-orange-600';
-                                                            break;
-                                                        case 'tokopedia':
-                                                            echo 'bg-green-50 text-green-600';
-                                                            break;
-                                                        case 'tiktok':
-                                                            echo 'bg-gray-50 text-gray-600';
-                                                            break;
-                                                        default:
-                                                            echo 'bg-blue-50 text-blue-600';
-                                                    }
-                                                    ?>">
-                                                    <?= ucfirst(htmlspecialchars($marketplace['nama'])) ?>
-                                                </span>
-                                            </td>
-                                            <td class="py-4 px-6">
-                                                <span class="px-3 py-1 rounded-lg text-sm font-medium bg-blue-50 text-blue-600">
-                                                    <?= $marketplace['total_transaksi'] ?> Transaksi
-                                                </span>
-                                            </td>
-                                            <td class="py-4 px-6 text-sm text-gray-600">
-                                                Rp <?= number_format($marketplace['total_pendapatan'], 0, ',', '.') ?>
-                                            </td>
-                                            <td class="py-4 px-6">
-                                                <span class="text-sm font-medium <?= $marketplace['profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?>">
-                                                    Rp <?= number_format($marketplace['profit'], 0, ',', '.') ?>
-                                                </span>
-                                            </td>
-                                            <td class="py-4 px-6">
-                                                <button onclick="showMarketplaceDetail('<?= htmlspecialchars($marketplace['nama']) ?>')"
-                                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                    </svg>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                        <thead>
+                            <tr class="border-b border-gray-100 bg-gray-50/50">
+                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">NO</th>
+                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">MARKETPLACE</th>
+                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">TOTAL TRANSAKSI</th>
+                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">TOTAL PENDAPATAN</th>
+                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">PROFIT</th>
+                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">AKSI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($marketplaces as $index => $marketplace): ?>
+                                <tr class="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                                    <td class="py-4 px-6 text-sm text-gray-600"><?= $index + 1 ?></td>
+                                    <td class="py-4 px-6">
+                                        <span class="px-3 py-1 rounded-lg text-sm font-medium 
+                                            <?php
+                                            switch (strtolower($marketplace['nama'])) {
+                                                case 'shopee':
+                                                    echo 'bg-orange-50 text-orange-600';
+                                                    break;
+                                                case 'tokopedia':
+                                                    echo 'bg-green-50 text-green-600';
+                                                    break;
+                                                case 'tiktok':
+                                                    echo 'bg-gray-50 text-gray-600';
+                                                    break;
+                                                default:
+                                                    echo 'bg-blue-50 text-blue-600';
+                                            }
+                                            ?>">
+                                            <?= ucfirst(htmlspecialchars($marketplace['nama'])) ?>
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-6">
+                                        <span class="px-3 py-1 rounded-lg text-sm font-medium bg-blue-50 text-blue-600">
+                                            <?= $marketplace['total_transaksi'] ?> Transaksi
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-6 text-sm text-gray-600">
+                                        Rp <?= number_format($marketplace['total_pendapatan'], 0, ',', '.') ?>
+                                    </td>
+                                    <td class="py-4 px-6">
+                                        <span class="text-sm font-medium <?= $marketplace['profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?>">
+                                            Rp <?= number_format($marketplace['profit'], 0, ',', '.') ?>
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-6">
+                                        <button onclick="showMarketplaceDetail('<?= htmlspecialchars($marketplace['nama']) ?>')"
+                                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                         </div>
-                    </div>
+                </div>
 
-                    <!-- Modal Detail Marketplace -->
-                    <div id="marketplaceDetailModal" class="modal">
-                        <div class="modal-content bg-white rounded-2xl overflow-hidden shadow-xl">
-                            <div class="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-center">
-                                <h3 class="text-lg font-semibold text-gray-800" id="marketplaceTitle">Detail Marketplace</h3>
+                <!-- Modal Detail Marketplace -->
+                <div id="marketplaceDetailModal" class="modal">
+                    <div class="modal-content bg-white rounded-2xl overflow-hidden shadow-xl">
+                        <div class="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-center">
+                            <h3 class="text-lg font-semibold text-gray-800" id="marketplaceTitle">Detail Marketplace</h3>
                                 <button onclick="closeMarketplaceModal()" class="text-gray-400 hover:text-gray-500">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="p-6">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="p-6">
+                                <div class="table-wrapper">
                                     <table class="w-full">
                                         <thead class="sticky top-0 bg-gray-50">
                                             <tr>
@@ -900,36 +1178,38 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
                             </div>
                         </div>
                     </div>
+                </div>
                 <?php elseif (isset($_GET['tab']) && $_GET['tab'] === 'pembeli'): ?>
                     <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-                        <!-- Search bar untuk pembeli -->
+                    <!-- Search bar untuk pembeli -->
                         <div class="p-6 border-b border-gray-100">
-                            <div class="flex items-center gap-4">
-                                <div class="flex items-center gap-2 flex-1">
-                                    <div class="flex-1">
-                                        <input type="text" 
-                                               id="searchPembeli" 
-                                               placeholder="Cari nama pembeli..."
-                                               class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                                    </div>
-                                    <button onclick="searchPembeli(document.getElementById('searchPembeli').value)"
-                                            class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl 
-                                                   hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium
-                                                   shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40">
-                                        <div class="flex items-center gap-2">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                                            </svg>
-                                            Cari
-                                        </div>
-                                    </button>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2 flex-1">
+                                <div class="flex-1">
+                                    <input type="text" 
+                                           id="searchPembeli" 
+                                           placeholder="Cari nama pembeli..."
+                                           class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
                                 </div>
+                                <button onclick="searchPembeli(document.getElementById('searchPembeli').value)"
+                                        class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl 
+                                               hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium
+                                               shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40">
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                        </svg>
+                                        Cari
+                                    </div>
+                                </button>
                             </div>
                         </div>
+                    </div>
 
                         <!-- Tabel Pembeli -->
-                        <table class="w-full">
+                    <div class="table-container">
+                            <table class="w-full">
                             <thead class="bg-gray-50/50">
                                 <tr class="border-b border-gray-100">
                                     <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">NO</th>
@@ -989,12 +1269,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
-                            </table>
+                        </table>
                     </div>
+                </div>
                 <?php endif; ?>
             </div>
-                        </div>
-                    </div>
+        </div>
+    </div>
 
     <!-- Detail Modal -->
     <div id="detailModal" class="modal">
@@ -1095,18 +1376,20 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
             <!-- Body dengan scroll -->
             <div class="modal-body">
                 <div class="p-6">
-                    <table class="w-full">
-                        <thead class="sticky top-0 bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">NO</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">TANGGAL</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">PEMBELI</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">JUMLAH</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">HARGA</th>
-                            </tr>
-                        </thead>
-                        <tbody id="productHistoryTable"></tbody>
-                    </table>
+                    <div class="table-wrapper">
+                        <table class="w-full">
+                            <thead class="sticky top-0 bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">NO</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">TANGGAL</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">PEMBELI</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">JUMLAH</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">HARGA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productHistoryTable"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1127,7 +1410,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
 
             <!-- Modal Content -->
             <div class="p-6">
-                <div class="overflow-x-auto">
+                <div class="table-wrapper">
                     <table class="w-full">
                         <thead class="bg-gray-50 border-b border-gray-100">
                             <tr>
@@ -1199,7 +1482,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
 
                     // Update modal content
                     document.getElementById('detailBuyerName').textContent = `: ${transaction.buyer_name || 'Tanpa Nama'}`;
-                    document.getElementById('detailDate').textContent = `: ${new Date(transaction.tanggal).toLocaleString('id-ID')}`;
+                    // Format tanggal dan jam
+                    const date = new Date(transaction.tanggal);
+                    const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                    document.getElementById('detailDate').textContent = `: ${formattedDate}`;
                     document.getElementById('detailTotal').textContent = `: Rp ${Number(transaction.total_harga).toLocaleString('id-ID')}`;
 
                     // Update items table
@@ -1262,6 +1548,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
                 urlParams.delete('search');
             }
 
+            // Hapus parameter success dan message saat filter
+            urlParams.delete('success');
+            urlParams.delete('message');
+
             // Keep the current tab
             if (!urlParams.has('tab')) {
                 urlParams.set('tab', 'transaksi');
@@ -1296,9 +1586,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
         function showTab(tab) {
             // Get current URL parameters
             const urlParams = new URLSearchParams(window.location.search);
-
+            
             // Update tab parameter
             urlParams.set('tab', tab);
+            
+            // Hapus parameter success dan message saat pindah tab
+            urlParams.delete('success');
+            urlParams.delete('message');
 
             // Keep the date range and search parameters if they exist
             const startDate = document.getElementById('start_date')?.value;
@@ -1469,18 +1763,22 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
             formData.append('action', 'edit_transaction');
 
             fetch('informasi.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        closeEditModal();
-                        location.reload();
-                    } else {
-                        alert('Gagal mengupdate transaksi');
-                    }
-                });
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    closeEditModal();
+                    // Redirect dengan parameter success
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('success', '1');
+                    currentUrl.searchParams.set('message', 'Transaksi berhasil diperbarui');
+                    window.location.href = currentUrl.toString();
+                } else {
+                    alert('Gagal mengupdate transaksi');
+                }
+            });
         });
 
         async function showMarketplaceDetail(marketplace) {
@@ -1680,6 +1978,50 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
                 searchInput.addEventListener('input', debouncedSearch);
             }
         });
+
+        // Tambahkan fungsi ini di bagian <script>
+        function checkTableScroll() {
+            const tableWrappers = document.querySelectorAll('.table-wrapper');
+            tableWrappers.forEach(wrapper => {
+                if (wrapper.scrollWidth > wrapper.clientWidth) {
+                    wrapper.classList.add('can-scroll');
+                } else {
+                    wrapper.classList.remove('can-scroll');
+                }
+            });
+        }
+
+        // Panggil fungsi saat modal dibuka
+        document.addEventListener('DOMContentLoaded', function() {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                modal.addEventListener('transitionend', checkTableScroll);
+            });
+            
+            // Check scroll saat window diresize
+            window.addEventListener('resize', checkTableScroll);
+        });
+
+        // Fungsi untuk menutup alert
+        function closeAlert() {
+            const alert = document.getElementById('alert');
+            if (alert) {
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateY(-10px)';
+                alert.style.transition = 'all 0.3s ease-in-out';
+                setTimeout(() => alert.remove(), 300);
+            }
+        }
+
+        // Tambahkan script untuk menghapus parameter success dari URL setelah alert muncul
+        window.onload = function() {
+            if (window.history.replaceState) {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('success');
+                url.searchParams.delete('message');
+                window.history.replaceState({}, '', url);
+            }
+        };
     </script>
 </body>
 

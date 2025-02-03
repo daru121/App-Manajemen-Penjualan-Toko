@@ -14,10 +14,10 @@ class MYPDF extends TCPDF {
     public function Header() {
         // Header text
         $this->SetFont('helvetica', 'B', 14);
-        $this->Cell(0, 5, 'PT. PAKSESORIES', 0, 1, 'C');
+        $this->Cell(0, 5, 'TOKO JAMU AIR MANCUR', 0, 1, 'C');
         $this->SetFont('helvetica', '', 10);
-        $this->Cell(0, 5, 'One Stop Business and IT Solution', 0, 1, 'C');
-        $this->Cell(0, 5, 'Jl. Contoh No. 123, Kota, Indonesia Telp: (021) 1234567', 0, 1, 'C');
+        $this->Cell(0, 5, 'Jamu tradisional, minuman sehat dan kendi. Segar & berkhasiat', 0, 1, 'C');
+        $this->Cell(0, 5, 'Jl. Soekarno Hatta, Loa Janan ulu, Kutai Kartanegara Telp: 082154541854', 0, 1, 'C');
         
         // Garis header
         $this->SetLineWidth(0.5);
@@ -90,7 +90,12 @@ $pdf->Ln(4); // Tambah space setelah garis
 // Judul Slip dengan spacing yang lebih
 $pdf->SetFont('helvetica', 'B', 12);
 $pdf->Cell(0, 5, 'SLIP GAJI KARYAWAN', 0, 1, 'C');
-$pdf->Cell(0, 5, 'Periode ' . date('d F Y', strtotime($slip['tanggal'])), 0, 1, 'C');
+
+// Format periode dengan rentang tanggal
+$tanggal = date('Y-m', strtotime($slip['tanggal']));
+$awal_bulan = date('d F Y', strtotime($tanggal . '-01'));
+$akhir_bulan = date('d F Y', strtotime($tanggal . '-' . date('t', strtotime($tanggal))));
+$pdf->Cell(0, 5, '' . $awal_bulan . ' - ' . $akhir_bulan, 0, 1, 'C');
 $pdf->Ln(3);
 
 // Informasi Karyawan dengan format baru
@@ -186,7 +191,7 @@ $pdf->Cell(0, 5, 'Samarinda, ' . date('d F Y', strtotime($slip['tanggal'])), 0, 
 $pdf->Cell(0, 5, 'Pemilik Toko', 0, 1, 'R');
 $pdf->Ln(15);
 $pdf->SetFont('helvetica', 'B', 10);
-$pdf->Cell(0, 5, 'DARU CARAKA', 0, 1, 'R');
+$pdf->Cell(0, 5, 'SITI ROHMAH', 0, 1, 'R');
 
 // Output PDF
 ob_end_clean();

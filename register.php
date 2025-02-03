@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PAksesories - Register</title>
+    <title>Jamu Air Mancur - Register</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -234,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         bg-gradient-to-br from-indigo-600 via-blue-600 to-blue-700 shadow-2xl 
                         mb-10 transform hover:scale-110 transition-all duration-500 
                         relative overflow-hidden group float-animation">
-                        <img src="img/gambar.jpg" alt="Logo" class="w-12 h-12 object-cover rounded-xl">
+                        <img src="img/Jamu.png" alt="Logo" class="w-12 h-12 object-cover rounded-xl">
                         <div class="absolute inset-0 animate-shine"></div>
                         <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>

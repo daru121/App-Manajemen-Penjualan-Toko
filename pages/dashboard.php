@@ -479,7 +479,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'updateTopProducts') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - PAksesoris</title>
+    <title>Dashboard - Jamu Air Mancur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Tambahkan Font -->

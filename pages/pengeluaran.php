@@ -307,7 +307,7 @@ function getCategoryBadgeClass($kategori) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pengeluaran - PAksesories</title>
+    <title>Pengeluaran - Jamu Air Mancur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -316,19 +316,20 @@ function getCategoryBadgeClass($kategori) {
     <?php include '../components/sidebar.php'; ?>
     <?php include '../components/navbar.php'; ?>
 
-    <div class="ml-64 p-8 pt-24">
+    <div class="ml-0 md:ml-64 p-4 md:p-8 pt-20 md:pt-24">
         <!-- Header -->
-        <div class="mb-8 bg-gradient-to-br from-indigo-600 via-blue-500 to-blue-400 rounded-3xl p-10 text-white shadow-2xl relative overflow-hidden">
+        <div class="mb-6 md:mb-8 bg-gradient-to-br from-indigo-600 via-blue-500 to-blue-400 rounded-2xl md:rounded-3xl p-6 md:p-10 text-white shadow-2xl relative overflow-hidden">
+            <!-- Decorative elements -->
             <div class="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
             <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full translate-y-32 -translate-x-32 blur-3xl"></div>
             
-            <div class="relative flex justify-between items-center">
+            <div class="relative flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
-                    <h1 class="text-4xl font-bold mb-3">Pengeluaran</h1>
-                    <p class="text-blue-100 text-lg">Kelola data pengeluaran operasional</p>
+                    <h1 class="text-2xl sm:text-4xl font-bold mb-2 sm:mb-3">Pengeluaran</h1>
+                    <p class="text-blue-100 text-base sm:text-lg">Kelola data pengeluaran operasional</p>
                 </div>
                 <button onclick="showAddModal()" 
-                        class="px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center gap-3 transition-all duration-300 backdrop-blur-sm">
+                        class="w-full sm:w-auto px-4 sm:px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center justify-center sm:justify-start gap-3 transition-all duration-300 backdrop-blur-sm">
                     <div class="p-2 bg-white/10 rounded-lg">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
@@ -366,24 +367,22 @@ function getCategoryBadgeClass($kategori) {
         <?php endif; ?>
 
         <!-- Tab Navigation -->
-        <div class="p-1.5 bg-gray-100/80 backdrop-blur-xl rounded-2xl inline-flex gap-2 shadow-sm mb-6">
-            <button onclick="switchTab('data')" 
-                    class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
+        <div class="p-1.5 bg-gray-100/80 backdrop-blur-xl rounded-xl md:rounded-2xl flex flex-col md:flex-row gap-2 shadow-sm mb-4 md:mb-6">
+            <button onclick="switchTab('data')" class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
                     <?= !isset($_GET['tab']) || $_GET['tab'] === 'data' ? 
                         'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
                         'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 md:w-5 h-4 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                         d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
                 </svg>
                 Data Pengeluaran
             </button>
-            <button onclick="switchTab('statistik')" 
-                    class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
+            <button onclick="switchTab('statistik')" class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
                     <?= isset($_GET['tab']) && $_GET['tab'] === 'statistik' ? 
                         'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
                         'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 md:w-5 h-4 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                 </svg>
@@ -394,8 +393,8 @@ function getCategoryBadgeClass($kategori) {
         <!-- Tab Content -->
         <div id="dataTab">
             <!-- Filter -->
-            <div class="mb-6 bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-                <div class="flex flex-wrap gap-4">
+            <div class="mb-4 md:mb-6 bg-white rounded-xl md:rounded-3xl shadow-sm border border-gray-100 p-4 md:p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                     <!-- Filter Kategori -->
                     <div class="flex-1 min-w-[200px]">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
@@ -460,9 +459,9 @@ function getCategoryBadgeClass($kategori) {
             </div>
 
             <!-- Content -->
-            <div class="bg-white rounded-3xl shadow-sm border border-gray-100">
-                <div class="p-6">
-                    <table id="pengeluaranTable" class="w-full">
+            <div class="bg-white rounded-xl md:rounded-3xl shadow-sm border border-gray-100 overflow-x-auto">
+                <div class="p-4 md:p-6">
+                    <table id="pengeluaranTable" class="w-full min-w-[800px]">
                         <thead>
                             <tr class="bg-gray-50">
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Tanggal</th>
@@ -653,7 +652,7 @@ function getCategoryBadgeClass($kategori) {
 
     <!-- Add Modal -->
     <div id="addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-2xl w-full max-w-md mx-4">
+        <div class="bg-white rounded-xl md:rounded-2xl w-[95%] md:w-full max-w-md mx-auto my-4 max-h-[90vh] overflow-y-auto">
             <form action="" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="add">
                 
@@ -1594,6 +1593,51 @@ function getCategoryBadgeClass($kategori) {
     /* Animasi untuk shadow */
     .shadow-sm {
         box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    }
+
+    @media (max-width: 768px) {
+        .table-responsive {
+            margin: 0 -1rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-button {
+            padding: 0.5rem;
+        }
+        
+        .modal-content {
+            padding: 1rem;
+        }
+        
+        .filter-section {
+            flex-direction: column;
+        }
+        
+        .filter-item {
+            width: 100%;
+        }
+    }
+
+    /* Better touch interactions */
+    @media (hover: none) {
+        .table-responsive {
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        select, input[type="date"] {
+            font-size: 16px; /* Prevent zoom on iOS */
+        }
+    }
+
+    /* Smooth scrolling */
+    .smooth-scroll {
+        scroll-behavior: smooth;
     }
     </style>
 </body>

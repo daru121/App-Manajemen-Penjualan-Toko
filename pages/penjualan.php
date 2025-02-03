@@ -51,24 +51,15 @@ if (isset($_GET['action']) && $_GET['action'] === 'print_receipt') {
     // Set font
     $pdf->SetFont('helvetica', '', 8);
     
-    // Add store logo/image
-    $image_file = '../img/gambar.jpg';
-    $pdf->Image($image_file, 5, 5, 15, 15, '', '', '', false, 300, '', false, false, 0);
-    
-    // Store Name - Geser ke kanan agar tidak tertutup logo
+    // Store Name - Center aligned
     $pdf->SetFont('helvetica', 'B', 12);
-    $pdf->SetXY(22, 5);
-    $pdf->Cell(53, 5, 'PAksesories', 0, 1, 'L');
+    $pdf->Cell(0, 5, 'Jamu Air Mancur', 0, 1, 'C');
     $pdf->SetFont('helvetica', '', 8);
-    $pdf->SetXY(22, 10);
-    $pdf->Cell(53, 4, 'Jl. Awang Long, Kab. Kutai Kartanegara', 0, 1, 'L');
-    $pdf->SetXY(22, 14);
-    $pdf->Cell(53, 4, 'Telp: 085247694758', 0, 1, 'L');
-    
-    // Reset position for next content
-    $pdf->SetY(22);
+    $pdf->Cell(0, 4, 'Jl. Soekarno Hatta, Kutai Kartanegara', 0, 1, 'C');
+    $pdf->Cell(0, 4, 'Telp: 082154541854', 0, 1, 'C');
     
     // Line separator
+    $pdf->Ln(1);
     $pdf->Cell(0, 0, str_repeat('=', 48), 0, 1, 'C');
     $pdf->Ln(1);
     
@@ -528,7 +519,7 @@ $kasir = $stmt->fetch();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Kasir - PAksesories</title>
+    <title>POS Kasir - Jamu Air Mancur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     <style>

@@ -9,7 +9,7 @@ require_once '../backend/database.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tentang Saya - PAksesories</title>
+    <title>Tentang Saya - Jamu Air Mancur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @media (max-width: 768px) {

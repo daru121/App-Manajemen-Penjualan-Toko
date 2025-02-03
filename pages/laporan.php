@@ -140,10 +140,9 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     $pdf->SetFont('helvetica', '', 12);
     
     // Add logo and company name
-    $pdf->Image('../img/gambar.jpg', 15, 15, 30);
     $pdf->Cell(0, 10, '', 0, 1);
     $pdf->SetFont('helvetica', 'B', 20);
-    $pdf->Cell(0, 10, 'Laporan Penjualan PAksesories', 0, 1, 'C');
+    $pdf->Cell(0, 10, 'Laporan Penjualan Jamu Air Mancur', 0, 1, 'C');
     
     // Add period information
     $pdf->SetFont('helvetica', '', 12);
@@ -233,178 +232,166 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     <?php include '../components/sidebar.php'; ?>
     <?php include '../components/navbar.php'; ?>
     
-    <div class="ml-64 pt-16 min-h-screen bg-gray-50/50">
-        <div class="p-8 space-y-6">
+    <div class="ml-0 md:ml-64 pt-16 min-h-screen bg-gray-50/50">
+        <div class="p-4 md:p-8 space-y-4 md:space-y-6">
             <!-- Header Section -->
-            <div class="bg-gradient-to-r from-blue-600 to-blue-400 rounded-3xl p-12">
-                <div class="flex items-center justify-between">
+            <div class="bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 rounded-[30px] p-6 md:p-10 shadow-xl relative overflow-hidden">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div>
-                        <h1 class="text-3xl font-semibold text-white mb-2">Laporan Penjualan</h1>
+                        <h1 class="text-2xl md:text-3xl font-semibold text-white mb-2">Laporan Penjualan</h1>
                         <p class="text-blue-100/80">Lihat detail laporan penjualan Anda</p>
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
                         <?php if ($view_type === 'monthly'): ?>
                             <input type="month" id="selected_date" 
                                    value="<?= date('Y-m', strtotime($start_date)) ?>" 
-                                   class="w-44 h-11 px-4 rounded-xl border border-white/30 focus:border-white/50 bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/20">
+                                   class="w-full sm:w-44 h-11 px-4 rounded-xl border border-white/30 focus:border-white/50 bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/20">
                         <?php elseif ($view_type === 'yearly'): ?>
                             <input type="number" id="selected_date" 
                                    value="<?= date('Y', strtotime($start_date)) ?>" 
                                    min="2000" max="2099"
-                                   class="w-44 h-11 px-4 rounded-xl border border-white/30 focus:border-white/50 bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/20">
+                                   class="w-full sm:w-44 h-11 px-4 rounded-xl border border-white/30 focus:border-white/50 bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/20">
                         <?php else: ?>
                             <input type="date" id="selected_date" 
                                    value="<?= $start_date ?>" 
-                                   class="w-44 h-11 px-4 rounded-xl border border-white/30 focus:border-white/50 bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/20">
+                                   class="w-full sm:w-44 h-11 px-4 rounded-xl border border-white/30 focus:border-white/50 bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/20">
                         <?php endif; ?>
-                        
+
+                        <!-- Buttons -->
                         <button onclick="applyFilter()" 
-                                class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2">
-                            <span class="text-sm font-medium">Cari</span>
+                                class="w-full sm:w-auto px-6 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                            </svg>
+                            <span>Filter</span>
                         </button>
                         
                         <button onclick="exportToPDF()" 
-                                class="h-11 px-4 flex items-center gap-2 bg-orange-50 text-orange-600 rounded-xl border border-orange-200 hover:bg-orange-100 transition-all duration-200">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                class="w-full sm:w-auto h-11 px-6 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                             </svg>
-                            <span class="text-sm font-medium">Export</span>
+                            <span>Export PDF</span>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Tab Navigation dan Search Input Container -->
-            <div class="flex flex-col gap-4">
-                <!-- Tab Navigation -->
-                <div class="inline-flex">
-                    <div class="p-1.5 bg-gray-100/80 backdrop-blur-xl rounded-2xl inline-flex gap-2 shadow-sm">
-                        <button id="btnHarian" onclick="showTab('harian')" 
-                                class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
-                                       <?= $view_type === 'daily' ? 
-                                           'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
-                                           'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            Laporan Harian
-                        </button>
-                        <button id="btnBulanan" onclick="showTab('bulanan')" 
-                                class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
-                                       <?= $view_type === 'monthly' ? 
-                                           'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
-                                           'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                            </svg>
-                            Laporan Bulanan
-                        </button>
-                        <button id="btnTahunan" onclick="showTab('tahunan')" 
-                                class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
-                                       <?= $view_type === 'yearly' ? 
-                                           'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
-                                           'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Laporan Tahunan
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Search Input -->
-                <div class="flex justify-end">
-                    <div class="relative w-72">
-                        <input type="text" 
-                               id="searchInput" 
-                               class="w-full h-11 pl-10 pr-4 py-2 text-gray-700 bg-white border border-gray-200 rounded-xl focus:border-blue-400 focus:ring-blue-300 focus:ring-opacity-40 focus:outline-none focus:ring" 
-                               placeholder="Cari nama pembeli...">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-                        </div>
-                    </div>
+            <!-- Tab Navigation -->
+            <div class="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
+                <div class="p-1.5 bg-gray-100/80 backdrop-blur-xl rounded-2xl flex gap-2 shadow-sm min-w-max">
+                    <button id="btnHarian" onclick="showTab('harian')" 
+                            class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
+                                   <?= $view_type === 'daily' ? 
+                                       'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
+                                       'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Laporan Harian
+                    </button>
+                    <button id="btnBulanan" onclick="showTab('bulanan')" 
+                            class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
+                                   <?= $view_type === 'monthly' ? 
+                                       'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
+                                       'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        Laporan Bulanan
+                    </button>
+                    <button id="btnTahunan" onclick="showTab('tahunan')" 
+                            class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
+                                   <?= $view_type === 'yearly' ? 
+                                       'bg-white text-blue-600 shadow-lg shadow-blue-500/10 scale-[1.02] ring-1 ring-black/5' : 
+                                       'text-gray-500 hover:text-gray-600 hover:bg-white/50' ?>">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Laporan Tahunan
+                    </button>
                 </div>
             </div>
 
-            <!-- Table Section -->
-            <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-                <table class="w-full">
-                    <thead class="bg-gray-50/50 border-b border-gray-100">
-                        <tr>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">No</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pembeli</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Marketplace</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Detail Barang</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
-                            <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Profit</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <?php foreach ($transactions as $i => $transaction): ?>
-                            <tr class="hover:bg-gray-50/50">
-                                <td class="px-6 py-4 text-sm text-gray-600">
-                                    <?= $i + 1 ?>
+            <!-- Search dan Table Section -->
+            <div class="bg-white rounded-[30px] overflow-hidden border border-gray-100 shadow-sm mx-4 md:mx-0">
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[800px]">
+                        <thead class="bg-gray-50/50 border-b border-gray-100">
+                            <tr>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">No</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pembeli</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Marketplace</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Detail Barang</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+                                <th class="px-6 py-5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <?php foreach ($transactions as $i => $transaction): ?>
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="px-6 py-4 text-sm text-gray-600">
+                                        <?= $i + 1 ?>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-600">
+                                        <?= date('d/m/Y H:i', strtotime($transaction['tanggal'])) ?>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-600">
+                                        <?= htmlspecialchars($transaction['nama_pembeli']) ?>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-3 py-1 rounded-lg text-sm font-medium
+                                            <?php 
+                                                switch(strtolower($transaction['marketplace'])) {
+                                                    case 'shopee':
+                                                        echo 'bg-orange-100 text-orange-700';
+                                                        break;
+                                                    case 'tokopedia':
+                                                        echo 'bg-green-100 text-green-700';
+                                                        break;
+                                                    case 'tiktok':
+                                                        echo 'bg-gray-100 text-gray-700';
+                                                        break;
+                                                    default:
+                                                        echo 'bg-blue-100 text-blue-700';
+                                                }
+                                            ?>">
+                                            <?= ucfirst(htmlspecialchars($transaction['marketplace'])) ?>
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-600 whitespace-pre-line">
+                                        <?= nl2br($transaction['detail_pembelian']) ?>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-600">
+                                        Rp <?= number_format($transaction['total_harga'], 0, ',', '.') ?>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <span class="<?= $transaction['profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
+                                            Rp <?= number_format($transaction['profit'], 0, ',', '.') ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <!-- Footer dengan total -->
+                        <tfoot class="bg-gray-50/50 border-t border-gray-100">
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-sm font-medium text-gray-800">
+                                    Total Keseluruhan:
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
-                                    <?= date('d/m/Y H:i', strtotime($transaction['tanggal'])) ?>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
-                                    <?= htmlspecialchars($transaction['nama_pembeli']) ?>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="px-3 py-1 rounded-lg text-sm font-medium
-                                        <?php 
-                                            switch(strtolower($transaction['marketplace'])) {
-                                                case 'shopee':
-                                                    echo 'bg-orange-100 text-orange-700';
-                                                    break;
-                                                case 'tokopedia':
-                                                    echo 'bg-green-100 text-green-700';
-                                                    break;
-                                                case 'tiktok':
-                                                    echo 'bg-gray-100 text-gray-700';
-                                                    break;
-                                                default:
-                                                    echo 'bg-blue-100 text-blue-700';
-                                            }
-                                        ?>">
-                                        <?= ucfirst(htmlspecialchars($transaction['marketplace'])) ?>
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-600 whitespace-pre-line">
-                                    <?= nl2br($transaction['detail_pembelian']) ?>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
-                                    Rp <?= number_format($transaction['total_harga'], 0, ',', '.') ?>
+                                <td class="px-6 py-4 text-sm text-gray-800 font-medium">
+                                    Rp <?= number_format($grand_total_penjualan, 0, ',', '.') ?>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
-                                    <span class="<?= $transaction['profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
-                                        Rp <?= number_format($transaction['profit'], 0, ',', '.') ?>
+                                    <span class="<?= $grand_total_profit >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
+                                        Rp <?= number_format($grand_total_profit, 0, ',', '.') ?>
                                     </span>
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                    <!-- Footer dengan total -->
-                    <tfoot class="bg-gray-50/50 border-t border-gray-100">
-                        <tr>
-                            <td colspan="5" class="px-6 py-4 text-sm font-medium text-gray-800">
-                                Total Keseluruhan:
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-800 font-medium">
-                                Rp <?= number_format($grand_total_penjualan, 0, ',', '.') ?>
-                            </td>
-                            <td class="px-6 py-4 text-sm">
-                                <span class="<?= $grand_total_profit >= 0 ? 'text-green-600' : 'text-red-600' ?> font-medium">
-                                    Rp <?= number_format($grand_total_profit, 0, ',', '.') ?>
-                                </span>
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -513,39 +500,35 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
 
     <style>
         @media (max-width: 768px) {
-            /* Tab Navigation untuk mobile */
-            .p-1\.5.bg-gray-100\/80 {
-                width: auto !important;
-                display: flex !important;
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch !important;
-                scrollbar-width: none !important;
-                -ms-overflow-style: none !important;
+            /* Input styles for mobile */
+            input[type="date"],
+            input[type="month"],
+            input[type="number"] {
+                font-size: 16px !important;
+                -webkit-appearance: none;
             }
 
-            .p-1\.5.bg-gray-100\/80::-webkit-scrollbar {
-                display: none !important;
+            /* Table scroll */
+            .overflow-x-auto {
+                -webkit-overflow-scrolling: touch;
             }
 
-            /* Search input styling for mobile */
-            .flex.justify-end {
-                padding: 0 0.75rem !important;
+            /* Hide scrollbar but keep functionality */
+            .overflow-x-auto::-webkit-scrollbar {
+                display: none;
             }
 
-            .relative.w-72 {
-                width: 100% !important;
+            /* Better spacing */
+            .space-y-4 > * + * {
+                margin-top: 1rem;
             }
 
-            #searchInput {
-                font-size: 0.875rem !important;
-                height: 2.75rem !important;
-            }
-
-            .absolute.inset-y-0.left-0.pl-3 svg {
-                width: 1.25rem !important;
-                height: 1.25rem !important;
+            /* Touch targets */
+            button, input {
+                min-height: 44px;
             }
         }
     </style>
 </body>
-</html></html>
+</html>
+

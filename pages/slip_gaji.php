@@ -166,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Penggajian Karyawan - PAksesories</title>
+    <title>Penggajian Karyawan - Jamu Air Mancur</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -190,11 +190,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 <div class="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
                 <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full translate-y-32 -translate-x-32 blur-3xl"></div>
                 
-                <div class="relative flex justify-between items-center">
+                <div class="relative flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <div>
-                        <h1 class="text-4xl font-bold mb-3">Penggajian Karyawan</h1>
+                        <h1 class="text-4xl font-bold mb-2">Penggajian Karyawan</h1>
                         <p class="text-blue-100 text-lg">Kelola data gaji karyawan</p>
                     </div>
+                    <button onclick="showModal()" 
+                            class="w-full sm:w-auto px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center justify-center sm:justify-start gap-3 transition-all duration-300 backdrop-blur-sm">
+                        <div class="p-2 bg-white/10 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                        </div>
+                        <span class="font-medium">Input Gaji</span>
+                    </button>
                 </div>
             </div>
 
@@ -250,225 +259,314 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 <?php unset($_SESSION['error']); ?>
             <?php endif; ?>
 
-            <!-- Filter dan Tombol -->
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <div class="flex items-end gap-4">
-                    <div>
+                <!-- Filter Section -->
+            <div class="flex items-center gap-3 mb-6">
+                    <div class="flex-1">
                         <input type="month" 
-                               id="filter_tanggal" 
-                               value="<?= isset($_GET['bulan']) ? $_GET['bulan'] : date('Y-m') ?>"
-                               class="px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm">
+                            id="filter_tanggal" 
+                            value="<?= isset($_GET['bulan']) ? $_GET['bulan'] : date('Y-m') ?>"
+                            class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-white">
                     </div>
                     <button onclick="filterData()" 
-                            class="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl transition-colors duration-200 border border-gray-200 shadow-sm">
-                        <div class="flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-                            </svg>
-                            Filter
-                        </div>
-                    </button>
-                </div>
-                
-                <button onclick="showModal()" 
-                        class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors duration-200 shadow-sm">
-                    <div class="flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            class="px-4 py-2 bg-gray-50 text-gray-700 rounded-xl border border-gray-200 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                         </svg>
-                        Input Gaji
-                    </div>
+                        Filter
                 </button>
             </div>
 
-            <!-- Daftar Karyawan Belum Gajian -->
+            <!-- Alert Karyawan Belum Gajian -->
             <?php if (count($karyawanBelumGajian) > 0): ?>
                 <div class="mb-6">
-                    <div class="flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-xl">
+                    <div class="flex items-center gap-3 p-4 bg-red-50 rounded-xl">
                         <div class="flex-shrink-0">
-                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                             </svg>
                         </div>
                         <div class="flex-1 text-sm">
-                            <span class="font-medium text-red-600"><?= count($karyawanBelumGajian) ?> Karyawan</span> 
+                            <span class="text-red-600"><?= count($karyawanBelumGajian) ?> Karyawan</span> 
                             <span class="text-gray-600">belum menerima gaji bulan <?= date('F Y', strtotime($filter_bulan)) ?></span>
-                            <button onclick="showDetailKaryawan()" class="ml-1 text-blue-600 hover:text-blue-700 font-medium">
+                            <button onclick="showDetailKaryawan()" class="ml-1 text-blue-600">
                                 detail
                             </button>
                         </div>
                     </div>
                 </div>
+            <?php endif; ?>
 
-                <!-- Modal Detail Karyawan -->
-                <div id="modalDetail" class="fixed inset-0 bg-gray-500 bg-opacity-75 z-50 hidden">
-                    <div class="flex items-center justify-center min-h-screen p-4">
-                        <div class="bg-white rounded-xl shadow-xl w-full max-w-md relative">
-                            <div class="p-5 border-b border-gray-100">
+            <!-- Tabel Riwayat - Mobile View -->
+            <div class="block sm:hidden">
+                <?php foreach ($riwayat as $i => $r): ?>
+                    <div class="bg-white rounded-xl p-4 mb-3 border border-gray-100">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <div class="font-medium text-gray-900"><?= htmlspecialchars($r['nama']) ?></div>
+                                <div class="text-sm text-gray-500"><?= date('d M Y', strtotime($r['tanggal'])) ?></div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="showDeleteAlert(<?= $r['id'] ?>)" 
+                                        class="text-red-600 p-1 rounded-lg hover:bg-red-50">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                                <a href="cetak_slip_gaji.php?id=<?= $r['id'] ?>" 
+                                   target="_blank"
+                                   class="text-blue-600 p-1 rounded-lg hover:bg-blue-50">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="space-y-1 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Gaji Pokok</span>
+                                <span>Rp <?= number_format($r['gaji_pokok'], 0, ',', '.') ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Bonus</span>
+                                <span>Rp <?= number_format($r['bonus'] - $r['bonus_target'], 0, ',', '.') ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Bonus Target</span>
+                                <span>Rp <?= number_format($r['bonus_target'], 0, ',', '.') ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Potongan</span>
+                                <span class="text-red-600">- Rp <?= number_format($r['potongan'], 0, ',', '.') ?></span>
+                            </div>
+                            <?php if (!empty($r['keterangan_potongan'])): ?>
+                                <div class="text-xs text-gray-500">
+                                    Ket: <?= htmlspecialchars($r['keterangan_potongan']) ?>
+                                </div>
+                            <?php endif; ?>
+                            <div class="pt-2 border-t">
+                                <div class="flex justify-between font-medium">
+                                    <span>Total Terima</span>
+                                    <span class="text-blue-600">Rp <?= number_format($r['total_gaji'], 0, ',', '.') ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Tabel Riwayat - Desktop View -->
+            <div class="hidden sm:block overflow-x-auto">
+                <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">NO</th>
+                                <th scope="col" class="px-6 py-3">TANGGAL</th>
+                                <th scope="col" class="px-6 py-3">NAMA</th>
+                                <th scope="col" class="px-6 py-3">NOMINAL</th>
+                                <th scope="col" class="px-6 py-3">BONUS</th>
+                                <th scope="col" class="px-6 py-3">BONUS TARGET</th>
+                                <th scope="col" class="px-6 py-3">POTONGAN</th>
+                                <th scope="col" class="px-6 py-3">TERIMA</th>
+                                <th scope="col" class="px-6 py-3">AKSI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($riwayat as $i => $r): ?>
+                                <tr class="bg-white border-b hover:bg-gray-50">
+                                    <td class="px-6 py-4"><?= $i + 1 ?></td>
+                                    <td class="px-6 py-4"><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
+                                    <td class="px-6 py-4"><?= htmlspecialchars($r['nama']) ?></td>
+                                    <td class="px-6 py-4">Rp <?= number_format($r['gaji_pokok'], 0, ',', '.') ?></td>
+                                    <td class="px-6 py-4">
+                                        Rp <?= number_format($r['bonus'] - $r['bonus_target'], 0, ',', '.') ?>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        Rp <?= number_format($r['bonus_target'], 0, ',', '.') ?>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        Rp <?= number_format($r['potongan'], 0, ',', '.') ?> (-)
+                                        <?php if (!empty($r['keterangan_potongan'])): ?>
+                                            <span class="block text-xs text-gray-500 mt-1">
+                                                Ket: <?= htmlspecialchars($r['keterangan_potongan']) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-6 py-4">Rp <?= number_format($r['total_gaji'], 0, ',', '.') ?></td>
+                                    <td class="px-6 py-4 flex gap-2">
+                                        <button onclick="showDeleteAlert(<?= $r['id'] ?>)" 
+                                                class="text-red-600 hover:text-red-700 p-1 rounded-lg hover:bg-red-50">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                            </svg>
+                                        </button>
+                                        <a href="cetak_slip_gaji.php?id=<?= $r['id'] ?>" 
+                                           target="_blank"
+                                           class="text-blue-600 hover:text-blue-700 p-1 rounded-lg hover:bg-blue-50">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal Input Gaji -->
+            <div id="modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden z-[60]">
+                <div class="flex items-start justify-center min-h-screen pt-20 sm:pt-16 px-4 pb-4">
+                    <!-- Update modal container for better mobile view -->
+                    <div class="bg-white rounded-xl shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto relative">
+                        <!-- Sticky header -->
+                        <div class="sticky top-0 bg-white border-b border-gray-200 rounded-t-xl z-10">
+                            <div class="p-4">
                                 <div class="flex items-center justify-between">
-                                    <h3 class="text-lg font-semibold text-gray-800">
-                                        Karyawan Belum Gajian
-                                    </h3>
-                                    <button onclick="hideDetailKaryawan()" class="text-gray-400 hover:text-gray-500">
+                                    <h3 class="text-lg font-semibold text-gray-800">Input Gaji Karyawan</h3>
+                                    <button onclick="hideModal()" class="text-gray-400 hover:text-gray-500">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                         </svg>
                                     </button>
                                 </div>
                             </div>
-                            <div class="p-5">
-                                <div class="space-y-2">
+                        </div>
+                        
+                        <form method="POST" class="p-4">
+                            <div class="space-y-4">
+                                <!-- Karyawan & Tanggal in one row for larger screens -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Karyawan</label>
+                                        <select name="karyawan_id" required 
+                                            class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                            onchange="setGaji(this)">
+                                            <option value="">Pilih Karyawan</option>
+                                            <?php foreach ($karyawan as $k): ?>
+                                                <option value="<?= $k['id'] ?>" data-gaji="<?= $k['gaji'] ?>">
+                                                    <?= htmlspecialchars($k['nama']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
+                                        <input type="date" name="tanggal" required 
+                                            class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                            onchange="getBonusTarget()">
+                                    </div>
+                                </div>
+
+                                <!-- Nominal Section -->
+                                <div class="bg-gray-50 rounded-lg p-4 space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Gaji Pokok</label>
+                                        <input type="text" name="gaji_pokok" required readonly
+                                            class="w-full p-2 border rounded-lg bg-gray-100 cursor-not-allowed" 
+                                            title="Gaji pokok diambil dari data karyawan">
+                                        <span class="text-xs text-gray-500">*Sesuai data karyawan</span>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Bonus</label>
+                                            <input type="text" name="bonus" value="0" required 
+                                                class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Bonus Target</label>
+                                            <input type="text" name="bonus_target" value="0" readonly
+                                                class="w-full p-2 border rounded-lg bg-gray-100 cursor-not-allowed">
+                                            <span class="text-xs text-gray-500">*Otomatis dari target tercapai</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Potongan Section -->
+                                <div class="bg-gray-50 rounded-lg p-4 space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Potongan</label>
+                                        <input type="text" name="potongan" value="0" required 
+                                            class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Keterangan Potongan</label>
+                                        <textarea name="keterangan_potongan" 
+                                            class="w-full p-2 border rounded-lg resize-none h-16 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                            placeholder="Masukkan keterangan potongan (opsional)"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Total & Buttons -->
+                            <div class="sticky bottom-0 bg-white border-t border-gray-200 p-4 rounded-b-xl">
+                                <div class="space-y-4">
+                                    <div class="bg-blue-50 p-4 rounded-lg">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-sm font-medium text-gray-700">Total Terima Bersih:</span>
+                                            <span class="text-lg font-bold text-blue-600" id="total_terima">Rp 0</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex gap-3 justify-end">
+                                        <button type="button" onclick="hideModal()" 
+                                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                                            Batal
+                                        </button>
+                                        <button type="submit" 
+                                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                                            Simpan
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Detail Karyawan -->
+            <div id="modalDetail" class="fixed inset-0 bg-black/50 z-[70] hidden">
+                <div class="flex items-center justify-center min-h-screen p-4">
+                    <div class="bg-white w-full max-w-md rounded-2xl shadow-lg opacity-0 scale-95 transform transition-all duration-300">
+                        <div class="p-6 text-center space-y-6">
+                            <div class="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mx-auto">
+                                <svg class="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                            </div>
+
+                            <div class="space-y-2">
+                                <h3 class="text-xl font-medium text-gray-900">Karyawan Belum Gajian</h3>
+                                <p class="text-gray-500">Bulan <?= date('F Y', strtotime($filter_bulan)) ?></p>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-xl p-4">
+                                <div class="space-y-3">
                                     <?php foreach ($karyawanBelumGajian as $k): ?>
-                                        <div class="p-3 bg-gray-50/80 hover:bg-gray-100/80 transition-colors duration-150 rounded-lg">
-                                            <div class="font-medium text-gray-800"><?= htmlspecialchars($k['nama']) ?></div>
-                                            <div class="text-sm text-gray-500"><?= $k['role'] ?></div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-600"><?= htmlspecialchars($k['nama']) ?></span>
+                                            <button onclick="inputGajiLangsung(<?= $k['id'] ?>, '<?= htmlspecialchars($k['nama']) ?>', <?= $k['gaji'] ?>)" 
+                                                    class="px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200">
+                                                Input Gaji
+                                            </button>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
                             </div>
+
+                            <div class="flex justify-center">
+                                <button onclick="hideDetailKaryawan()" 
+                                        class="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors duration-200">
+                                    Tutup
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <!-- Tabel Riwayat -->
-            <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-                <table class="w-full text-sm text-left text-gray-500">
-                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3">NO</th>
-                            <th scope="col" class="px-6 py-3">TANGGAL</th>
-                            <th scope="col" class="px-6 py-3">NAMA</th>
-                            <th scope="col" class="px-6 py-3">NOMINAL</th>
-                            <th scope="col" class="px-6 py-3">BONUS</th>
-                            <th scope="col" class="px-6 py-3">BONUS TARGET</th>
-                            <th scope="col" class="px-6 py-3">POTONGAN</th>
-                            <th scope="col" class="px-6 py-3">TERIMA</th>
-                            <th scope="col" class="px-6 py-3">AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($riwayat as $i => $r): ?>
-                            <tr class="bg-white border-b hover:bg-gray-50">
-                                <td class="px-6 py-4"><?= $i + 1 ?></td>
-                                <td class="px-6 py-4"><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
-                                <td class="px-6 py-4"><?= htmlspecialchars($r['nama']) ?></td>
-                                <td class="px-6 py-4">Rp <?= number_format($r['gaji_pokok'], 0, ',', '.') ?></td>
-                                <td class="px-6 py-4">
-                                    Rp <?= number_format($r['bonus'] - $r['bonus_target'], 0, ',', '.') ?>
-                                </td>
-                                <td class="px-6 py-4">
-                                    Rp <?= number_format($r['bonus_target'], 0, ',', '.') ?>
-                                </td>
-                                <td class="px-6 py-4">
-                                    Rp <?= number_format($r['potongan'], 0, ',', '.') ?> (-)
-                                    <?php if (!empty($r['keterangan_potongan'])): ?>
-                                        <span class="block text-xs text-gray-500 mt-1">
-                                            Ket: <?= htmlspecialchars($r['keterangan_potongan']) ?>
-                                        </span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="px-6 py-4">Rp <?= number_format($r['total_gaji'], 0, ',', '.') ?></td>
-                                <td class="px-6 py-4 flex gap-2">
-                                    <button onclick="showDeleteAlert(<?= $r['id'] ?>)" 
-                                            class="text-red-600 hover:text-red-700 p-1 rounded-lg hover:bg-red-50">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                        </svg>
-                                    </button>
-                                    <a href="cetak_slip_gaji.php?id=<?= $r['id'] ?>" 
-                                       target="_blank"
-                                       class="text-blue-600 hover:text-blue-700 p-1 rounded-lg hover:bg-blue-50">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                        </svg>
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Modal Input Gaji -->
-            <div id="modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden">
-                <div class="flex items-center justify-center min-h-screen">
-                    <div class="bg-white p-6 rounded-lg w-1/2">
-                        <h3 class="text-xl font-bold mb-4">Input Gaji Karyawan</h3>
-                        
-                        <form method="POST" class="space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block mb-1">Karyawan</label>
-                                    <select name="karyawan_id" required class="w-full p-2 border rounded" onchange="setGaji(this)">
-                                        <option value="">Pilih Karyawan</option>
-                                        <?php foreach ($karyawan as $k): ?>
-                                            <option value="<?= $k['id'] ?>" data-gaji="<?= $k['gaji'] ?>">
-                                                <?= htmlspecialchars($k['nama']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                
-                                <div>
-                                    <label class="block mb-1">Tanggal</label>
-                                    <input type="date" name="tanggal" required class="w-full p-2 border rounded" onchange="getBonusTarget()">
-                                </div>
-                                
-                                <div>
-                                    <label class="block mb-1">Gaji Pokok</label>
-                                    <input type="text" name="gaji_pokok" required readonly
-                                        class="w-full p-2 border rounded bg-gray-100 cursor-not-allowed" 
-                                        title="Gaji pokok diambil dari data karyawan">
-                                    <span class="text-xs text-gray-500 mt-1">*Sesuai data karyawan</span>
-                                </div>
-                                
-                                <div>
-                                    <label class="block mb-1">Bonus</label>
-                                    <input type="text" name="bonus" value="0" required 
-                                        class="w-full p-2 border rounded">
-                                </div>
-
-                                <div>
-                                    <label class="block mb-1">Bonus Target</label>
-                                    <input type="text" name="bonus_target" value="0" readonly
-                                        class="w-full p-2 border rounded bg-gray-100 cursor-not-allowed" 
-                                        title="Bonus target dihitung otomatis dari target yang tercapai">
-                                    <span class="text-xs text-gray-500 mt-1">*Dihitung otomatis dari target yang tercapai</span>
-                                </div>
-                                
-                                <div>
-                                    <label class="block mb-1">Potongan</label>
-                                    <input type="text" name="potongan" value="0" required 
-                                        class="w-full p-2 border rounded">
-                                </div>
-
-                                <div class="col-span-2">
-                                    <label class="block mb-1">Keterangan Potongan</label>
-                                    <textarea name="keterangan_potongan" 
-                                        class="w-full p-2 border rounded resize-none h-20" 
-                                        placeholder="Masukkan keterangan potongan (opsional)"></textarea>
-                                </div>
-                            </div>
-                            
-                            <div class="border-t border-gray-200 mt-4 pt-4">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-lg font-semibold">Total Terima Bersih:</span>
-                                    <span class="text-xl font-bold text-blue-600" id="total_terima">Rp 0</span>
-                                </div>
-                            </div>
-
-                            <div class="flex justify-end gap-2 mt-4">
-                                <button type="button" onclick="hideModal()" 
-                                    class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-                                    Batal
-                                </button>
-                                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                                    Simpan
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             </div>
@@ -593,6 +691,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             document.querySelector('select[name="karyawan_id"]').value = id;
             document.querySelector('input[name="gaji_pokok"]').value = formatNumber(gaji);
             // Show modal
+            hideDetailKaryawan();
             showModal();
         }
 

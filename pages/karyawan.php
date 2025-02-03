@@ -221,29 +221,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     // Hapus atau update data terkait di semua tabel yang memiliki relasi
 
-                    // 1. Hapus detail transaksi terkait
+                    // 1. Hapus slip gaji
+                    $stmt = $conn->prepare("DELETE FROM slip_gaji WHERE user_id = ?");
+                    $stmt->execute([$id]);
+
+                    // 2. Hapus detail transaksi terkait
                     $stmt = $conn->prepare("DELETE FROM detail_transaksi 
                                            WHERE transaksi_id IN (SELECT id FROM transaksi WHERE user_id = ?)");
                     $stmt->execute([$id]);
 
-                    // 2. Hapus transaksi
+                    // 3. Hapus transaksi
                     $stmt = $conn->prepare("DELETE FROM transaksi WHERE user_id = ?");
                     $stmt->execute([$id]);
 
-                    // 3. Hapus target_produk
+                    // 4. Hapus target_produk
                     $stmt = $conn->prepare("DELETE FROM target_produk 
                                            WHERE target_id IN (SELECT id FROM target_penjualan WHERE user_id = ?)");
                     $stmt->execute([$id]);
 
-                    // 4. Hapus target_penjualan
+                    // 5. Hapus target_penjualan
                     $stmt = $conn->prepare("DELETE FROM target_penjualan WHERE user_id = ?");
                     $stmt->execute([$id]);
 
-                    // 5. Hapus absensi jika ada
+                    // 6. Hapus absensi jika ada
                     $stmt = $conn->prepare("DELETE FROM absensi_karyawan WHERE user_id = ?");
                     $stmt->execute([$id]);
 
-                    // 6. Terakhir hapus data karyawan
+                    // 7. Terakhir hapus data karyawan
                     $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
                     $stmt->execute([$id]);
 
@@ -586,10 +590,6 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     $pdf->Cell(0, 20, '', 0, 1, 'C', true);
     $pdf->SetY($pdf->GetY() - 20);
     
-    // Add logo
-    if(file_exists('../img/gambar.jpg')) {
-        $pdf->Image('../img/gambar.jpg', 20, 16, 25);
-    }
     
     // Add title
     $pdf->SetFont('helvetica', 'B', 24);
@@ -702,7 +702,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen Karyawan - PAksesories</title>
+    <title>Manajemen Karyawan - Jamu Air Mancur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -711,42 +711,44 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     <?php include '../components/sidebar.php'; ?>
     <?php include '../components/navbar.php'; ?>
 
-    <div class="ml-64 p-8 pt-24">
-        <!-- Header Section - Menggunakan gradient yang sama dengan pengaturan.php -->
-        <div class="mb-6 gradient-animation rounded-xl sm:rounded-3xl p-6 sm:p-10 text-white shadow-lg sm:shadow-2xl relative overflow-hidden">
+    <div class="ml-0 md:ml-64 p-4 md:p-8 pt-20 md:pt-24">
+        <!-- Header Section -->
+        <div class="mb-6 gradient-animation rounded-xl sm:rounded-3xl p-4 sm:p-10 text-white shadow-lg sm:shadow-2xl relative overflow-hidden">
             <!-- Decorative elements -->
             <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
             <div class="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/20 rounded-full translate-y-32 -translate-x-32 blur-3xl"></div>
             
             <div class="relative">
-                <h1 class="text-2xl sm:text-3xl font-bold mb-2">Manajemen Karyawan</h1>
+                <h1 class="text-xl sm:text-3xl font-bold mb-2">Manajemen Karyawan</h1>
                 <p class="text-sm sm:text-lg text-blue-100">Kelola data dan performa karyawan Anda</p>
             </div>
         </div>
 
-        <!-- Tab Navigation - Sama seperti pengaturan.php -->
-        <div class="p-1.5 bg-gray-100/80 rounded-2xl inline-flex items-center gap-2 mb-8">
-            <button onclick="switchTab('karyawan')" id="accountTab" 
+        <!-- Make tab navigation scrollable on mobile -->
+        <div class="overflow-x-auto">
+            <div class="p-1.5 bg-gray-100/80 rounded-2xl inline-flex items-center gap-2 mb-8 min-w-max">
+                <button onclick="switchTab('karyawan')" id="accountTab" 
+                        class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Data Karyawan
+            </button>
+            <button onclick="switchTab('target')" id="securityTab"
                     class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-            Data Karyawan
-        </button>
-        <button onclick="switchTab('target')" id="securityTab"
-                class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-            </svg>
-            Target & Komisi
-        </button>
-        <button onclick="switchTab('absensi')" id="absensiTab"
-                class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            Absensi
-        </button>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                Target & Komisi
+            </button>
+            <button onclick="switchTab('absensi')" id="absensiTab"
+                    class="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Absensi
+            </button>
+        </div>
     </div>
 
     <!-- Style untuk animasi dan efek -->
@@ -835,14 +837,13 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     <!-- Content Section - Styling yang lebih mewah -->
     <div id="tab-karyawan" class="tab-content <?= $activeTab === 'karyawan' ? '' : 'hidden' ?>">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
-            <div class="p-8">
-                <div class="flex justify-between items-center mb-8">
+            <div class="p-4 sm:p-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <div>
-                        <h2 class="text-2xl font-bold text-gray-800 mb-1">Daftar Karyawan</h2>
-                        <p class="text-gray-500">Kelola data karyawan Anda</p>
+                        <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-1">Daftar Karyawan</h2>
                     </div>
                     <button onclick="showModal('modal-tambah-karyawan')"
-                        class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
@@ -850,98 +851,102 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                     </button>
                 </div>
 
-                <!-- Tabel dengan styling yang lebih rapi -->
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="border-b border-gray-100">
-                                <!-- Tambah kolom untuk avatar -->
-                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[80px]">Foto</th>
-                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[150px]">Nama</th>
-                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[180px]">Email</th>
-                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[180px]">Tempat, Tgl Lahir</th>
-                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[120px]">Jenis Kelamin</th>
-                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[130px]">Telepon</th>
-                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[150px]">Alamat</th>
-                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[130px]">Gaji</th>
-                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[180px]">Bank & No. Rek</th>
-                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[130px]">Tgl Bergabung</th>
-                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[100px]">Role</th>
-                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[100px]">Status</th>
-                                <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[80px]">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50">
-                            <?php foreach ($karyawan as $k): ?>
-                                <tr class="text-sm text-gray-600 hover:bg-gray-50/50 transition-colors duration-200">
-                                    <!-- Kolom avatar -->
-                                    <td class="py-4 px-4">
-                                        <div class="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-gray-100">
-                                            <?php if (isset($k['avatar']) && file_exists("../uploads/avatars/" . $k['avatar'])): ?>
-                                                <img src="../uploads/avatars/<?= htmlspecialchars($k['avatar']) ?>"
-                                                     alt="<?= htmlspecialchars($k['nama']) ?>"
-                                                     class="w-full h-full object-cover">
-                                            <?php else: ?>
-                                                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=<?= urlencode($k['nama']) ?>&backgroundColor=6366F1&textureChance=50&mouthChance=100&sidesChance=100&spots=50&eyes=happy"
-                                                     alt="<?= htmlspecialchars($k['nama']) ?>"
-                                                     class="w-full h-full object-cover">
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-                                    <td class="py-4 px-4 truncate"><?= htmlspecialchars($k['nama']) ?></td>
-                                    <td class="py-4 px-4"><?= htmlspecialchars($k['email']) ?></td>
-                                    <td class="py-4 px-4">
-                                        <?= $k['tempat_lahir'] ? htmlspecialchars($k['tempat_lahir']) : '-' ?>
-                                        <?= $k['tanggal_lahir'] ? ', ' . date('d/m/Y', strtotime($k['tanggal_lahir'])) : '' ?>
-                                    </td>
-                                    <td class="py-4 px-4"><?= htmlspecialchars($k['jenis_kelamin'] ?: '-') ?></td>
-                                    <td class="py-4 px-4"><?= htmlspecialchars($k['telepon'] ?: '-') ?></td>
-                                    <td class="py-4 px-4 truncate max-w-[150px]"><?= htmlspecialchars($k['alamat'] ?: '-') ?></td>
-                                    <td class="py-4 px-4">
-                                        <?= $k['gaji'] ? 'Rp ' . number_format($k['gaji'], 0, ',', '.') : 'Rp 0' ?>
-                                    </td>
-                                    <td class="py-4 px-4">
-                                        <?php if ($k['bank'] && $k['nomor_rekening']): ?>
-                                            <?= htmlspecialchars($k['bank']) ?> - <?= htmlspecialchars($k['nomor_rekening']) ?>
-                                        <?php else: ?>
-                                            -
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="py-4 px-4"><?= $k['tanggal_bergabung'] ? date('d/m/Y', strtotime($k['tanggal_bergabung'])) : '-' ?></td>
-                                    <td class="py-4 px-4">
-                                        <span class="px-3 py-1 rounded-full text-xs font-medium inline-block min-w-[90px] text-center
-                                        <?= $k['role'] === 'Operator' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700' ?>">
-                                            <?= htmlspecialchars($k['role']) ?>
-                                        </span>
-                                    </td>
-                                    <td class="py-4 px-4">
-                                        <span class="px-3 py-1 rounded-full text-xs font-medium inline-block min-w-[80px] text-center
-                                        <?= $k['status'] === 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' ?>">
-                                            <?= htmlspecialchars($k['status']) ?>
-                                        </span>
-                                    </td>
-                                    <td class="py-4 px-4">
-                                        <div class="flex items-center gap-2">
-                                            <button onclick="editKaryawan(<?= $k['id'] ?>)"
-                                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                </svg>
-                                            </button>
-                                            <button onclick="deleteKaryawan(<?= $k['id'] ?>)"
-                                                class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
+                <!-- Make table responsive -->
+                <div class="overflow-x-auto -mx-4 sm:mx-0">
+                    <div class="inline-block min-w-full align-middle">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr class="border-b border-gray-100">
+                                    <!-- Tambah kolom untuk avatar -->
+                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[80px]">Foto</th>
+                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[150px]">Nama</th>
+                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[180px]">Email</th>
+                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[180px]">Tempat, Tgl Lahir</th>
+                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[120px]">Jenis Kelamin</th>
+                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[130px]">Telepon</th>
+                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[150px]">Alamat</th>
+                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[130px]">Gaji</th>
+                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[180px]">Bank & No. Rek</th>
+                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[130px]">Tgl Bergabung</th>
+                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[100px]">Role</th>
+                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[100px]">Status</th>
+                                    <th class="pb-5 text-sm font-semibold text-gray-600 uppercase tracking-wider text-left px-4 w-[80px]">Aksi</th>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                <?php foreach ($karyawan as $k): ?>
+                                    <tr class="text-sm text-gray-600 hover:bg-gray-50/50">
+                                        <!-- Kolom avatar -->
+                                        <td class="py-4 px-2 sm:px-4">
+                                            <div class="w-8 sm:w-10 h-8 sm:h-10 rounded-xl overflow-hidden ring-2 ring-gray-100">
+                                                <?php if (isset($k['avatar']) && file_exists("../uploads/avatars/" . $k['avatar'])): ?>
+                                                    <img src="../uploads/avatars/<?= htmlspecialchars($k['avatar']) ?>"
+                                                         alt="<?= htmlspecialchars($k['nama']) ?>"
+                                                         class="w-full h-full object-cover">
+                                                <?php else: ?>
+                                                    <img src="https://api.dicebear.com/7.x/bottts/svg?seed=<?= urlencode($k['nama']) ?>&backgroundColor=6366F1&textureChance=50&mouthChance=100&sidesChance=100&spots=50&eyes=happy"
+                                                         alt="<?= htmlspecialchars($k['nama']) ?>"
+                                                         class="w-full h-full object-cover">
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-2 sm:px-4 truncate max-w-[100px] sm:max-w-none">
+                                            <?= htmlspecialchars($k['nama']) ?>
+                                        </td>
+                                        <td class="py-4 px-2 sm:px-4"><?= htmlspecialchars($k['email']) ?></td>
+                                        <td class="py-4 px-2 sm:px-4">
+                                            <?= $k['tempat_lahir'] ? htmlspecialchars($k['tempat_lahir']) : '-' ?>
+                                            <?= $k['tanggal_lahir'] ? ', ' . date('d/m/Y', strtotime($k['tanggal_lahir'])) : '' ?>
+                                        </td>
+                                        <td class="py-4 px-2 sm:px-4"><?= htmlspecialchars($k['jenis_kelamin'] ?: '-') ?></td>
+                                        <td class="py-4 px-2 sm:px-4"><?= htmlspecialchars($k['telepon'] ?: '-') ?></td>
+                                        <td class="py-4 px-2 sm:px-4 truncate max-w-[150px]"><?= htmlspecialchars($k['alamat'] ?: '-') ?></td>
+                                        <td class="py-4 px-2 sm:px-4">
+                                            <?= $k['gaji'] ? 'Rp ' . number_format($k['gaji'], 0, ',', '.') : 'Rp 0' ?>
+                                        </td>
+                                        <td class="py-4 px-2 sm:px-4">
+                                            <?php if ($k['bank'] && $k['nomor_rekening']): ?>
+                                                <?= htmlspecialchars($k['bank']) ?> - <?= htmlspecialchars($k['nomor_rekening']) ?>
+                                            <?php else: ?>
+                                                -
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="py-4 px-2 sm:px-4"><?= $k['tanggal_bergabung'] ? date('d/m/Y', strtotime($k['tanggal_bergabung'])) : '-' ?></td>
+                                        <td class="py-4 px-2 sm:px-4">
+                                            <span class="px-3 py-1 rounded-full text-xs font-medium inline-block min-w-[90px] text-center
+                                            <?= $k['role'] === 'Operator' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700' ?>">
+                                                <?= htmlspecialchars($k['role']) ?>
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-2 sm:px-4">
+                                            <span class="px-3 py-1 rounded-full text-xs font-medium inline-block min-w-[80px] text-center
+                                            <?= $k['status'] === 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' ?>">
+                                                <?= htmlspecialchars($k['status']) ?>
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-2 sm:px-4">
+                                            <div class="flex items-center gap-2">
+                                                <button onclick="editKaryawan(<?= $k['id'] ?>)"
+                                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                </button>
+                                                <button onclick="deleteKaryawan(<?= $k['id'] ?>)"
+                                                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -952,8 +957,8 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
 
-            <div class="relative bg-white rounded-2xl max-w-md w-full">
-                <div class="p-6">
+            <div class="relative bg-white rounded-2xl w-full max-w-lg mx-4 sm:mx-auto">
+                <div class="p-4 sm:p-6">
                     <h3 class="text-lg font-semibold mb-4">Tambah Karyawan</h3>
 
                     <form id="form-tambah-karyawan" method="POST">
@@ -965,7 +970,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                                 <input type="text" name="nama" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Tempat Lahir</label>
                                     <input type="text" name="tempat_lahir" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
@@ -1022,7 +1027,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                                     class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Bank</label>
                                     <select name="bank" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
@@ -1337,7 +1342,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
         <!-- Header Section dengan Glass Effect -->
 
         <!-- Statistik Cards - Ultra Premium Design -->
-        <div class="grid grid-cols-4 gap-8 mb-10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 mb-10">
             <!-- Card Hadir -->
             <div class="group relative">
                 <div class="absolute -inset-0.5 bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
@@ -1417,16 +1422,16 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
 
         <!-- Tabel Absensi -->
         <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-6">
+            <div class="p-4 sm:p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <h2 class="text-xl font-semibold text-gray-800">Data Absensi Karyawan</h2>
-                    <div class="flex gap-3">
+                    <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                         <input type="date" id="tanggal-absensi" value="<?= $today ?>"
                             onchange="filterAbsensi(this.value)"
-                            class="px-4 py-2 rounded-xl border border-gray-200">
+                            class="w-full sm:w-auto px-4 py-2 rounded-xl border border-gray-200">
                         
                         <button onclick="exportAbsensiPDF()" 
-                            class="inline-flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700">
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -1435,7 +1440,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                         </button>
                         
                         <button onclick="showInputAbsensiModal()"
-                            class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
@@ -1444,59 +1449,62 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="bg-gray-50 border-b border-gray-100">
-                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">KARYAWAN</th>
-                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">ROLE</th>
-                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">JAM MASUK</th>
-                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">JAM KELUAR</th>
-                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">DURASI</th>
-                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">STATUS</th>
-                                <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">KETERANGAN</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($absensi as $data): ?>
-                                <tr class="border-b border-gray-50 last:border-0">
-                                    <td class="py-4 px-6"><?= htmlspecialchars($data['nama_karyawan']) ?></td>
-                                    <td class="py-4 px-6">
-                                        <span class="px-2 py-1 rounded-lg text-sm <?= $data['role'] === 'Operator' ? 'bg-purple-50 text-purple-600' : 'bg-orange-50 text-orange-600' ?>">
-                                            <?= htmlspecialchars($data['role']) ?>
-                                        </span>
-                                    </td>
-                                    <td class="py-4 px-6">
-                                        <?php if ($data['jam_masuk']): ?>
-                                            <span class="<?= strtotime($data['jam_masuk']) > strtotime('08:00:00') ? 'text-red-600' : 'text-gray-800' ?>">
-                                                <?= $data['jam_masuk'] ?>
-                                            </span>
-                                        <?php else: ?>
-                                            -
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="py-4 px-6"><?= $data['jam_keluar'] ?: '-' ?></td>
-                                    <td class="py-4 px-6"><?= $data['durasi'] ?: '00:00' ?></td>
-                                    <td class="py-4 px-6">
-                                        <?php if ($data['status'] === 'Hadir'): ?>
-                                            <span class="px-3 py-1 rounded-full text-sm bg-green-50 text-green-600">
-                                                Hadir
-                                            </span>
-                                        <?php elseif ($data['status'] === 'Belum Absen'): ?>
-                                            <span class="px-3 py-1 rounded-full text-sm bg-gray-50 text-gray-600">
-                                                Belum Absen
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="px-3 py-1 rounded-full text-sm bg-yellow-50 text-yellow-600">
-                                                <?= htmlspecialchars($data['status']) ?>
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="py-4 px-6"><?= htmlspecialchars($data['keterangan']) ?></td>
+                <!-- Make table responsive -->
+                <div class="overflow-x-auto -mx-4 sm:mx-0">
+                    <div class="inline-block min-w-full align-middle">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-100">
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">KARYAWAN</th>
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">ROLE</th>
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">JAM MASUK</th>
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">JAM KELUAR</th>
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">DURASI</th>
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">STATUS</th>
+                                    <th class="text-left py-4 px-6 text-sm font-medium text-gray-600">KETERANGAN</th>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($absensi as $data): ?>
+                                    <tr class="border-b border-gray-50 last:border-0">
+                                        <td class="py-4 px-6"><?= htmlspecialchars($data['nama_karyawan']) ?></td>
+                                        <td class="py-4 px-6">
+                                            <span class="px-2 py-1 rounded-lg text-sm <?= $data['role'] === 'Operator' ? 'bg-purple-50 text-purple-600' : 'bg-orange-50 text-orange-600' ?>">
+                                                <?= htmlspecialchars($data['role']) ?>
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-6">
+                                            <?php if ($data['jam_masuk']): ?>
+                                                <span class="<?= strtotime($data['jam_masuk']) > strtotime('08:00:00') ? 'text-red-600' : 'text-gray-800' ?>">
+                                                    <?= $data['jam_masuk'] ?>
+                                                </span>
+                                            <?php else: ?>
+                                                -
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="py-4 px-6"><?= $data['jam_keluar'] ?: '-' ?></td>
+                                        <td class="py-4 px-6"><?= $data['durasi'] ?: '00:00' ?></td>
+                                        <td class="py-4 px-6">
+                                            <?php if ($data['status'] === 'Hadir'): ?>
+                                                <span class="px-3 py-1 rounded-full text-sm bg-green-50 text-green-600">
+                                                    Hadir
+                                                </span>
+                                            <?php elseif ($data['status'] === 'Belum Absen'): ?>
+                                                <span class="px-3 py-1 rounded-full text-sm bg-gray-50 text-gray-600">
+                                                    Belum Absen
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="px-3 py-1 rounded-full text-sm bg-yellow-50 text-yellow-600">
+                                                    <?= htmlspecialchars($data['status']) ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="py-4 px-6"><?= htmlspecialchars($data['keterangan']) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1879,6 +1887,9 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
             } else if (type === 'error') {
                 toastDiv.className = 'flex items-center p-4 mb-4 text-red-800 bg-red-50 rounded-lg shadow-lg min-w-[300px]';
                 toastIcon.className = 'w-5 h-5 text-red-600';
+            } else if (type === 'info') {
+                toastDiv.className = 'flex items-center p-4 mb-4 text-blue-800 bg-blue-50 rounded-lg shadow-lg min-w-[300px]';
+                toastIcon.className = 'w-5 h-5 text-blue-600';
             }
 
             // Tampilkan toast
@@ -2237,9 +2248,114 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
         }
 
         function exportAbsensiPDF() {
-            const tanggal = document.getElementById('tanggal-absensi').value;
+            // Ambil tanggal dari input, jika tidak ada gunakan tanggal hari ini
+            const tanggalInput = document.getElementById('tanggal-absensi');
+            const tanggal = tanggalInput ? tanggalInput.value : '<?= date('Y-m-d') ?>';
+            
+            // Validasi tanggal
+            if (!tanggal) {
+                showToast('Pilih tanggal terlebih dahulu', 'error');
+                return;
+            }
+            
             const bulan = tanggal.substring(0, 7); // Ambil tahun-bulan saja
-            window.location.href = `karyawan.php?tab=absensi&export=pdf&bulan=${bulan}`;
+            
+            try {
+                // Tampilkan loading toast
+                showToast('Memproses export PDF...', 'info');
+                
+                // Buat URL untuk ekspor PDF
+                const exportUrl = `karyawan.php?tab=absensi&export=pdf&bulan=${bulan}`;
+                
+                // Buka di tab baru
+                window.open(exportUrl, '_blank');
+                
+                // Sembunyikan toast loading setelah 1 detik
+                setTimeout(() => {
+                    hideToast();
+                }, 1000);
+
+            } catch (error) {
+                showToast('Gagal mengexport PDF', 'error');
+                console.error('Export PDF error:', error);
+            }
+        }
+    </script>
+
+    <!-- Add responsive styles -->
+    <style>
+        @media (max-width: 640px) {
+            .gradient-animation {
+                border-radius: 1rem;
+                padding: 1.5rem;
+            }
+
+            .table-container {
+                margin: 0 -1rem;
+            }
+
+            .modal-content {
+                margin: 1rem;
+                max-height: calc(100vh - 2rem);
+                overflow-y: auto;
+            }
+        }
+    </style>
+
+    <!-- Update JavaScript for better mobile handling -->
+    <script>
+        // Add touch event handling for mobile
+        document.addEventListener('touchstart', handleTouchStart, false);
+        document.addEventListener('touchmove', handleTouchMove, false);
+
+        let xDown = null;
+        let yDown = null;
+
+        function handleTouchStart(evt) {
+            xDown = evt.touches[0].clientX;
+            yDown = evt.touches[0].clientY;
+        }
+
+        function handleTouchMove(evt) {
+            if (!xDown || !yDown) {
+                return;
+            }
+
+            let xUp = evt.touches[0].clientX;
+            let yUp = evt.touches[0].clientY;
+
+            let xDiff = xDown - xUp;
+            let yDiff = yDown - yUp;
+
+            if (Math.abs(xDiff) > Math.abs(yDiff)) {
+                if (xDiff > 0) {
+                    // Swipe left
+                } else {
+                    // Swipe right
+                }
+            }
+
+            xDown = null;
+            yDown = null;
+        }
+
+        // Update modal positioning for mobile
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.style.display = 'block';
+            modal.classList.remove('hidden');
+            
+            // Prevent body scroll when modal is open
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+            
+            // Restore body scroll
+            document.body.style.overflow = '';
         }
     </script>
 </body>
