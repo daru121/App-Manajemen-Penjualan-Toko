@@ -1,6 +1,13 @@
 <?php
-require_once '../backend/check_session.php';
-require_once '../backend/database.php';
+// Cek jika ini adalah request scan (ada parameter token dan user_id)
+if (isset($_GET['token']) && isset($_GET['user_id'])) {
+    // Bypass session check untuk scan QR
+    require_once '../backend/database.php';
+} else {
+    // Tetap require session check untuk halaman utama
+    require_once '../backend/check_session.php';
+    require_once '../backend/database.php';
+}
 
 // Tambahkan di bagian paling atas file setelah require statements
 date_default_timezone_set('Asia/Makassar'); // Set timezone ke WITA
@@ -120,7 +127,7 @@ if (isset($_GET['token']) && isset($_GET['user_id'])) {
     ?>
     <!DOCTYPE html>
     <html lang="en">
-    <head>
+    <head>  
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Hasil Absensi - Jamu Air Mancur</title>
@@ -241,7 +248,7 @@ if (isset($_GET['token']) && isset($_GET['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi - PAksesories</title>
+    <title>Absensi - Jamu Air Mancur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>

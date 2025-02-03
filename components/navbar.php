@@ -109,6 +109,15 @@ require_once '../backend/database.php';
                         } else if ($current_page === 'pengiriman') {
                             echo '<span class="text-gray-500 hidden sm:inline">Pengiriman</span>';
                         }
+                        // PENGATURAN
+                        if ($current_page === 'pengaturan') {
+                            echo '<span class="text-gray-500 hidden sm:inline">Pengaturan</span>';
+                        }
+                        // TENTANG
+                        if ($current_page === 'tentang') {
+                            echo '<span class="text-gray-500 hidden sm:inline">Tentang</span>';
+                        }
+
 
                         // Define page hierarchy
                         $breadcrumbs = [];
@@ -220,20 +229,6 @@ require_once '../backend/database.php';
                                 $breadcrumbs[] = [
                                     'text' => 'Gaji Karyawan',
                                     'url' => 'slip_gaji.php',
-                                    'active' => true
-                                ];
-                                break;
-                            case 'pengaturan':
-                                $breadcrumbs[] = [
-                                    'text' => 'Pengaturan',
-                                    'url' => 'pengaturan.php',
-                                    'active' => true
-                                ];
-                                break;
-                            case 'tentang':
-                                $breadcrumbs[] = [
-                                    'text' => 'Tentang',
-                                    'url' => 'tentang.php',
                                     'active' => true
                                 ];
                                 break;
