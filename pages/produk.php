@@ -1,6 +1,11 @@
 <?php
 session_start();
+require_once '../backend/check_session.php';
 require_once '../backend/database.php';
+
+// Set timezone di awal file
+date_default_timezone_set('Asia/Makassar'); // Set timezone ke WITA
+
 
 // Query untuk mengambil semua produk dengan kategori dan stok
 $query = "SELECT b.*, k.nama_kategori, s.nama_supplier, s.id as supplier_id, COALESCE(st.jumlah, 0) as stok 

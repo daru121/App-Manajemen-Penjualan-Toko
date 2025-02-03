@@ -3,6 +3,9 @@ require_once '../backend/check_session.php';
 require_once '../backend/database.php';
 require_once('../vendor/tecnickcom/tcpdf/tcpdf.php');
 
+// Set timezone di awal file
+date_default_timezone_set('Asia/Makassar'); // Set timezone ke WITA
+
 try {
     // Get date range
     $start_date = $_GET['start_date'] ?? date('Y-m-d');

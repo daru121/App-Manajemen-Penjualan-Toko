@@ -2,6 +2,9 @@
 require_once '../backend/check_session.php';
 require_once '../backend/database.php';
 
+// Set timezone di awal file
+date_default_timezone_set('Asia/Makassar'); // Set timezone ke WITA
+
 if (isset($_GET['user_id']) && isset($_GET['tanggal'])) {
     $user_id = $_GET['user_id'];
     $tanggal = $_GET['tanggal'];

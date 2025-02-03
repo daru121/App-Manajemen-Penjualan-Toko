@@ -3,6 +3,9 @@ session_start();
 require_once '../backend/check_session.php';
 require_once '../backend/database.php';
 
+// Set timezone di awal file
+date_default_timezone_set('Asia/Makassar'); // Set timezone ke WITA
+
 // Ambil data user
 $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);

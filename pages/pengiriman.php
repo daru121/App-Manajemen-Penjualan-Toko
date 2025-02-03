@@ -2,6 +2,9 @@
 require_once '../backend/check_session.php';
 require_once '../backend/database.php';
 
+// Set timezone di awal file
+date_default_timezone_set('Asia/Makassar'); // Set timezone ke WITA
+
 // Update schema jika diperlukan
 try {
     // Ubah status_pengiriman terlebih dahulu

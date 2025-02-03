@@ -3,6 +3,10 @@ require_once '../backend/check_session.php';
 require_once '../backend/database.php';
 require_once('../vendor/tecnickcom/tcpdf/tcpdf.php'); // Ubah path ke vendor
 
+// Set timezone di awal file
+date_default_timezone_set('Asia/Makassar'); // Set timezone ke WITA
+
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
