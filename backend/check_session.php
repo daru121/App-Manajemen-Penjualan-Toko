@@ -11,7 +11,6 @@ if (!isset($_SESSION['user_id'])) {
 
 // Set timezone di awal file
 date_default_timezone_set('Asia/Makassar'); // Set timezone ke WITA
-echo date('Y-m-d H:i:s');
 
 // Redirect jika mencoba mengakses dashboard sebagai Kasir
 if ($_SESSION['role'] === 'Kasir' && basename($_SERVER['PHP_SELF']) === 'dashboard.php') {
