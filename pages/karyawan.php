@@ -346,20 +346,27 @@ $stmt = $conn->query($query);
 $karyawan = $stmt->fetchAll();
 
 // Update query untuk menampilkan target dan menghitung insentif
-$queryTarget = "
-    SELECT 
-        tp.*,
+$queryTarget = "SELECT 
+        tp.id,
+        tp.user_id,
         u.nama as nama_karyawan,
+        tp.jenis_target,
+        tp.periode_mulai,
+        tp.periode_selesai,
+        tp.target_nominal,
+        tp.insentif_persen,
+        tp.status,
+        b.nama_barang,
         tpr.jumlah_target,
         tpr.insentif_per_unit,
-        b.nama_barang,
         CASE 
             WHEN tp.jenis_target = 'omset' THEN 
                 COALESCE((
-                    SELECT SUM(total_harga) 
-                    FROM transaksi 
-                    WHERE user_id = tp.user_id 
-                    AND tanggal BETWEEN tp.periode_mulai AND tp.periode_selesai
+                    SELECT SUM(t.total_harga)
+                    FROM transaksi t 
+                    WHERE t.user_id = tp.user_id 
+                    AND DATE(CONVERT_TZ(t.tanggal, @@session.time_zone, '+08:00')) 
+                    BETWEEN DATE(tp.periode_mulai) AND DATE(tp.periode_selesai)
                 ), 0)
             ELSE 
                 COALESCE((
@@ -367,7 +374,8 @@ $queryTarget = "
                     FROM detail_transaksi dt 
                     JOIN transaksi t ON dt.transaksi_id = t.id 
                     WHERE t.user_id = tp.user_id 
-                    AND t.tanggal BETWEEN tp.periode_mulai AND tp.periode_selesai
+                    AND DATE(CONVERT_TZ(t.tanggal, @@session.time_zone, '+08:00')) 
+                    BETWEEN DATE(tp.periode_mulai) AND DATE(tp.periode_selesai)
                     AND dt.barang_id = tpr.barang_id
                 ), 0)
         END as total_pencapaian,
