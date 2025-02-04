@@ -1,6 +1,6 @@
 <div align="center">
   <h1>🏪 Aplikasi Manajemen dan Penjualan Toko</h1>
-  <p>Sistem manajemen toko modern berbasis web menggunakan PHP 8 & MySQL</p>
+  <p>Sistem manajemen toko berbasis web menggunakan PHP & MySQL</p>
 
   <p align="center">
     <img src="https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php&logoColor=white">
