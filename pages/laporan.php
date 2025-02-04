@@ -16,7 +16,7 @@ try {
         // Query untuk laporan tahunan (menampilkan semua transaksi dalam tahun)
         $query = "SELECT 
             t.id,
-            t.tanggal,
+            DATE_FORMAT(CONVERT_TZ(t.tanggal, @@session.time_zone, '+08:00'), '%Y-%m-%d %H:%i:%s') as tanggal,
             t.total_harga,
             t.marketplace,
             p.nama as nama_pembeli,
@@ -33,7 +33,7 @@ try {
         JOIN detail_transaksi dt ON t.id = dt.transaksi_id
         JOIN barang b ON dt.barang_id = b.id
         LEFT JOIN pembeli p ON t.pembeli_id = p.id
-        WHERE YEAR(t.tanggal) = YEAR(?)
+        WHERE YEAR(CONVERT_TZ(t.tanggal, @@session.time_zone, '+08:00')) = YEAR(?)
         GROUP BY t.id, t.tanggal, t.total_harga, t.marketplace, p.nama
         ORDER BY t.tanggal ASC";
         
@@ -43,7 +43,7 @@ try {
         // Query untuk laporan bulanan (menampilkan semua transaksi dalam bulan)
         $query = "SELECT 
             t.id,
-            t.tanggal,
+            DATE_FORMAT(CONVERT_TZ(t.tanggal, @@session.time_zone, '+08:00'), '%Y-%m-%d %H:%i:%s') as tanggal,
             t.total_harga,
             t.marketplace,
             p.nama as nama_pembeli,
@@ -60,7 +60,7 @@ try {
         JOIN detail_transaksi dt ON t.id = dt.transaksi_id
         JOIN barang b ON dt.barang_id = b.id
         LEFT JOIN pembeli p ON t.pembeli_id = p.id
-        WHERE DATE_FORMAT(t.tanggal, '%Y-%m') = DATE_FORMAT(?, '%Y-%m')
+        WHERE DATE_FORMAT(CONVERT_TZ(t.tanggal, @@session.time_zone, '+08:00'), '%Y-%m') = DATE_FORMAT(?, '%Y-%m')
         GROUP BY t.id, t.tanggal, t.total_harga, t.marketplace, p.nama
         ORDER BY t.tanggal ASC";
 
@@ -70,7 +70,7 @@ try {
         // Original daily query
         $query = "SELECT 
             t.id,
-            t.tanggal,
+            DATE_FORMAT(CONVERT_TZ(t.tanggal, @@session.time_zone, '+08:00'), '%Y-%m-%d %H:%i:%s') as tanggal,
             t.total_harga,
             t.marketplace,
             p.nama as nama_pembeli,
@@ -87,7 +87,7 @@ try {
         JOIN detail_transaksi dt ON t.id = dt.transaksi_id
         JOIN barang b ON dt.barang_id = b.id
         LEFT JOIN pembeli p ON t.pembeli_id = p.id
-        WHERE DATE(t.tanggal) BETWEEN ? AND ?
+        WHERE DATE(CONVERT_TZ(t.tanggal, @@session.time_zone, '+08:00')) BETWEEN ? AND ?
         GROUP BY t.id, t.tanggal, t.total_harga, t.marketplace, p.nama
         ORDER BY t.tanggal DESC";
         
