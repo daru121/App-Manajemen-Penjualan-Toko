@@ -178,11 +178,14 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_transaction') {
     header('Content-Type: application/json');
     try {
         $id = $_GET['id'];
-        $stmt = $conn->prepare("SELECT t.*, p.nama as nama_pembeli, u.nama as nama_kasir 
-                               FROM transaksi t 
-                               LEFT JOIN pembeli p ON t.pembeli_id = p.id 
-                               LEFT JOIN users u ON t.user_id = u.id 
-                               WHERE t.id = ?");
+        $stmt = $conn->prepare("SELECT t.id, 
+            DATE_FORMAT(CONVERT_TZ(t.tanggal, @@session.time_zone, '+08:00'), '%Y-%m-%d %H:%i:%s') as tanggal,
+            t.total_harga, t.marketplace, t.pembayaran, t.kembalian,
+            p.nama as nama_pembeli, u.nama as nama_kasir 
+            FROM transaksi t 
+            LEFT JOIN pembeli p ON t.pembeli_id = p.id 
+            LEFT JOIN users u ON t.user_id = u.id 
+            WHERE t.id = ?");
         $stmt->execute([$id]);
         $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -245,7 +248,7 @@ try {
     $query = "SELECT 
         t.id,
         p.nama as nama_pembeli,
-        DATE_FORMAT(t.tanggal, '%Y-%m-%d %H:%i:%s') as tanggal,
+        DATE_FORMAT(CONVERT_TZ(t.tanggal, @@session.time_zone, '+08:00'), '%Y-%m-%d %H:%i:%s') as tanggal,
         t.total_harga,
         SUM(dt.jumlah * (dt.harga - b.harga_modal)) as profit,
         t.marketplace,
@@ -1746,8 +1749,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
                     document.getElementById('editTransactionId').value = data.id;
 
                     // Format tanggal untuk input datetime-local
-                    const tanggal = new Date(data.tanggal + ' UTC');
-                    tanggal.setHours(tanggal.getHours() + 8); // Konversi ke WITA
+                    const tanggal = new Date(data.tanggal);
                     const formattedDate = tanggal.toISOString().slice(0, 16);
                     document.getElementById('editTanggal').value = formattedDate;
 
