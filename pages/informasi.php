@@ -863,7 +863,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
                                         <td class="px-6 py-4 text-sm text-gray-600"><?= htmlspecialchars($transaction['nama_pembeli']) ?></td>
                                         <td class="px-6 py-4 text-sm text-gray-600"><?= htmlspecialchars($transaction['nama_kasir'] ?? '-') ?></td>
                                         <td class="px-6 py-4 text-sm text-gray-600">
-                                            <?= date('d/m/Y H:i', strtotime($transaction['tanggal'])) ?>
+                                            <?php 
+                                                $tanggal = new DateTime($transaction['tanggal']);
+                                                echo $tanggal->format('d/m/Y H:i') . ' WITA'; 
+                                            ?>
                                         </td>
                                         <td class="px-6 py-4">
                                             <span class="px-3 py-1 rounded-lg text-sm font-medium
@@ -1484,9 +1487,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
 
                     // Update modal content
                     document.getElementById('detailBuyerName').textContent = `: ${transaction.buyer_name || 'Tanpa Nama'}`;
-                    // Format tanggal dan jam
+                    // Format tanggal dan jam yang sudah dalam WITA dari server
                     const date = new Date(transaction.tanggal);
-                    const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                    const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}, ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')} WITA`;
                     document.getElementById('detailDate').textContent = `: ${formattedDate}`;
                     document.getElementById('detailTotal').textContent = `: Rp ${Number(transaction.total_harga).toLocaleString('id-ID')}`;
 
@@ -1746,7 +1749,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
                     document.getElementById('editTransactionId').value = data.id;
 
                     // Format tanggal untuk input datetime-local
-                    const tanggal = new Date(data.tanggal);
+                    const tanggal = new Date(data.tanggal + ' UTC');
+                    tanggal.setHours(tanggal.getHours() + 8); // Konversi ke WITA
                     const formattedDate = tanggal.toISOString().slice(0, 16);
                     document.getElementById('editTanggal').value = formattedDate;
 
