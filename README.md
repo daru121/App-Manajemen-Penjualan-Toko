@@ -11,7 +11,7 @@
 </div>
 
 ## 📋 Deskripsi
-Sistem manajemen toko modern yang menangani berbagai aspek operasional bisnis retail. Dirancang dengan fokus pada kemudahan penggunaan dan efisiensi operasional yang sudah responsif untuk mobile
+Sistem manajemen toko yang menangani berbagai aspek operasional bisnis retail. Dirancang dengan fokus pada kemudahan penggunaan dan efisiensi operasional yang sudah responsif untuk mobile
 
 ## ✨ Fitur Utama
 
