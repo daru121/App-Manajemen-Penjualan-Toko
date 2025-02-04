@@ -45,7 +45,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_detail' && isset($_GET['i
         // Get transaction details with buyer name
         $query = "SELECT 
             t.id,
-            t.tanggal,
+            DATE_FORMAT(CONVERT_TZ(t.tanggal, @@session.time_zone, '+08:00'), '%Y-%m-%d %H:%i:%s') as tanggal,
             t.total_harga,
             t.marketplace,
             p.nama as buyer_name,
