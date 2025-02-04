@@ -3,9 +3,6 @@ session_start();
 require_once '../backend/check_session.php';
 require_once '../backend/database.php';
 
-// Set timezone di awal file
-date_default_timezone_set('Asia/Makassar'); // Set timezone ke WITA
-
 // Fungsi untuk mengambil semua data marketplace
 function getMarketplaceData()
 {
@@ -167,7 +164,7 @@ $queryToday = "SELECT
     ), 0)), 0) as total_profit,
     COUNT(t.id) as total_transaksi
 FROM transaksi t
-WHERE DATE(t.tanggal) = CURDATE()";
+WHERE DATE_FORMAT(CONVERT_TZ(t.tanggal, @@session.time_zone, '+08:00'), '%Y-%m-%d') = CURDATE()";
 
 // Query untuk data kemarin dengan perhitungan yang sama
 $queryYesterday = "SELECT 
@@ -180,7 +177,7 @@ $queryYesterday = "SELECT
     ), 0)), 0) as total_profit,
     COUNT(t.id) as total_transaksi
 FROM transaksi t
-WHERE DATE(t.tanggal) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+WHERE DATE_FORMAT(CONVERT_TZ(t.tanggal, @@session.time_zone, '+08:00'), '%Y-%m-%d') = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
 
 // Fungsi untuk menghitung persentase perubahan dengan lebih akurat
 function calculatePercentageChange($current, $previous)
