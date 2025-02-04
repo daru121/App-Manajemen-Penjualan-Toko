@@ -241,11 +241,11 @@ try {
     $start_date = $_GET['start_date'] ?? $today;
     $end_date = $_GET['end_date'] ?? $today;
 
-    // Base query
+    // Base query untuk transaksi
     $query = "SELECT 
         t.id,
         p.nama as nama_pembeli,
-        t.tanggal,
+        DATE_FORMAT(t.tanggal, '%Y-%m-%d %H:%i:%s') as tanggal,
         t.total_harga,
         SUM(dt.jumlah * (dt.harga - b.harga_modal)) as profit,
         t.marketplace,
@@ -863,10 +863,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
                                         <td class="px-6 py-4 text-sm text-gray-600"><?= htmlspecialchars($transaction['nama_pembeli']) ?></td>
                                         <td class="px-6 py-4 text-sm text-gray-600"><?= htmlspecialchars($transaction['nama_kasir'] ?? '-') ?></td>
                                         <td class="px-6 py-4 text-sm text-gray-600">
-                                            <?php 
-                                                $tanggal = new DateTime($transaction['tanggal']);
-                                                echo $tanggal->format('d/m/Y H:i') . ' WITA'; 
-                                            ?>
+                                            <?= date('d/m/Y H:i', strtotime($transaction['tanggal'])) ?> WITA
                                         </td>
                                         <td class="px-6 py-4">
                                             <span class="px-3 py-1 rounded-lg text-sm font-medium
@@ -1487,9 +1484,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_marketplace_detail') {
 
                     // Update modal content
                     document.getElementById('detailBuyerName').textContent = `: ${transaction.buyer_name || 'Tanpa Nama'}`;
-                    // Format tanggal dan jam yang sudah dalam WITA dari server
-                    const date = new Date(transaction.tanggal);
-                    const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}, ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')} WITA`;
+                    // Gunakan tanggal langsung dari server
+                    const dateParts = transaction.tanggal.split(/[- :]/);
+                    const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}, ${dateParts[3]}:${dateParts[4]} WITA`;
                     document.getElementById('detailDate').textContent = `: ${formattedDate}`;
                     document.getElementById('detailTotal').textContent = `: Rp ${Number(transaction.total_harga).toLocaleString('id-ID')}`;
 
