@@ -125,6 +125,6 @@ Sistem manajemen toko yang menangani berbagai aspek operasional bisnis retail. D
 
 
 ## 🔑 Login
-Gunakan akun berikut untuk mengakses sistem:
+Gunakan akun berikut untuk mengakses sistem [website](https://kasir.pedagang.store/)
 - **Email**: `admin@admin.com`
 - **Password**: `123456`
