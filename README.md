@@ -123,3 +123,8 @@ Sistem manajemen toko yang menangani berbagai aspek operasional bisnis retail. D
 - MySQL >= 5.7
 - Web Server (Apache/Nginx)
 
+
+## 🔑 Login
+Gunakan akun berikut untuk mengakses sistem:
+- **Email**: `admin@admin.com`
+- **Password**: `123456`
