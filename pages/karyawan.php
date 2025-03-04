@@ -10,7 +10,7 @@ date_default_timezone_set('Asia/Makassar'); // Set timezone ke WITA
 function convertToWITA($date) {
     if (!$date) return null;
     $timestamp = strtotime($date);
-    return date('Y-m-d H:i:s', $timestamp);
+    return gmdate('Y-m-d H:i:s', $timestamp + (8 * 3600)); // Konversi ke WITA (+8 jam)
 }
 
 // Fungsi untuk format tanggal Indonesia
@@ -457,7 +457,7 @@ $queryAbsensi = "SELECT
     END as durasi
 FROM users u 
 LEFT JOIN absensi_karyawan ak ON u.id = ak.user_id 
-    AND DATE(CONVERT_TZ(ak.tanggal, @@session.time_zone, '+08:00')) = ?
+    AND DATE(CONVERT_TZ(ak.tanggal, '+00:00', '+08:00')) = DATE(CONVERT_TZ(?, '+00:00', '+08:00'))
 WHERE u.role IN ('Operator', 'Kasir') AND u.status = 'Aktif'
 ORDER BY ak.jam_masuk DESC, u.nama ASC";
 
@@ -524,11 +524,11 @@ function formatNumber($number, $isRupiah = false)
 if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     $bulan = $_GET['bulan'];
     $queryAbsensi = "WITH RECURSIVE dates AS (
-        SELECT DATE(CONVERT_TZ(?, @@session.time_zone, '+08:00')) as date
+        SELECT DATE(CONVERT_TZ(?, '+00:00', '+08:00')) as date
         UNION ALL
         SELECT date + INTERVAL 1 DAY
         FROM dates
-        WHERE date < LAST_DAY(CONVERT_TZ(?, @@session.time_zone, '+08:00'))
+        WHERE date < LAST_DAY(CONVERT_TZ(?, '+00:00', '+08:00'))
     ),
     users_list AS (
         SELECT id, nama, role 
@@ -553,7 +553,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     FROM dates d
     CROSS JOIN users_list u
     LEFT JOIN absensi_karyawan ak ON u.id = ak.user_id 
-        AND DATE(CONVERT_TZ(ak.tanggal, @@session.time_zone, '+08:00')) = d.date
+        AND DATE(CONVERT_TZ(ak.tanggal, '+00:00', '+08:00')) = d.date
     ORDER BY u.nama ASC, d.date ASC";
 
     $stmt = $conn->prepare($queryAbsensi);

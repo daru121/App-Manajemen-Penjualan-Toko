@@ -86,7 +86,9 @@ if (isset($_GET['token']) && isset($_GET['user_id'])) {
         
         if ($valid_token) {
             // Cek apakah sudah absen hari ini
-            $check_query = "SELECT * FROM absensi_karyawan WHERE user_id = ? AND DATE(tanggal) = CURRENT_DATE";
+            $check_query = "SELECT * FROM absensi_karyawan 
+                            WHERE user_id = ? 
+                            AND DATE(CONVERT_TZ(tanggal, '+00:00', '+08:00')) = CURRENT_DATE";
             $stmt = $conn->prepare($check_query);
             $stmt->execute([$user_id]);
             
@@ -96,7 +98,10 @@ if (isset($_GET['token']) && isset($_GET['user_id'])) {
                 $jam_masuk = $absensi_data['jam_masuk'];
                 
                 // Update jam keluar
-                $update_query = "UPDATE absensi_karyawan SET jam_keluar = ? WHERE user_id = ? AND DATE(tanggal) = CURRENT_DATE";
+                $update_query = "UPDATE absensi_karyawan 
+                                SET jam_keluar = ? 
+                                WHERE user_id = ? 
+                                AND DATE(CONVERT_TZ(tanggal, '+00:00', '+08:00')) = CURRENT_DATE";
                 $stmt = $conn->prepare($update_query);
                 $stmt->execute([$current_time, $user_id]);
                 
@@ -104,8 +109,9 @@ if (isset($_GET['token']) && isset($_GET['user_id'])) {
                 $status = "success";
                 $jam_keluar = $current_time;
             } else {
-                // Insert absen masuk baru
-                $insert_query = "INSERT INTO absensi_karyawan (user_id, tanggal, jam_masuk, status) VALUES (?, CURRENT_DATE, ?, 'Hadir')";
+                // Insert absen masuk baru dengan timezone WITA
+                $insert_query = "INSERT INTO absensi_karyawan (user_id, tanggal, jam_masuk, status) 
+                                VALUES (?, CONVERT_TZ(NOW(), '+00:00', '+08:00'), ?, 'Hadir')";
                 $stmt = $conn->prepare($insert_query);
                 $stmt->execute([$user_id, $current_time]);
                 
