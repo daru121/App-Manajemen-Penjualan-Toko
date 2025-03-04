@@ -6,6 +6,23 @@ require_once('../vendor/tecnickcom/tcpdf/tcpdf.php'); // Ubah path ke vendor
 // Set timezone di awal file
 date_default_timezone_set('Asia/Makassar'); // Set timezone ke WITA
 
+// Fungsi helper untuk konversi tanggal ke WITA
+function convertToWITA($date) {
+    if (!$date) return null;
+    $timestamp = strtotime($date);
+    return date('Y-m-d H:i:s', $timestamp);
+}
+
+// Fungsi untuk format tanggal Indonesia
+function formatTanggalIndonesia($tanggal) {
+    if (!$tanggal) return '-';
+    $bulan = array (
+        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    );
+    $pecahkan = explode('-', $tanggal);
+    return $pecahkan[2] . ' ' . $bulan[(int)$pecahkan[1]] . ' ' . $pecahkan[0];
+}
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -423,7 +440,7 @@ try {
     $targets = [];
 }
 
-// Ubah query untuk absensi dengan filter tanggal
+// Ubah query untuk absensi dengan filter tanggal dan timezone yang konsisten
 $today = isset($_GET['tanggal']) ? $_GET['tanggal'] : date('Y-m-d');
 $queryAbsensi = "SELECT 
     u.id as user_id,
@@ -440,7 +457,7 @@ $queryAbsensi = "SELECT
     END as durasi
 FROM users u 
 LEFT JOIN absensi_karyawan ak ON u.id = ak.user_id 
-    AND DATE(ak.tanggal) = ?
+    AND DATE(CONVERT_TZ(ak.tanggal, @@session.time_zone, '+08:00')) = ?
 WHERE u.role IN ('Operator', 'Kasir') AND u.status = 'Aktif'
 ORDER BY ak.jam_masuk DESC, u.nama ASC";
 
@@ -507,11 +524,11 @@ function formatNumber($number, $isRupiah = false)
 if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     $bulan = $_GET['bulan'];
     $queryAbsensi = "WITH RECURSIVE dates AS (
-        SELECT DATE('$bulan-01') as date
+        SELECT DATE(CONVERT_TZ(?, @@session.time_zone, '+08:00')) as date
         UNION ALL
         SELECT date + INTERVAL 1 DAY
         FROM dates
-        WHERE date < LAST_DAY('$bulan-01')
+        WHERE date < LAST_DAY(CONVERT_TZ(?, @@session.time_zone, '+08:00'))
     ),
     users_list AS (
         SELECT id, nama, role 
@@ -536,11 +553,11 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     FROM dates d
     CROSS JOIN users_list u
     LEFT JOIN absensi_karyawan ak ON u.id = ak.user_id 
-        AND DATE(ak.tanggal) = d.date
+        AND DATE(CONVERT_TZ(ak.tanggal, @@session.time_zone, '+08:00')) = d.date
     ORDER BY u.nama ASC, d.date ASC";
 
     $stmt = $conn->prepare($queryAbsensi);
-    $stmt->execute();
+    $stmt->execute([$bulan . '-01', $bulan . '-01']); // Execute dengan parameter bulan
     $absensi = $stmt->fetchAll();
 
     // Hitung statistik
@@ -669,7 +686,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
         );
         
         $pdf->Cell($w[0], 8, $no++, 1, 0, 'C', true);
-        $pdf->Cell($w[1], 8, date('d/m/Y', strtotime($row['tanggal'])), 1, 0, 'C', true);
+        $pdf->Cell($w[1], 8, formatTanggalIndonesia($row['tanggal']), 1, 0, 'C', true);
         $pdf->Cell($w[2], 8, $row['nama_karyawan'], 1, 0, 'L', true);
         $pdf->Cell($w[3], 8, $row['role'], 1, 0, 'C', true);
         $pdf->Cell($w[4], 8, $row['jam_masuk'] ?: '-', 1, 0, 'C', true);
@@ -1486,15 +1503,11 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                                             </span>
                                         </td>
                                         <td class="py-4 px-6">
-                                            <?php if ($data['jam_masuk']): ?>
-                                                <span class="<?= strtotime($data['jam_masuk']) > strtotime('08:00:00') ? 'text-red-600' : 'text-gray-800' ?>">
-                                                    <?= $data['jam_masuk'] ?>
-                                                </span>
-                                            <?php else: ?>
-                                                -
-                                            <?php endif; ?>
+                                            <?= $data['jam_masuk'] ? date('H:i:s', strtotime(convertToWITA($data['jam_masuk']))) : '-' ?>
                                         </td>
-                                        <td class="py-4 px-6"><?= $data['jam_keluar'] ?: '-' ?></td>
+                                        <td class="py-4 px-6">
+                                            <?= $data['jam_keluar'] ? date('H:i:s', strtotime(convertToWITA($data['jam_keluar']))) : '-' ?>
+                                        </td>
                                         <td class="py-4 px-6"><?= $data['durasi'] ?: '00:00' ?></td>
                                         <td class="py-4 px-6">
                                             <?php if ($data['status'] === 'Hadir'): ?>
