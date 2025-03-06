@@ -1,0 +1,168 @@
+.product-image {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+    /* Container utama */
+    .ml-64 {
+        margin-left: 0 !important;
+    }
+
+    /* Header section */
+    .mb-8.bg-gradient-to-br {
+        margin: 0.5rem !important;
+        padding: 1.25rem !important;
+        border-radius: 1rem !important;
+    }
+
+    /* Header text */
+    .text-3xl {
+        font-size: 1.5rem !important;
+    }
+
+    .text-blue-100 {
+        font-size: 0.875rem !important;
+    }
+
+    /* Padding top untuk menghindari navbar */
+    .pt-24 {
+        padding-top: 5rem !important;
+    }
+
+    /* Statistik cards */
+    .grid.grid-cols-5 {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.75rem !important;
+        padding: 0.75rem !important;
+    }
+
+    /* Card styling */
+    .relative.bg-gradient-to-br {
+        padding: 1rem !important;
+        border-radius: 1rem !important;
+        background: white !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
+    }
+
+    /* Card content */
+    .relative.flex.items-center.gap-4 {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.75rem !important;
+    }
+
+    /* Icon container */
+    .p-4.bg-indigo-500\/10,
+    .p-4.bg-orange-500\/10,
+    .p-4.bg-blue-500\/10,
+    .p-4.bg-green-500\/10,
+    .p-4.bg-red-500\/10 {
+        padding: 0.75rem !important;
+    }
+
+    /* Numbers */
+    .text-4xl {
+        font-size: 1.75rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    /* Text */
+    .text-sm.font-medium {
+        font-size: 0.813rem !important;
+    }
+
+    /* Last card (Dibatalkan) */
+    .grid.grid-cols-5 > div:last-child {
+        grid-column: span 2 !important;
+    }
+
+    /* Card padding */
+    .p-6 {
+        padding: 1rem !important;
+    }
+
+    /* Icon size */
+    .w-7.h-7 {
+        width: 1.5rem !important;
+        height: 1.5rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Header adjustments for smaller screens */
+    .mb-8.bg-gradient-to-br {
+        margin: 0.25rem !important;
+        padding: 1rem !important;
+    }
+
+    .text-3xl {
+        font-size: 1.25rem !important;
+    }
+
+    /* Statistik cards untuk layar sangat kecil */
+    .grid.grid-cols-5 {
+        gap: 0.5rem !important;
+        padding: 0.5rem !important;
+    }
+
+    .relative.bg-gradient-to-br {
+        padding: 0.875rem !important;
+    }
+
+    .text-4xl {
+        font-size: 1.5rem !important;
+    }
+
+    .text-sm.font-medium {
+        font-size: 0.75rem !important;
+    }
+
+    /* Icon container */
+    .p-4.bg-indigo-500\/10,
+    .p-4.bg-orange-500\/10,
+    .p-4.bg-blue-500\/10,
+    .p-4.bg-green-500\/10,
+    .p-4.bg-red-500\/10 {
+        padding: 0.625rem !important;
+    }
+
+    /* Icon size */
+    .w-7.h-7 {
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+    }
+
+    /* Card shadow */
+    .shadow-\[0_8px_30px_rgb\(0\,0\,0\,0\.04\)\] {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+    }
+
+    /* Further adjustments for smaller screens */
+    .mb-6.flex {
+        padding: 0 0.5rem !important;
+    }
+
+    select,
+    input[type="text"] {
+        font-size: 0.813rem !important;
+    }
+
+    /* Reduce padding */
+    .px-4 {
+        padding-left: 0.875rem !important;
+        padding-right: 0.875rem !important;
+    }
+}
+
+/* Hide scrollbar but keep functionality */
+.overflow-x-auto {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+    display: none !important;
+}
