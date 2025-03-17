@@ -313,17 +313,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </button>
                     </div>
 
-                    <!-- Remember Me & Forgot Password -->
-                    <div class="flex items-center justify-between">
-                        <label class="flex items-center gap-2 cursor-pointer group">
-                            <input type="checkbox" 
-                                   name="remember" 
-                                   class="w-4 h-4 rounded border-gray-300 text-indigo-500 focus:ring-indigo-500/20 transition-colors">
-                            <span class="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">Remember me</span>
-                        </label>
-                        <a href="#" class="text-sm text-indigo-600 hover:text-indigo-700 transition-colors">Lupa Password?</a>
-                    </div>
-
                     <!-- Sign In Button -->
                     <button type="submit" 
                             class="w-full py-4 px-5 bg-gradient-to-r from-indigo-600 via-blue-600 to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transform transition-all duration-300 hover:from-indigo-500 hover:via-blue-500 hover:to-blue-600 btn-shine">
