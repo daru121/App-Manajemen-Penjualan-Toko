@@ -87,31 +87,46 @@ if (isset($_GET['token']) && isset($_GET['user_id'])) {
         if ($valid_token) {
             // Cek apakah sudah absen hari ini
             $check_query = "SELECT * FROM absensi_karyawan 
-                            WHERE user_id = ? 
-                            AND DATE(CONVERT_TZ(tanggal, '+00:00', '+08:00')) = CURRENT_DATE";
+                          WHERE user_id = ? 
+                          AND DATE(CONVERT_TZ(tanggal, '+00:00', '+08:00')) = CURRENT_DATE
+                          AND jam_keluar IS NULL
+                          LIMIT 1";
             $stmt = $conn->prepare($check_query);
             $stmt->execute([$user_id]);
+            $existing_absensi = $stmt->fetch();
             
-            if ($stmt->rowCount() > 0) {
-                // Ambil data absensi terlebih dahulu
-                $absensi_data = $stmt->fetch();
-                $jam_masuk = $absensi_data['jam_masuk'];
-                
-                // Update jam keluar
+            // Cek juga apakah sudah absen lengkap hari ini
+            $check_complete_query = "SELECT * FROM absensi_karyawan 
+                                   WHERE user_id = ? 
+                                   AND DATE(CONVERT_TZ(tanggal, '+00:00', '+08:00')) = CURRENT_DATE
+                                   AND jam_keluar IS NOT NULL
+                                   LIMIT 1";
+            $stmt_complete = $conn->prepare($check_complete_query);
+            $stmt_complete->execute([$user_id]);
+            $complete_absensi = $stmt_complete->fetch();
+            
+            if ($complete_absensi) {
+                // Jika sudah ada absensi lengkap (masuk dan pulang)
+                $message = "Anda sudah melakukan absen masuk dan pulang hari ini!";
+                $status = "error";
+                $jam_masuk = $complete_absensi['jam_masuk'];
+                $jam_keluar = $complete_absensi['jam_keluar'];
+            } elseif ($existing_absensi) {
+                // Jika baru absen masuk (belum ada jam keluar)
                 $update_query = "UPDATE absensi_karyawan 
-                                SET jam_keluar = ? 
-                                WHERE user_id = ? 
-                                AND DATE(CONVERT_TZ(tanggal, '+00:00', '+08:00')) = CURRENT_DATE";
+                               SET jam_keluar = ? 
+                               WHERE id = ?";
                 $stmt = $conn->prepare($update_query);
-                $stmt->execute([$current_time, $user_id]);
+                $stmt->execute([$current_time, $existing_absensi['id']]);
                 
                 $message = "Absen pulang berhasil!";
                 $status = "success";
+                $jam_masuk = $existing_absensi['jam_masuk'];
                 $jam_keluar = $current_time;
             } else {
-                // Insert absen masuk baru dengan timezone WITA
+                // Belum ada absensi hari ini, insert absen masuk baru
                 $insert_query = "INSERT INTO absensi_karyawan (user_id, tanggal, jam_masuk, status) 
-                                VALUES (?, CONVERT_TZ(NOW(), '+00:00', '+08:00'), ?, 'Hadir')";
+                               VALUES (?, CURRENT_DATE, ?, 'Hadir')";
                 $stmt = $conn->prepare($insert_query);
                 $stmt->execute([$user_id, $current_time]);
                 
